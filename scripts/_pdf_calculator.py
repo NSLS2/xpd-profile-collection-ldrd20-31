@@ -1,6 +1,6 @@
 import pymatgen as pm
 from diffpy.pdffit2 import PdfFit
-from diffpy.Structure import loadStructure
+from diffpy.structure import loadStructure
 from pymatgen.io.cif import CifWriter
 from pymatgen.io.cif import CifParser
 import os
