@@ -12,7 +12,8 @@ from diffpy.pdffit2 import PdfFit
 
 
 # === User parameters ===
-data_dir  = "/Users/matthewgreenberg/Desktop/BNL in-situ CsPbBr3 Manuscript/2025 Beamtime"  # directory with your CIFs
+# data_dir  = "/Users/matthewgreenberg/Desktop/BNL in-situ CsPbBr3 Manuscript/2025 Beamtime"  # directory with your CIFs
+data_dir = '/nsls2/users/clin1/Documents/Git_BNL/xpd-profile-collection-ldrd20-31/scripts/Matt_multi_phase'
 raw_cifs  = ["Cs4PbBr6.cif", "CsBr.cif", "CsPbBr3.cif"]    # original CIF filenames
 qmin, qmax = 1.0, 20.0    # Q-range for PDF (Å⁻¹)
 rmin, rmax, dr = 2.0, 20.0, 0.01  # r-range and step size (Å)
@@ -73,38 +74,43 @@ def calculate_pdf(
              pdf_calculator_kwargs['qdamp'], 
              pdf_calculator_kwargs['rmin'], 
              pdf_calculator_kwargs['rmax'], 
-             1000
+             1500
              )
     pf.setvar(pf.qbroad, pdf_calculator_kwargs['qbroad'])
     pf.add_structure(diffpy_structure)
     pf.calc()
 
-    r1 = pf.getR()
-    g1 = pf.getpdf_fit()
+    r1 = np.asarray(pf.getR())
+    g1 = np.asarray(pf.getpdf_fit())
 
-    return np.array([r1, g1]).T
+    # return np.array([r1, g1]).T
+    return r1, g1
 
 
 # Configure PDFCalculator
-dpc = PDFCalculator()
-dpc.qmin, dpc.qmax = qmin, qmax
-dpc.rmin, dpc.rmax, dpc.dr = rmin, rmax, dr
+# dpc = PDFCalculator()
+# dpc.qmin, dpc.qmax = qmin, qmax
+# dpc.rmin, dpc.rmax, dpc.dr = rmin, rmax, dr
 
+plt.figure(figsize=(6,4))
 for cif in raw_cifs:
     raw_path = os.path.join(data_dir, cif)
     
     # 1) Clean with pymatgen
-    pm_struct = Structure.from_file(raw_path)
-    pm_struct.remove_oxidation_states()
-    clean_name = os.path.splitext(cif)[0] + "_pym.cif"
-    clean_path = os.path.join(data_dir, clean_name)
-    CifWriter(pm_struct, symprec=0.1).write_file(clean_path)
+    # pm_struct = Structure.from_file(raw_path)
+    # pm_struct.remove_oxidation_states()
+    # clean_name = os.path.splitext(cif)[0] + "_pym.cif"
+    # clean_path = os.path.join(data_dir, clean_name)
+    # CifWriter(pm_struct, symprec=0.1).write_file(clean_path)
+    
+    diffpy_structure = pmg_to_diffpy_str(raw_path)
     
     # 2) Load cleaned CIF and compute PDF
-    struct = loadStructure(clean_path)
-    struct.Uisoequiv = 0.01
-        
-    r, G = dpc(struct)
+    # struct = loadStructure(clean_path)
+    # struct.Uisoequiv = 0.01
+    # r, G = dpc(struct)
+    
+    r, G = calculate_pdf(diffpy_structure)
 
     
     
