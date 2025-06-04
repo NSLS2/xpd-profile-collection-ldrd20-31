@@ -14,10 +14,10 @@ de = importlib.import_module("_data_export")
 da = importlib.import_module("_data_analysis")
 pc = importlib.import_module("_pdf_calculator")
 
-from diffpy.pdfgetx import PDFConfig
-gp = importlib.import_module("_get_pdf")
-
-build_agent = importlib.import_module("prepare_agent_pdf").build_agent
+## Commment the below 3 lines for missing packages: diffpy.pdfgetx, blop on 2025/06/03 at 1LL09
+# from diffpy.pdfgetx import PDFConfig
+# gp = importlib.import_module("_get_pdf")
+# build_agent = importlib.import_module("prepare_agent_pdf").build_agent
 import torch
 
 from tiled.client import from_uri
