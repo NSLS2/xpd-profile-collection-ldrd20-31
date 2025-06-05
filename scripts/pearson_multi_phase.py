@@ -35,12 +35,12 @@ def pmg_to_diffpy_str(raw_cif, cifwriter_kwargs={"symprec": 0.1}):
 
 def calculate_pdf(
     diffpy_structure,
-    diffpy_structure_attributes={"Uisoequiv": 0.04},
+    diffpy_structure_attributes={"Uisoequiv": 0.01},
     pdf_calculator_kwargs={
         "qmin": 1, 
-        "qmax": 18,
-        "rmin": 1.5,
-        "rmax": 22,
+        "qmax": 20,
+        "rmin": 1.0,
+        "rmax": 20.0,
         "qdamp": 0.06,
         "qbroad": 0.06
     }
@@ -74,7 +74,7 @@ def calculate_pdf(
              pdf_calculator_kwargs['qdamp'], 
              pdf_calculator_kwargs['rmin'], 
              pdf_calculator_kwargs['rmax'], 
-             1500
+             1800
              )
     pf.setvar(pf.qbroad, pdf_calculator_kwargs['qbroad'])
     pf.add_structure(diffpy_structure)
