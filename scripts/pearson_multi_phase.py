@@ -10,14 +10,19 @@ from diffpy.structure import loadStructure
 # from diffpy.srreal.pdfcalculator import PDFCalculator
 from diffpy.pdffit2 import PdfFit
 
-
+# import importlib
+# # sq = importlib.import_module("_synthesis_queue_RM")
+# de = importlib.import_module("_data_export")
+# da = importlib.import_module("_data_analysis")
+# # pc = importlib.import_module("_pdf_calculator")
+# plot_uvvis = importlib.import_module("_plot_helper").plot_uvvis
 
 # === User parameters ===
 # data_dir  = "/Users/matthewgreenberg/Desktop/BNL in-situ CsPbBr3 Manuscript/2025 Beamtime"  # directory with your CIFs
-data_dir = '/nsls2/users/clin1/Documents/Git_BNL/xpd-profile-collection-ldrd20-31/scripts/Matt_multi_phase'
-raw_cifs  = ["Cs4PbBr6.cif", "CsBr.cif", "CsPbBr3.cif"]    # original CIF filenames
-qmin, qmax = 1.0, 20.0    # Q-range for PDF (Å⁻¹)
-rmin, rmax, dr = 2.0, 20.0, 0.01  # r-range and step size (Å)
+# data_dir = '/nsls2/users/clin1/Documents/Git_BNL/xpd-profile-collection-ldrd20-31/scripts/Matt_multi_phase'
+# raw_cifs  = ["Cs4PbBr6.cif", "CsBr.cif", "CsPbBr3.cif"]    # original CIF filenames
+# qmin, qmax = 1.0, 20.0    # Q-range for PDF (Å⁻¹)
+# rmin, rmax, dr = 2.0, 20.0, 0.01  # r-range and step size (Å)
 
 
 
@@ -109,58 +114,41 @@ def calculate_pdf_save(raw_cifs, data_dir, is_save = True, is_plot = True):
             # plt.plot(r, G, label=os.path.splitext(cif)[0])
             pass
 
-            
 
-            
-            
-            
-# Directory containing both experimental and simulated .gr files
-data_dir = "/Users/matthewgreenberg/Desktop/BNL in-situ CsPbBr3 Manuscript/2025 Beamtime"
 
-# Names of your simulated files (adjust if needed)
-simulated_files = ["CsBr.gr", "CsPbBr3.gr", "Cs4PbBr6.gr"]
 
-# Find all .gr files in the directory
-all_gr = [f for f in os.listdir(data_dir) if f.endswith(".gr")]
-
-# Split into experimental vs. simulated
-exp_files = [f for f in all_gr if f not in simulated_files]
-
+def pearson_pdf(experiment_data_df, simulated_gr_fn, simulated_gr_path, uid=None):
 # Load simulated data into a dict
-sim_data = {}
-for fname in simulated_files:
-    path = os.path.join(data_dir, fname)
-    r_sim, G_sim = np.loadtxt(path).T
-    sim_data[fname] = (r_sim, G_sim)
+    sim_data = {}
+    for fname in simulated_gr_fn:
+        path = os.path.join(simulated_gr_path, fname)
+        r_sim, G_sim = np.loadtxt(path).T
+        sim_data[fname] = (r_sim, G_sim)
 
-# Prepare results container
-results = []
-
-# Loop over experimental files
-for fname in exp_files:
-    path = os.path.join(data_dir, fname)
-    r_exp, G_exp = np.loadtxt(path,skiprows=27).T
-    
+    r_exp, G_exp = experiment_data_df['r'], experiment_data_df['g(r)']
+        
     # Slice experimental data between 2.0 and 20.0 Å
     mask = (r_exp >= 2.0) & (r_exp <= 20.0)
     r_slice = r_exp[mask]
     G_slice = G_exp[mask]
-    
+
+    pearson_results = {}  # Prepare results container
+
     # Compute Pearson r against each simulated PDF
-    row = {"exp_file": fname}
     for sim_fname, (r_sim, G_sim) in sim_data.items():
         # interpolate simulated G onto experimental r-grid
         G_sim_i = np.interp(r_slice, r_sim, G_sim)
         # pearson correlation
         pearson_r = np.corrcoef(G_slice, G_sim_i)[0,1]
-        row[sim_fname] = pearson_r
-    
-    results.append(row)
+        pearson_results[f"{sim_fname} correlation"] = pearson_r
+        
+    return pearson_results
 
-# Build DataFrame and save
-df = pd.DataFrame(results).set_index("exp_file")
-print(df.to_string(float_format="%.4f"))
 
-out_csv = os.path.join(data_dir, "pearson_correlations.csv")
-df.to_csv(out_csv)
-print(f"\nSaved correlations to {out_csv}")
+# # Build DataFrame and save
+# df = pd.DataFrame(results).set_index("exp_file")
+# print(df.to_string(float_format="%.4f"))
+
+# out_csv = os.path.join(simulated_gr_path, "pearson_correlations.csv")
+# df.to_csv(out_csv)
+# print(f"\nSaved correlations to {out_csv}")

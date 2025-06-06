@@ -13,6 +13,7 @@ sq = importlib.import_module("_synthesis_queue_RM")
 de = importlib.import_module("_data_export")
 da = importlib.import_module("_data_analysis")
 pc = importlib.import_module("_pdf_calculator")
+pmp = importlib.import_module("pearson_multi_phase")
 
 ## Commment the below 3 lines for missing packages: diffpy.pdfgetx, blop on 2025/06/03 at 1LL09
 # from diffpy.pdfgetx import PDFConfig
@@ -67,6 +68,7 @@ def _kafka_inputs():
             'iq_to_gr', 'iq_to_gr_path', 'cfg_fn', 'bkg_fn', 'iq_fn',  
             'search_and_match', 'mystery_path', 'results_path', 
             'fitting_pdf', 'fitting_pdf_path', 'cif_fn', 'gr_fn', 
+            'pearson_pdf', 'simulated_gr_path', 'simulated_gr_fn',
             'dummy_pdf', 'write_to_sandbox', 'sandbox_uri', 'beamline_acronym', 
             'fn_TBD', 
             ]
@@ -91,7 +93,7 @@ def _kafka_process():
             'PL_goodbad', 'PL_fitting', 'abs_data', 'abs_fitting', 
             'plqy_dic', 'optical_property', 'agent_data', 'rate_label_dic', 
             'good_data', 'bad_data', 'continue_iteration', 'finished', 
-            
+            'pearson_results', 
             ]
 
     return process_list
@@ -601,6 +603,37 @@ class xlsx_to_inputs():
 
 
 
+
+
+
+    def macro_061_pearson_pdf(self, gr_fn):
+        """macro to calculate the pearson correlation of gr vs. multi-phase, used in kafka consumer 
+        using function pearson_pdf from pearson_multi_phase.py  
+
+        Args:
+            gr_fn (str): g(r) data path for searching and matching, ex: self.gr_data[0] or self.inputs.gr_fn[0]
+                        if using self.gr_data[0], g(r) is generated in workflow
+                        if using self.inputs.gr_fn[-1], g(r) is directly read from a file
+
+        Returns:
+            str: the file name of the best fitted cif
+        """
+        
+        self.pearson_results = {}
+        experiment_data_df = pd.read_csv(gr_fn, names=['r', 'g(r)'], sep =' ')
+        simulated_gr_fn = self.inputs.simulated_gr_fn
+        simulated_gr_path = self.inputs.simulated_gr_path[0]
+        
+        pearson_results = pmp.pearson_pdf(experiment_data_df, simulated_gr_fn, simulated_gr_path)
+        
+        self.pearson_results.update(pearson_results)
+        
+        return pearson_results
+
+
+
+
+
     def macro_07_fitting_pdf(self, gr_fn, beamline_acronym, 
                             rmax=100.0, qmax=12.0, qdamp=0.031, qbroad=0.032, 
                             fix_APD=True, toler=0.01):
@@ -971,6 +1004,7 @@ class xlsx_to_inputs():
         ff = self.PL_fitting
         self.agent_data.update({'abs_offset':{'fit_function':ff_abs['fit_function'].__name__, 'popt':ff_abs['curve_fit'].tolist()}})
         self.agent_data.update({'PL_fitting':{'fit_function':ff['fit_function'].__name__, 'popt':ff['curve_fit'].tolist()}})
+        self.agent_data.update(self.pearson_results)
 
 
 

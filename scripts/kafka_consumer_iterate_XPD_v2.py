@@ -36,7 +36,8 @@ plt.rcParams["figure.raise_window"] = False
 
 # xlsx_fn = '/home/xf28id2/Documents/ChengHung/inputs_qserver_kafka_v2.xlsx'
 # xlsx_fn = '/home/xf28id2/.ipython/profile_collection/scripts/inputs_qserver_kafka_v2.xlsx'
-xlsx_fn = '/home/xf28id2/.ipython/profile_collection_ldrd20-31/scripts/inputs_qserver_kafka_v2_test.xlsx'
+# xlsx_fn = '/home/xf28id2/.ipython/profile_collection_ldrd20-31/scripts/inputs_qserver_kafka_v2_test.xlsx'
+xlsx_fn = '/home/xf28id2/.ipython/profile_collection_ldrd20-31/scripts/inputs_qserver_kafka_v2.xlsx'
 
 ## Input varaibales for Qserver, reading from xlsx_fn by given sheet name
 qserver_process = LK.xlsx_to_inputs(LK._qserver_inputs(), xlsx_fn=xlsx_fn, sheet_name='qserver_XPD')
@@ -235,6 +236,14 @@ def print_kafka_messages(beamline_acronym_01,
                     cif_fn = kafka_process.macro_06_search_and_match(kafka_process.gr_data[0])                    
                     print(f'\n\n*** After matching, the most correlated strucuture is\n' 
                           f'*** {cif_fn} ***\n\n')
+                    
+                ## macro_061: calculate pearson correlation of gr data vs. simulated
+                if kin.pearson_pdf[0]:
+                    # pearson_results = kafka_process.macro_061_search_and_match(kin.gr_fn[0])
+                    pearson_results = kafka_process.macro_061_search_and_match(kafka_process.gr_data[0])                    
+                    print(f'\n\n*** After Pearson calculation, the correlations to simulation are\n')
+                    pprint.pprint(pearson_results)
+                    print('\n\n')
                 
                 ## macro_07: do pdf fitting and update kafka_process.gr_fitting
                 if kin.fitting_pdf[0]:

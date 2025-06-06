@@ -58,13 +58,13 @@ def _dark_json(_dark_dict_list, json_fn, dump_or_load='dump'):
 
 
 ## Creat file name based on date, time, uid, sample_name/type from fluorescence stream
-def _fn_generator(uid, beamline_acronym='xpd'):
-    _, metadata_dic = read_qepro_by_stream(uid, stream_name='fluorescence', data_agent='tiled', beamline_acronym=beamline_acronym)
+def _fn_generator(uid, beamline_acronym='xpd', stream_name='fluorescence', data_agent='tiled'):
+    _, metadata_dic = read_qepro_by_stream(uid, stream_name=stream_name, data_agent=data_agent, beamline_acronym=beamline_acronym)
     sample_type = metadata_dic['sample_type']
     date, ttime = _readable_time(metadata_dic['time'])
     full_uid = metadata_dic['uid']
     fn = f'{sample_type}_{date}-{ttime}_{full_uid[0:8]}'
-    return fnkafka_test
+    return fn
 
 
 ## Auto generate sample name with given prefix and infuse_rate
