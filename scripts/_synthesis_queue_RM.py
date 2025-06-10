@@ -118,10 +118,14 @@ def synthesis_queue_xlsx(parameter_obj):
 
 		## 3. Wait for equilibrium
 		if len(mixer) == 1:
-			if (precursor_list[-1] == 'Toluene') and ('CsPb' in precursor_list[0]):
-				mixer_pump_list = [[mixer[0], *pump_list[:2]]]
-			elif (precursor_list[-1] == 'Toluene') and ('Cs-rich' in precursor_list[0]):
-				mixer_pump_list = [[mixer[0], *pump_list[:3]]]
+			if (precursor_list[-1] == 'Toluene') and (precursor_list[-2] == 'PF_oil'):
+				mixer_pump_list = [[mixer[0], *pump_list[:-2]]]
+			# if (precursor_list[-1] == 'Toluene') and ('CsPb' in precursor_list[0]):
+			# 	mixer_pump_list = [[mixer[0], *pump_list[:2]]]
+			# elif (len(precursor_list)==6) and (precursor_list[-1] == 'Toluene') and ('OLA' in precursor_list[3]):
+			# 	mixer_pump_list = [[mixer[0], *pump_list[:4]]]
+			# elif (len(precursor_list)==5) and (precursor_list[-1] == 'Toluene') and ('Cs-rich' in precursor_list[0]):
+			# 	mixer_pump_list = [[mixer[0], *pump_list[:3]]]
 			else:
 				mixer_pump_list = [[mixer[0], *pump_list]]
 		elif len(mixer) == 2:

@@ -434,16 +434,18 @@ def wait_equilibrium2(mixer_pump_list, ratio=1, tubing_ID_mm=1.016):
             rate_unit = infuse_rate_unit[i]
             unit_const = vol_unit_converter(v0=rate_unit[:2], v1='ul')/t_unit_converter(t0=rate_unit[3:], t1='min')
             if pump_status[i] == 'Infusing':
-                _is_infusing = True
+                _is_infusing = 1.0
             else:
-                _is_infusing = False
+                _is_infusing = 0.0
 
             total_rate += rate*unit_const*_is_infusing
 
         res_time_sec += 60*mixer_vol_mm3/total_rate
 
-    print(f'Reaction resident time is {res_time_sec:.2f} seconds.')
-    print(f'Wait for {ratio} times of resident time, in total of {res_time_sec*ratio:.2f} seconds.')
+    print(f'\n{infuse_rates = }\n')
+    print(f'\n{pump_status = }\n')
+    print(f'\nReaction resident time is {res_time_sec:.2f} seconds.\n')
+    print(f'\nWait for {ratio} times of resident time, in total of {res_time_sec*ratio:.2f} seconds.\n')
     yield from sleep_sec_q(res_time_sec*ratio)
 
 
@@ -520,6 +522,7 @@ def cal_equilibrium2(mixer_pump_list, ratio=1, tubing_ID_mm=1.016):
     print(f'Reaction resident time is {res_time_sec:.2f} seconds.')
     print(f'Wait for {ratio} times of resident time, in total of {res_time_sec*ratio:.2f} seconds.')
     # yield from sleep_sec_q(res_time_sec*ratio)
+    return res_time_sec, pump_status 
 
 
 

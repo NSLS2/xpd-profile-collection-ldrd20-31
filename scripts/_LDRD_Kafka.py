@@ -16,9 +16,9 @@ pc = importlib.import_module("_pdf_calculator")
 pmp = importlib.import_module("pearson_multi_phase")
 
 ## Commment the below 3 lines for missing packages: diffpy.pdfgetx, blop on 2025/06/03 at 1LL09
-# from diffpy.pdfgetx import PDFConfig
-# gp = importlib.import_module("_get_pdf")
-# build_agent = importlib.import_module("prepare_agent_pdf").build_agent
+from diffpy.pdfgetx import PDFConfig
+gp = importlib.import_module("_get_pdf")
+build_agent = importlib.import_module("prepare_agent_pdf").build_agent
 import torch
 
 from tiled.client import from_uri
@@ -717,8 +717,8 @@ class xlsx_to_inputs():
         gr_fit_arrary = None
         
         gr_fit_df = pd.DataFrame()
-        gr_fit_df['fit_r'] = np.nan
-        gr_fit_df['fit_g(r)'] = np.nan
+        gr_fit_df['fit_r'] = 0  #np.nan
+        gr_fit_df['fit_g(r)'] = 0  #np.nan
 
         gr_fitting = {  'R':[], 
                         'pdf_fit':[], 
@@ -732,7 +732,8 @@ class xlsx_to_inputs():
         # self.gr_fitting.append(gr_fit_df)
         
         self.pdf_property = {}
-        pdf_property={'Br_ratio': np.nan, 'Br_size': np.nan}
+        # pdf_property={'Br_ratio': np.nan, 'Br_size': np.nan}
+        pdf_property={'Br_ratio': 0, 'Br_size': 0}
         self.pdf_property.update(pdf_property)
 
         self.gr_data = []
@@ -793,6 +794,8 @@ class xlsx_to_inputs():
         Args:
             stream_name (str): the stream name in scan doc to identify scan plan
         """
+        
+
         if self.qepro_dic['QEPro_spectrum_type'][0]==2 and stream_name=='take_a_uvvis':
             print(f'\n*** start to identify good/bad data in stream: {stream_name} ***\n')
             x0, y0, data_id, peak, prop = da._identify_one_in_kafka(
@@ -819,6 +822,7 @@ class xlsx_to_inputs():
         PL_goodbad = {  'wavelength':np.asarray(x0), 'percentile_mean':np.asarray(y0), 
                         'data_id':data_id, 'peak':peak, 'prop':prop}
         self.PL_goodbad.update(PL_goodbad)
+            
 
 
 
@@ -872,7 +876,7 @@ class xlsx_to_inputs():
                                 fitting=ff_abs)
 
 
-    def macro_12_PL_fitting(self):
+    def macro_12_PL_fitting(self, has_peak=True):
         """macro to do peak fitting with gaussian distribution of PL spectra
 
         This macro will
@@ -888,48 +892,61 @@ class xlsx_to_inputs():
             self.PL_fitting['percentile_mean']:   intensity of PL (percentile_mean)
         """
 
-        x, y, p, f_fit, popt = da._fitting_in_kafka(
-                                self.PL_goodbad['wavelength'], 
-                                self.PL_goodbad['percentile_mean'], 
-                                self.PL_goodbad['data_id'], 
-                                self.PL_goodbad['peak'], 
-                                self.PL_goodbad['prop'], 
-                                dummy_test=self.inputs.dummy_kafka[0])    
+        if has_peak:
+            x, y, p, f_fit, popt = da._fitting_in_kafka(
+                                    self.PL_goodbad['wavelength'], 
+                                    self.PL_goodbad['percentile_mean'], 
+                                    self.PL_goodbad['data_id'], 
+                                    self.PL_goodbad['peak'], 
+                                    self.PL_goodbad['prop'], 
+                                    dummy_test=self.inputs.dummy_kafka[0])    
 
-        fitted_y = f_fit(x, *popt)
-        r2_idx1, _ = da.find_nearest(x, popt[1] - 3*popt[2])
-        r2_idx2, _ = da.find_nearest(x, popt[1] + 3*popt[2])
-        r_2 = da.r_square(x[r2_idx1:r2_idx2], y[r2_idx1:r2_idx2], fitted_y[r2_idx1:r2_idx2], y_low_limit=0)               
+            fitted_y = f_fit(x, *popt)
+            r2_idx1, _ = da.find_nearest(x, popt[1] - 3*popt[2])
+            r2_idx2, _ = da.find_nearest(x, popt[1] + 3*popt[2])
+            r_2 = da.r_square(x[r2_idx1:r2_idx2], y[r2_idx1:r2_idx2], fitted_y[r2_idx1:r2_idx2], y_low_limit=0)               
 
-        self.metadata_dic["r_2"] = r_2                                   
+            self.metadata_dic["r_2"] = r_2                                   
+            
+            if 'gauss' in f_fit.__name__:
+                constant = 2.355
+            else:
+                constant = 1
+
+            intensity_list = []
+            peak_list = []
+            fwhm_list = []
+            for i in range(int(len(popt)/3)):
+                intensity_list.append(popt[i*3+0])
+                peak_list.append(popt[i*3+1])
+                fwhm_list.append(popt[i*3+2]*constant)
+            
+            peak_emission_id = np.argmax(np.asarray(intensity_list))
+            peak_emission = peak_list[peak_emission_id]
+            fwhm = fwhm_list[peak_emission_id]
+            
+            ff={'fit_function': f_fit, 'curve_fit': popt,  
+                'fwhm': fwhm, 'peak_emission': peak_emission, 
+                'wavelength': x, 'intensity': y, 'shifted_peak_idx': p, 
+                'percentile_mean': self.PL_goodbad['percentile_mean']}
+
+            self.PL_fitting = {}
+            self.PL_fitting.update(ff)
         
-        if 'gauss' in f_fit.__name__:
-            constant = 2.355
         else:
-            constant = 1
-
-        intensity_list = []
-        peak_list = []
-        fwhm_list = []
-        for i in range(int(len(popt)/3)):
-            intensity_list.append(popt[i*3+0])
-            peak_list.append(popt[i*3+1])
-            fwhm_list.append(popt[i*3+2]*constant)
-        
-        peak_emission_id = np.argmax(np.asarray(intensity_list))
-        peak_emission = peak_list[peak_emission_id]
-        fwhm = fwhm_list[peak_emission_id]
-        
-        ff={'fit_function': f_fit, 'curve_fit': popt,  
-            'fwhm': fwhm, 'peak_emission': peak_emission, 
-            'wavelength': x, 'intensity': y, 'shifted_peak_idx': p, 
+            ff={'fit_function': np.nan, 'curve_fit': np.nan,  
+            'fwhm': np.nan, 'peak_emission': np.nan, 
+            'wavelength': self.PL_goodbad['wavelength'], 
+            'intensity': self.PL_goodbad['percentile_mean'], 
+            'shifted_peak_idx': np.nan, 
             'percentile_mean': self.PL_goodbad['percentile_mean']}
+            
+            self.PL_fitting = {}
+            self.PL_fitting.update(ff)
 
-        self.PL_fitting = {}
-        self.PL_fitting.update(ff)
 
 
-    def macro_13_PLQY(self):
+    def macro_13_PLQY(self, has_peak=True):
         """macro to calculate integral of PL peak, PLQY and update optical_property
 
         This macro will
@@ -944,35 +961,51 @@ class xlsx_to_inputs():
 
         """
         
-        ## Integrate PL peak
-        x = self.PL_fitting['wavelength']
-        y = self.PL_fitting['intensity']
-        peak_emission = self.PL_fitting['peak_emission']
-        fwhm = self.PL_fitting['fwhm']
-        PL_integral_s = integrate.simpson(y)
-        
-        ## Find absorbance at 365 nm from absorbance stream
-        idx1, _ = da.find_nearest(self.abs_data['wavelength'], self.inputs.PLQY[2])
-        absorbance_s = self.abs_data['offset'][idx1]
+        if has_peak:
+            ## Integrate PL peak
+            x = self.PL_fitting['wavelength']
+            y = self.PL_fitting['intensity']
+            peak_emission = self.PL_fitting['peak_emission']
+            fwhm = self.PL_fitting['fwhm']
+            PL_integral_s = integrate.simpson(y)
+            
+            ## Find absorbance at 365 nm from absorbance stream
+            idx1, _ = da.find_nearest(self.abs_data['wavelength'], self.inputs.PLQY[2])
+            absorbance_s = self.abs_data['offset'][idx1]
 
-        if self.inputs.PLQY[1] == 'fluorescein':
-            plqy = da.plqy_fluorescein(absorbance_s, PL_integral_s, 1.506, *self.inputs.PLQY[3:])
+            if self.inputs.PLQY[1] == 'fluorescein':
+                plqy = da.plqy_fluorescein(absorbance_s, PL_integral_s, 1.506, *self.inputs.PLQY[3:])
+            else:
+                plqy = da.plqy_quinine(absorbance_s, PL_integral_s, 1.506, *self.inputs.PLQY[3:])
+
+            
+            plqy_dic = {'PL_integral':PL_integral_s, 'Absorbance_365':absorbance_s, 'plqy': plqy}
+            self.plqy_dic = {}
+            self.plqy_dic.update(plqy_dic)
+
+            optical_property = {'PL_integral':PL_integral_s, 'Absorbance_365':absorbance_s, 
+                                'Peak':peak_emission, 'FWHM':fwhm, 'PLQY':plqy}
+            self.optical_property = {}
+            self.optical_property.update(optical_property)
+            
         else:
-            plqy = da.plqy_quinine(absorbance_s, PL_integral_s, 1.506, *self.inputs.PLQY[3:])
+            ## Find absorbance at 365 nm from absorbance stream
+            idx1, _ = da.find_nearest(self.abs_data['wavelength'], self.inputs.PLQY[2])
+            absorbance_s = self.abs_data['offset'][idx1]
+            
+            
+            plqy_dic = {'PL_integral':0, 'Absorbance_365':absorbance_s, 'plqy': 0}
+            self.plqy_dic = {}
+            self.plqy_dic.update(plqy_dic)
+            
+            optical_property = {'PL_integral':0, 'Absorbance_365':absorbance_s, 
+                                'Peak':0, 'FWHM':1000, 'PLQY':0}
+            self.optical_property = {}
+            self.optical_property.update(optical_property)
 
-        
-        plqy_dic = {'PL_integral':PL_integral_s, 'Absorbance_365':absorbance_s, 'plqy': plqy}
-        self.plqy_dic = {}
-        self.plqy_dic.update(plqy_dic)
-
-        optical_property = {'PL_integral':PL_integral_s, 'Absorbance_365':absorbance_s, 
-                            'Peak':peak_emission, 'FWHM':fwhm, 'PLQY':plqy}
-        self.optical_property = {}
-        self.optical_property.update(optical_property)
 
 
-
-    def macro_14_upate_agent(self):
+    def macro_14_upate_agent(self, has_peak=True):
         """macro to update agent_data in type of dict for exporting
 
         This macro will
@@ -999,16 +1032,18 @@ class xlsx_to_inputs():
         self.agent_data.update({k:v for k, v in self.metadata_dic.items() if len(np.atleast_1d(v)) == 1})
         self.agent_data.update(de._exprot_rate_agent(self.metadata_dic, self.rate_label_dic, self.agent_data))
 
-        ## Update absorbance offset and fluorescence fitting results inot agent_data
-        ff_abs = self.abs_fitting
-        ff = self.PL_fitting
-        self.agent_data.update({'abs_offset':{'fit_function':ff_abs['fit_function'].__name__, 'popt':ff_abs['curve_fit'].tolist()}})
-        self.agent_data.update({'PL_fitting':{'fit_function':ff['fit_function'].__name__, 'popt':ff['curve_fit'].tolist()}})
+        if has_peak:
+            ## Update absorbance offset and fluorescence fitting results inot agent_data
+            ff_abs = self.abs_fitting
+            ff = self.PL_fitting
+            self.agent_data.update({'abs_offset':{'fit_function':ff_abs['fit_function'].__name__, 'popt':ff_abs['curve_fit'].tolist()}})
+            self.agent_data.update({'PL_fitting':{'fit_function':ff['fit_function'].__name__, 'popt':ff['curve_fit'].tolist()}})
+        
         self.agent_data.update(self.pearson_results)
 
 
 
-    def macro_15_save_data(self, stream_name):
+    def macro_15_save_data(self, stream_name, has_peak=True):
         """macro to save processed data and agent data
 
         This macro will
@@ -1020,19 +1055,20 @@ class xlsx_to_inputs():
             stream_name (str): the stream name in scan doc to identify scan plan
         """
         
-        ## Save fitting data
-        print(f'\nFitting function: {self.PL_fitting["fit_function"]}\n')
-        de.dic_to_csv_for_stream(self.inputs.csv_path[0], 
-                                self.qepro_dic, 
-                                self.metadata_dic, 
-                                stream_name = stream_name, 
-                                fitting = self.PL_fitting, 
-                                plqy_dic = self.plqy_dic)
-        print(f'\n** export fitting results complete**\n')
-
         if stream_name == 'fluorescence':
             self.uid_bundle.append(self.uid)
         
+        if has_peak:
+            ## Save fitting data
+            print(f'\nFitting function: {self.PL_fitting["fit_function"]}\n')
+            de.dic_to_csv_for_stream(self.inputs.csv_path[0], 
+                                    self.qepro_dic, 
+                                    self.metadata_dic, 
+                                    stream_name = stream_name, 
+                                    fitting = self.PL_fitting, 
+                                    plqy_dic = self.plqy_dic)
+            print(f'\n** export fitting results complete**\n')
+
         ## Save processed data in df and agent_data as metadta in sandbox
         if self.inputs.write_to_sandbox[0] and (stream_name == 'fluorescence'):
             df = pd.DataFrame()
@@ -1041,17 +1077,22 @@ class xlsx_to_inputs():
             df['absorbance_mean'] = self.abs_data['percentile_mean']
             df['absorbance_offset'] = self.abs_data['offset']
             df['fluorescence_mean'] = self.PL_goodbad['percentile_mean']
-            f_fit = self.PL_fitting['fit_function']
-            popt = self.PL_fitting['curve_fit']
-            df['fluorescence_fitting'] = f_fit(x0, *popt)
+            
+            if has_peak:
+                f_fit = self.PL_fitting['fit_function']
+                popt = self.PL_fitting['curve_fit']
+                df['fluorescence_fitting'] = f_fit(x0, *popt)
 
             ## use pd.concat to add various length data together
             try:
                 df_new = pd.concat([df, self.iq_data['df'], self.gr_data[1], self.gr_fitting['df']], ignore_index=False, axis=1)
+                # df_new = pd.concat([df, self.iq_data['df'], self.gr_data[1]], ignore_index=False, axis=1)
             except (TypeError, KeyError):
                 df_new = df
 
             # entry = sandbox_tiled_client.write_dataframe(df, metadata=agent_data)
+            print(df_new, '\n\n')
+            print(self.agent_data, '\n\n')
             entry = self.sandbox_tiled_client.write_dataframe(df_new, metadata=self.agent_data)
             # uri = sandbox_tiled_client.values()[-1].uri
             uri = entry.uri
@@ -1067,6 +1108,10 @@ class xlsx_to_inputs():
                 json.dump(self.agent_data, f, indent=2)
 
             print(f"\nwrote to {self.inputs.agent_data_path[0]}\n")
+                
+        # else:
+        #     # TODO: Figure out what to write to sandbox if no PL peak
+        #     pass
 
 
     def macro_16_num_good(self, stream_name):
@@ -1113,15 +1158,19 @@ class xlsx_to_inputs():
         qin = qserver_process.inputs
         ## Depend on # of good/bad data, add items into queue item or stop 
         if (stream_name == 'take_a_uvvis') and (self.inputs.use_good_bad[0]):     
-            if len(self.bad_data) > 3:
-                print('*** qsever aborted due to too many bad scans, please check setup ***\n')
+            if len(self.bad_data) > 2:
+                # print('*** qsever aborted due to too many bad scans, please check setup ***\n')
 
-                ### Stop all infusing pumps and wash loop
-                sq.wash_tube_queue2(qin.pump_list, qin.if_wash, qin.wash_loop, 'ul/min', 
-                                zmq_control_addr=qin.zmq_control_addr[0],
-                                zmq_info_addr=qin.zmq_info_addr[0])
+                # ### Stop all infusing pumps and wash loop
+                # sq.wash_tube_queue2(qin.pump_list, qin.if_wash, qin.wash_loop, 'ul/min', 
+                #                 zmq_control_addr=qin.zmq_control_addr[0],
+                #                 zmq_info_addr=qin.zmq_info_addr[0])
 
-                RM.queue_stop()
+                # RM.queue_stop()
+                
+                print('*** No good peaks in 400 - 800 nm, so too many bad scans, just keep going ***\n')
+                
+                RM.queue_start()
                 
             elif (len(self.good_data) <= 2) and (self.inputs.use_good_bad[0]):
                 print('*** Add another fluorescence scan to the front of qsever ***\n')

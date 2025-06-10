@@ -311,10 +311,14 @@ def print_kafka_messages(beamline_acronym_01,
                     print(f'\n*** start to identify good/bad data in stream: {stream_name} ***\n')
                     kafka_process.macro_10_good_bad(stream_name)
                     
-                    label_uid = f'{kafka_process.uid[0:8]}_{kafka_process.metadata_dic["sample_type"]}'
-                    u.plot_average_good(kafka_process.PL_goodbad['wavelength'], 
-                                        kafka_process.PL_goodbad['percentile_mean'], 
-                                        label=label_uid, clf_limit=9)
+                    type_peak = type(kafka_process.PL_goodbad['peak'])
+                    type_prop = type(kafka_process.PL_goodbad['prop'])
+                    
+                    if (type_peak is np.ndarray) and (type_prop is dict):
+                        label_uid = f'{kafka_process.uid[0:8]}_{kafka_process.metadata_dic["sample_type"]}'
+                        u.plot_average_good(kafka_process.PL_goodbad['wavelength'], 
+                                            kafka_process.PL_goodbad['percentile_mean'], 
+                                            label=label_uid, clf_limit=9)
 
  
                 ## Skip peak fitting if qepro type is absorbance
@@ -365,6 +369,15 @@ def print_kafka_messages(beamline_acronym_01,
                         ## macro_15_save_data: Save processed data and agent data
                         kafka_process.macro_15_save_data(stream_name)
                     
+                    ## Bad data: No peak fitting
+                    elif  (type_peak is list) and (stream_name == 'fluorescence'):
+                        kafka_process.macro_12_PL_fitting(has_peak=False)
+                        kafka_process.macro_13_PLQY(has_peak=False)
+                        kafka_process.macro_14_upate_agent(has_peak=False)
+                                                    
+                        ## macro_15_save_data: Save processed data and agent data
+                        kafka_process.macro_15_save_data(stream_name, has_peak=False)
+                        
                     ##  macro_16_num_good: Add self.PL_goodbad['data_id'] into self.good_data or self.bad_data
                     kafka_process.macro_16_num_good(stream_name)
 

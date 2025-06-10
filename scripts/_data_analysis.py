@@ -580,16 +580,23 @@ def _identify_multi_in_kafka(qepro_dic, metadata_dic, key_height=200, distance=1
         if (type(p1) is np.ndarray) and (type(p2) is dict):
             _for_average[f'{data_id}_{i:03d}'] = y_i
     
-    _for_average[f'{data_id}_mean'] = _for_average.mean(axis=1)
-
-    x0 = x_i
-    PL_per = percentile_PL(x0, _for_average.to_numpy().T, w_range=w_range, percent_range=percent_range)
-    # y0 = _for_average[f'{data_id}_mean'].values
-    y0 = PL_per.mean(axis=0)
     
-    peak, prop = good_bad_data(x0, y0, key_height=key_height, data_id = f'{data_id}_average', distance=distance, height=height, dummy_test=dummy_test)                            
-    return x0, y0, data_id, peak, prop
+    ## Add try/except Error for pass bad PL to save df in sandbox on 2025/06/06
+    try:
+        _for_average[f'{data_id}_mean'] = _for_average.mean(axis=1)
 
+        x0 = x_i
+        PL_per = percentile_PL(x0, _for_average.to_numpy().T, w_range=w_range, percent_range=percent_range)
+        # y0 = _for_average[f'{data_id}_mean'].values
+        y0 = PL_per.mean(axis=0)
+        
+        peak, prop = good_bad_data(x0, y0, key_height=key_height, data_id = f'{data_id}_average', distance=distance, height=height, dummy_test=dummy_test)                            
+        return x0, y0, data_id, peak, prop
+    
+    except ValueError:
+        x0 = x_i
+        y0 = y_i
+        return x0, y0, data_id, [], []
     
     
 def _fitting_in_kafka(x0, y0, data_id, peak, prop, is_one_peak=True, dummy_test=False):
