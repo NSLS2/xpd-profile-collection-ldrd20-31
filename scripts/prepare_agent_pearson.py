@@ -38,7 +38,7 @@ def build_agent(target_correlation=None, agent_data_path='/'):
         Objective(description="Peak width", name="FWHM", target="min", transform="log", weight=1,max_noise=0.25),
         Objective(description="Quantum yield", name="PLQY", target="max", transform="log", weight=1, max_noise=0.25),
         #Objective(description="CsBr Corre", name="CsBr.gr correlation", target='min', transform="log", weight=1, max_noise=0.25),
-        Objective(description="CsPbBr3 Corre", name="CsPbBr3.gr correlation", target='max', transform="log", weight=1, max_noise=0.1),
+        # Objective(description="CsPbBr3 Corre", name="CsPbBr3.gr correlation", target='max', transform="log", weight=1, max_noise=0.1),
         Objective(description="Cs4PbBr6 Corre", name="Cs4PbBr6.gr correlation", target='max', transform="log", weight=5, max_noise=0.1), 
     ]
 
