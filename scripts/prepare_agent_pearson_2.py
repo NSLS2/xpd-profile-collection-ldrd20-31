@@ -15,7 +15,7 @@ def build_agent(target_correlation=None, agent_data_path='/'):
     # data_path = '/home/xf28id2/data_ZnCl2'
     # agent_data_path = '/home/xf28id2/Documents/ChengHung/agent_data/Cl_02'
     # agent_data_path = agent_data_path
-    agent_data_path = '/home/xf28id2/Documents/ChengHung/20250606_XPD/agent_data/agent_data.csv'
+    # agent_data_path = '/home/xf28id2/Documents/ChengHung/20250606_XPD/agent_data/agent_data.csv'
     agent_data_path = '/nsls2/users/clin1/Documents/xpd-data/agent_data_20250724_sum.csv'
 
 
@@ -44,14 +44,15 @@ def build_agent(target_correlation=None, agent_data_path='/'):
     # ]
 
     objectives = [
-        Objective(description="Quantum yield", name="PLQY", target="max", transform="log", weight=1, max_noise=0.25),
+        # Objective(description="Quantum yield", name="PLQY", target="max", transform="log", weight=1, max_noise=0.25),
         # Objective(description="Peak emission", name="Peak", target=(peak_down, peak_up), weight=100., max_noise=0.25), 
-        Objective(description="Peak width", name="FWHM", target="min", transform="log", weight=1,max_noise=0.25),
-        Objective(description="CsBr Conc", name="CsBr_wt", target='min', transform="log", weight=1, max_noise=0.25), 
-        Objective(description="Cs4PbBr6 Conc", name="Cs4PbBr6_wt", target='max', transform="log", weight=5, max_noise=0.1),
-        Objective(description="CsPbBr3 Conc", name="CsPbBr3_wt", target='max', transform="log", weight=1, max_noise=0.1), 
-        Objective(description="Rw", name="Rw", target='min', transform="log", weight=1, max_noise=0.1),
-        # Objective(description="Rw inverse", name="Rw_inverse", target='max', transform="log", weight=1, max_noise=0.1), 
+        # Objective(description="Peak width", name="FWHM", target="min", transform="log", weight=1,max_noise=0.25),
+        Objective(description="CsBr Conc", name="CsBr_wt", target='max', transform="log", weight=5, max_noise=0.25), 
+        Objective(description="Cs4PbBr6 Conc", name="Cs4PbBr6_wt", target='min', transform="log", weight=1, max_noise=0.25),
+        Objective(description="CsPbBr3 Conc", name="CsPbBr3_wt", target='min', transform="log", weight=1, max_noise=0.25), 
+        # Objective(description="PLQY_RwInv", name="PLQY_RwInv", target='min', transform="log", weight=1, max_noise=0.25),
+        # Objective(description="Rw inverse", name="Rw_inverse", target='max', transform="log", weight=1, max_noise=0.25), 
+        # Objective(description="Rw", name="Rw", target='min', transform="log", weight=1, max_noise=0.25), 
          
     ]
 
@@ -70,20 +71,28 @@ def build_agent(target_correlation=None, agent_data_path='/'):
              'PLQY', 'Peak', 'FWHM', 
              'CsBr_wt', 'Cs4PbBr6_wt', 'CsPbBr3_wt', 'Rw', 'Rw_inverse']
     
+    
     df = pd.read_csv(fn, sep=',', names=names, skiprows=1, index_col=False)
+
+    df['PLQY_RwInv'] = df['PLQY'] * df['Rw_inverse'] *100
+
     # print(df)
     # print(agent.dofs.names)
     # print(agent.objectives.names)
     
     for i in range(len(df['PLQY'])):
-        x = {k:[df[k][i]] for k in agent.dofs.names}
-        y = {k:[df[k][i]] for k in agent.objectives.names}
-        metadata = {}
-        # metadata = {k:[data.get(k, None)] for k in metadata_keys}
-        agent.tell(x=x, y=y, metadata=metadata, train=False, update_models=False)
         
-    
-    
+        if df['Rw'][i] > 33:
+            print(f"{i = }")
+            print(f"{df['Rw'][i] = } > 0.5, skip this data point.\n")
+
+        else:
+            x = {k:[df[k][i]] for k in agent.dofs.names}        
+            y = {k:[df[k][i]] for k in agent.objectives.names}
+            metadata = {}
+            # metadata = {k:[data.get(k, None)] for k in metadata_keys}
+            agent.tell(x=x, y=y, metadata=metadata, train=False, update_models=False)
+        
     agent._construct_all_models()
     agent._train_all_models()
 
