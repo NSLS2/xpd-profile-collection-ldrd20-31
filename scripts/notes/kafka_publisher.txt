@@ -1,0 +1,1293 @@
+ 2/1: db[-1]
+ 2/2: db[-1].table()
+ 2/3: db[-1].table().T
+ 3/1: dds1_p1?
+ 3/2:
+pump_list = [dds1_p1, dds1_p2]
+syringe_list = [50, 50]
+target_vol_list = ['30 ml', '30 ml']
+infuse_rates = ['100 ul/min', '100 ul/min']
+precursor_list = ['CsPbOA', 'ToABr']
+mixer = ['30 cm']
+syringe_mater_list=['steel', 'steel']
+ 3/3: RE(reset_pumps2(pump_list))
+ 3/4: dds1_p1.infuse_rate.get()
+ 3/5: dds1_p2.infuse_rate.get()
+ 3/6: dds2_p1.infuse_rate.get()
+ 3/7: dds2_p2.infuse_rate.get()
+ 3/8: show_pump_status(syringe_list, pump_list, precursor_list)
+ 3/9: show_pump_status(syringe_list, pump_list, precursor_list, syringe_mater_list)
+3/10: infuse_rates = ['20 ul/min', '20 ul/min']
+3/11: RE(set_group_infuse2(syringe_list, pump_list, rate_list=infuse_rates))
+3/12: show_pump_status(syringe_list, pump_list, precursor_list, syringe_mater_list)
+3/13: RE(start_group_infuse(pump_list))
+3/14: RE(stop_group(pump_list))
+3/15: uid = 'e3124f23'
+3/16: %run -i ~/.ipython/profile_collection/scripts/_data_export.py
+3/17: qepro_dic, metadata_dic = read_qepro_by_stream(uid, stream_name='primary')
+3/18: qepro
+3/19: qepro_dic
+3/20: plt.figure()
+3/21: plt.close()
+3/22: plt.ion()
+3/23: plt.figure()
+3/24: plt.plot(qepro_dic['QEPro_x_axis'], qepro_dic['QEPro_output'])
+3/25: qepro_dic['QEPro_x_axis'].shape
+3/26: plt.figure()
+3/27: plt.plot(qepro_dic['QEPro_x_axis'][0], qepro_dic['QEPro_output'][0])
+3/28: RE(take_a_uvvis_csv_q(sample_type='test', plot='True', csv_path='/home/xf28id2/Documents/ChengHung/20230915_BS_reover_test'))
+3/29: uid = '6f82f56d-1d54-4e09-9c23-8b7a89db6ae1'
+3/30: qepro_dic, metadata_dic = read_qepro_by_stream(uid, stream_name='primary')
+3/31: plt.figure()
+3/32: plt.plot(qepro_dic['QEPro_x_axis'][0], qepro_dic['QEPro_output'][0])
+3/33: qepro_dic['QEPro_x_axis'].shape
+3/34: qepro_dic['QEPro_output'].shape
+3/35: qepro_dic['QEPro_dark'].shape
+ 4/1: path = '/home/xf28id2/Documents/ChengHung/20230918_FEP_exsitu/Toluene'
+ 4/2: RE(take_ref_bkg_q(integration_time=300, num_spectra_to_average=9, ref_name='Toluene', csv_path=path))
+ 4/3: RE(take_a_uvvis_csv_q(sample_type='Cs_Br_12mM_dilute_01', plot=False, csv_path=))//
+ 4/4: path = '/home/xf28id2/Documents/ChengHung/20230918_FEP_exsitu'
+ 4/5: RE(take_a_uvvis_csv_q(sample_type='Cs_Br_12mM_dilute_01', plot=False, csv_path=path))
+ 4/6: uid = ['a9d2611b']
+ 4/7: qepro_dic, metadata_dic = read_qepro_by_stream(uid, stream_name='primary')
+ 4/8: %run -i ~/.ipython/profile_collection/scripts/_data_export.py
+ 4/9: qepro_dic, metadata_dic = read_qepro_by_stream(uid, stream_name='primary')
+4/10: pump_list = [dds1_p1, dds1_p2]
+4/11: RE(take_a_uvvis_csv_q(sample_type='Cs_Br_12mM_dilute_01', plot=False, csv_path=path))
+4/12: RE(take_a_uvvis_csv_q(sample_type='Cs_Br_12mM_dilute_01', plot=False, csv_path=path, pump_list=pump_list))//
+4/13: qepro_dic, metadata_dic = read_qepro_by_stream(uid, stream_name='primary')
+4/14: run = tiled_client[uid]
+4/15: run
+4/16: run.keys()
+4/17: run.keys
+4/18: run.head
+4/19: ds = run.primary.read()
+4/20: tiled_client = from_profile("xpd-ldrd20-31")
+4/21: run = tiled_client[uid]
+4/22: uid = 'a9d2611b'
+4/23: run = tiled_client[uid]
+4/24: ds = run.primary.read()
+4/25: ds
+4/26: qepro_dic, metadata_dic = read_qepro_by_stream(uid, stream_name='primary')
+4/27: qepro_dic['QEPro_dark'].shape
+4/28: plt.ion()
+4/29: plt.figure()
+4/30: plt.plot(qepro_dic['QEPro_x_axis'][0], qepro_dic['QEPro_output'][0])
+4/31: RE(xray_uvvis_plan(det, qepro, num_abs=9, num_flu=9, sample_type='Cs_Br_12mM_dilute_01'))
+4/32: path
+4/33: RE(xray_uvvis_plan(det, qepro, num_abs=9, num_flu=9, sample_type='Cs_Br_12mM_dilute_01'))
+4/34: RE(xray_uvvis_plan(det, qepro, num_abs=9, num_flu=9, sample_type='Cs_Br_12mM_dilute_01'))
+4/35: RE(xray_uvvis_plan(det, qepro, num_abs=9, num_flu=9, sample_type='Cs_Br_12mM_dilute_08'))
+4/36: RE(xray_uvvis_plan(det, qepro, num_abs=9, num_flu=9, sample_type='Cs_Br_12mM_dilute_16'))
+4/37: RE(xray_uvvis_plan(det, qepro, num_abs=9, num_flu=9, sample_type='Cs_Br_12mM_dilute_16'))
+4/38: RE(xray_uvvis_plan(det, qepro, num_abs=9, num_flu=9, sample_type='Cs_Br_12mM_dilute_24'))
+4/39: RE.abort()
+4/40: RE(xray_uvvis_plan(det, qepro, num_abs=9, num_flu=9, sample_type='Cs_Br_12mM_dilute_24'))
+4/41: path = '/home/xf28id2/Documents/ChengHung/20230918_FEP_exsitu/Quinine'
+4/42: RE(take_ref_bkg_q(integration_time=300, num_spectra_to_average=9, ref_name='quinine_2E-4M', csv_path=path))
+4/43: RE(take_ref_bkg_q(integration_time=300, num_spectra_to_average=9, ref_name='H2SO4_050mM', csv_path=path))
+4/44: RE.abort()
+4/45: RE(take_ref_bkg_q(integration_time=300, num_spectra_to_average=9, ref_name='H2SO4_050mM', csv_path=path))
+ 5/1: path = '/home/xf28id2/Documents/ChengHung/20230918_FEP_exsitu/Quinine'
+ 5/2: RE(take_ref_bkg_q(integration_time=300, num_spectra_to_average=9, ref_name='H2SO4_050mM', csv_path=path))
+ 5/3: RE(take_ref_bkg_q(integration_time=300, num_spectra_to_average=9, ref_name='H2SO4_050mM', csv_path=path))
+ 5/4: RE(take_a_uvvis_csv_q(sample_type='quinine_2E-4M_FEP', plot=False, csv_path=path, spectrum_type='Absorbtion', correction_type='Reference'))
+ 5/5: RE(take_a_uvvis_csv_q(sample_type='quinine_2E-4M_FEP', plot=False, csv_path=path, spectrum_type='Corrected Sample', correction_type='Dark'))
+ 5/6: path = '/home/xf28id2/Documents/ChengHung/20230918_cuvette_bsui'
+ 5/7: RE(take_ref_bkg_q(integration_time=20, num_spectra_to_average=9, ref_name='Toluene', csv_path=path))
+ 5/8: RE(xray_uvvis_plan(det, qepro, num_abs=9, num_flu=9, sample_type='Cs_Br_12mM_dilute_01'))
+ 5/9: RE(xray_uvvis_plan(det, qepro, num_abs=9, num_flu=9, sample_type='Cs_Br_12mM_dilute_01'))
+5/10: RE(xray_uvvis_plan(det, qepro, num_abs=9, num_flu=9, sample_type='Cs_Br_12mM_dilute_08'))
+5/11: RE(xray_uvvis_plan(det, qepro, num_abs=9, num_flu=9, sample_type='Cs_Br_12mM_dilute_08'))
+5/12: RE(xray_uvvis_plan(det, qepro, num_abs=9, num_flu=9, sample_type='Cs_Br_12mM_dilute_16'))
+5/13: RE(xray_uvvis_plan(det, qepro, num_abs=9, num_flu=9, sample_type='Cs_Br_12mM_dilute_16'))
+5/14: RE(xray_uvvis_plan(det, qepro, num_abs=9, num_flu=9, sample_type='Cs_Br_12mM_dilute_24'))
+5/15: RE(take_ref_bkg_q(integration_time=20, num_spectra_to_average=9, ref_name='H2SO4_050mM', csv_path=path))
+5/16: RE(take_ref_bkg_q(integration_time=20, num_spectra_to_average=9, ref_name='H2SO4_050mM', csv_path=path))
+5/17: RE(take_a_uvvis_csv_q(sample_type='quinine_1E-4M_cuve', plot=False, csv_path=path, spectrum_type='Absorbtion', correction_type='Reference'))
+5/18: RE(take_a_uvvis_csv_q(sample_type='quinine_1E-4M_cuve', plot=False, csv_path=path, spectrum_type='Corrected Sample', correction_type='Dark'))
+5/19: RE(take_ref_bkg_q(integration_time=20, num_spectra_to_average=9, ref_name='Toluene', csv_path=path))
+5/20: RE(xray_uvvis_plan(det, qepro, num_abs=9, num_flu=9, sample_type='Cs_Br_12mM_dilute_24'))
+5/21: RE(xray_uvvis_plan(det, qepro, num_abs=9, num_flu=9, sample_type='Cs_Br_12mM_dilute_16'))
+5/22: RE(xray_uvvis_plan(det, qepro, num_abs=9, num_flu=9, sample_type='Cs_Br_12mM_dilute_08'))
+5/23: RE(xray_uvvis_plan(det, qepro, num_abs=9, num_flu=9, sample_type='Cs_Br_12mM_dilute_01'))
+5/24: RE(xray_uvvis_plan(det, qepro, num_abs=9, num_flu=9, sample_type='Cs_Br_12mM_dilute_01'))
+5/25: path = '/home/xf28id2/Documents/ChengHung/20230919_sapphire_bsui'
+5/26: path = '/home/xf28id2/Documents/ChengHung/20230919_sapphire_bsui/Toluene'
+5/27: RE(take_ref_bkg_q(integration_time=300, num_spectra_to_average=9, ref_name='Toluene', csv_path=path))
+5/28: path = '/home/xf28id2/Documents/ChengHung/20230919_sapphire_bsui'
+5/29: RE(xray_uvvis_plan(det, qepro, num_abs=9, num_flu=9, sample_type='Cs_Br_66mM_dilute_01'))
+5/30: RE(xray_uvvis_plan(det, qepro, num_abs=9, num_flu=9, sample_type='Cs_Br_66mM_dilute_02'))
+5/31: RE(xray_uvvis_plan(det, qepro, num_abs=9, num_flu=9, sample_type='Cs_Br_66mM_dilute_04'))
+5/32: RE(xray_uvvis_plan(det, qepro, num_abs=9, num_flu=9, sample_type='Cs_Br_66mM_dilute_06'))
+5/33: RE(xray_uvvis_plan(det, qepro, num_abs=9, num_flu=9, sample_type='Cs_Br_66mM_dilute_08'))
+5/34: RE(xray_uvvis_plan(det, qepro, num_abs=9, num_flu=9, sample_type='Cs_Br_66mM_dilute_10'))
+5/35: RE(take_ref_bkg_q(integration_time=300, num_spectra_to_average=9, ref_name='H2SO4_050mM', csv_path=path))//
+5/36: path = '/home/xf28id2/Documents/ChengHung/20230919_sapphire_bsui/Quinine'
+5/37: RE(take_ref_bkg_q(integration_time=300, num_spectra_to_average=9, ref_name='H2SO4_050mM', csv_path=path))
+5/38: RE(xray_uvvis_plan(det, qepro, num_abs=9, num_flu=9, sample_type='quinine_2E-4M_300ms'))
+5/39: RE(xray_uvvis_plan(det, qepro, num_abs=9, num_flu=9, sample_type='quinine_5E-4M_300ms'))
+ 6/1: %run -i ~/.ipython/profile_collection/scripts/_data_export.py
+ 6/2: xlsx = '/home/xf28id2/Documents/ChengHung/inputs_kafka_single.xlsx'
+ 6/3: input_dic = _read_input_xlsx(xlsx)
+ 6/4: input_dic
+5/40: RE(xray_uvvis_plan(det, qepro, num_abs=9, num_flu=9, sample_type='quinine_5E-4M_300ms_test'))
+5/41: RE(xray_uvvis_plan(det, qepro, num_abs=9, num_flu=9, sample_type='quinine_5E-4M_300ms_test'))
+5/42: RE(xray_uvvis_plan(det, qepro, num_abs=9, num_flu=9, sample_type='quinine_5E-4M_300ms_test'))
+5/43: uid = '690b03f1-9a7f-4eb1-8259-6317cb155e72'
+5/44: qepro_dic, metadata_dic = read_qepro_by_stream(uid, stream_name='absorbance')
+5/45: %run -i ~/.ipython/profile_collection/scripts/_data_export.py
+5/46: qepro_dic, metadata_dic = read_qepro_by_stream(uid, stream_name='absorbance')
+5/47: metadata_dic
+5/48: RE(xray_uvvis_plan(det, qepro, num_abs=9, num_flu=9, sample_type='quinine_5E-4M_300ms_test'))
+5/49: RE(xray_uvvis_plan(det, qepro, num_abs=9, num_flu=9, sample_type='quinine_5E-4M_300ms_test'))
+5/50: uid = '8a3f607e-d996-4bc6-b148-493e85d4a6ec'
+5/51: qepro_dic, metadata_dic = read_qepro_by_stream(uid, stream_name='fluorescence')
+5/52: x0, y0, data_id, peak, prop = da._identify_one_in_kafka(qepro_dic, metadata_dic, key_height=kh, distance=dis, height=hei, dummy_test=dummy_test)//
+5/53: %run -i ~/.ipython/profile_collection/scripts/_data_analysis.py
+5/54: x0, y0, data_id, peak, prop = _identify_one_in_kafka(qepro_dic, metadata_dic, key_height=1000, distance=30, height=500, dummy_test=0)
+5/55: x0
+5/56: peak
+5/57: u = plot_uvvis(qepro_dic, metadata_dic)
+5/58: %run -i ~/.ipython/profile_collection/scripts/_plot_helper.py
+5/59: u = plot_uvvis(qepro_dic, metadata_dic)
+5/60: u.plot_data()
+5/61: x0, y0, data_id, peak, prop = _identify_multi_in_kafka(qepro_dic, metadata_dic, key_height=1000, distance=30, height=500, dummy_test=0)
+5/62: peak
+5/63: prop
+5/64: x, y, p, f, popt = _fitting_in_kafka(x0, y0, data_id, peak, prop, dummy_test=0)
+5/65: x
+5/66: y
+5/67: p
+5/68: f
+5/69: popt
+5/70: u.plot_peak_fit(x, y, f, popt, peak=p, fill_between=True)
+5/71: type(peak) is np.ndarray
+5/72: type(prop) is dict
+5/73: plt.close('all')
+5/74: RE(xray_uvvis_plan(det, qepro, num_abs=9, num_flu=9, sample_type='quinine_5E-4M_300ms_test'))
+5/75: RE(xray_uvvis_plan(det, qepro, num_abs=9, num_flu=9, sample_type='quinine_5E-4M_300ms_test'))
+5/76: RE(xray_uvvis_plan(det, qepro, num_abs=9, num_flu=9, sample_type='quinine_5E-4M_300ms_test'))
+5/77: data_id
+5/78: qepro_dic, metadata_dic = read_qepro_by_stream(uid, stream_name='absorbtion')
+5/79: qepro_dic, metadata_dic = read_qepro_by_stream(uid, stream_name='absorbance')
+5/80: qepro_dic['QEPro_spectrum_type']
+5/81: RE(xray_uvvis_plan(det, qepro, num_abs=9, num_flu=9, sample_type='quinine_5E-4M_300ms_test'))
+5/82: RE(xray_uvvis_plan(det, qepro, num_abs=3, num_flu=3, sample_type='quinine_5E-4M_300ms_test'))
+5/83: RE(xray_uvvis_plan(det, qepro, num_abs=3, num_flu=3, sample_type='quinine_5E-4M_300ms_test'))
+5/84: RE(xray_uvvis_plan(det, qepro, num_abs=3, num_flu=3, sample_type='quinine_5E-4M_300ms_test'))
+5/85: RE(xray_uvvis_plan(det, qepro, num_abs=3, num_flu=3, sample_type='quinine_5E-4M_300ms_test'))
+5/86: RE(xray_uvvis_plan(det, qepro, num_abs=3, num_flu=3, sample_type='quinine_5E-4M_300ms_test'))
+5/87: RE(xray_uvvis_plan(det, qepro, num_abs=3, num_flu=3, sample_type='quinine_5E-4M_300ms_test'))
+5/88: RE(xray_uvvis_plan(det, qepro, num_abs=3, num_flu=3, sample_type='quinine_5E-4M_300ms_test'))
+5/89: RE(xray_uvvis_plan(det, qepro, num_abs=3, num_flu=3, sample_type='quinine_5E-4M_300ms_test'))
+5/90: RE(xray_uvvis_plan(det, qepro, num_abs=3, num_flu=3, sample_type='quinine_5E-4M_300ms_test'))
+5/91: RE(take_a_uvvis_csv_q(sample_type='quinine_5E-4M_300ms_test', plot=False, spectrum_type='Corrected Sample', correction_type='Dark'))
+5/92: RE(take_a_uvvis_csv_q(sample_type='quinine_5E-4M_300ms_test', plot=False, spectrum_type='Corrected Sample', correction_type='Dark'))
+5/93: RE(take_a_uvvis_csv_q(sample_type='quinine_5E-4M_300ms_test', plot=False, spectrum_type='Corrected Sample', correction_type='Dark'))
+5/94: RE(xray_uvvis_plan(det, qepro, num_abs=3, num_flu=3, sample_type='quinine_5E-4M_300ms_test'))
+5/95: path = '/home/xf28id2/Documents/ChengHung/20230925_insitu_dilute'
+5/96: RE(take_ref_bkg_q(integration_time=300, num_spectra_to_average=9, ref_name='Toluene', csv_path=path))
+5/97: RE(take_ref_bkg_q(integration_time=300, num_spectra_to_average=9, ref_name='Toluene', csv_path=path))
+5/98:
+pump_list = ['dds2_p1', 'dds2_p2', 'dds1_p1']
+syringe_list = [50, 50, 59]
+target_vol_list = ['30 ml', '30 ml', '30 ml']
+infuse_rates = [['100 ul/min', '100 ul/min', '100 ul/min']]
+precursor_list = ['CsPbOA_33mM', 'ToABr_66mM', 'Toluene']
+mixer = ['30 cm']
+syringe_mater_list=['steel', 'steel', 'steel']
+5/99:
+pump_list = ['dds2_p1', 'dds2_p2']
+syringe_list = [50, 50]
+target_vol_list = ['30 ml', '30 ml']
+infuse_rates = [['100 ul/min', '100 ul/min']]
+precursor_list = ['CsPbOA_33mM', 'ToABr_66mM']
+mixer = ['30 cm']
+syringe_mater_list=['steel', 'steel']
+5/100: RE(xray_uvvis_plan(det, qepro, num_abs=3, num_flu=3, sample_type='quinine_5E-4M_300ms_test', pump_list=pump_list, precursor_list=precursor_list, mixer=mixer))//
+5/101: RE(xray_uvvis_plan(det, qepro, num_abs=3, num_flu=3, sample_type=sample_type, pump_list=pump_list, precursor_list=precursor_list, mixer=mixer))//
+5/102: sample_type = 'Cs_Br_66mM_dilute_01'
+5/103: RE(xray_uvvis_plan(det, qepro, num_abs=3, num_flu=3, sample_type=sample_type, pump_list=pump_list, precursor_list=precursor_list, mixer=mixer))//
+5/104: pump_list = ['dds2_p1', 'dds2_p2', 'dds1_p1']
+5/105: precursor_list = ['CsPbOA_33mM', 'ToABr_66mM', 'Toluene']
+5/106: RE(xray_uvvis_plan(det, qepro, num_abs=3, num_flu=3, sample_type=sample_type, pump_list=pump_list, precursor_list=precursor_list, mixer=mixer))
+5/107: precursor_list = ['CsPbOA_33mM', 'ToABr_66mM', 'Toluene']
+5/108: pump_list = [dds2_p1, dds2_p2, dds1_p1]
+5/109: RE(xray_uvvis_plan(det, qepro, num_abs=3, num_flu=3, sample_type=sample_type, pump_list=pump_list, precursor_list=precursor_list, mixer=mixer))
+5/110: RE(xray_uvvis_plan(det, qepro, num_abs=9, num_flu=9, sample_type=sample_type, pump_list=pump_list, precursor_list=precursor_list, mixer=mixer))
+5/111: RE(xray_uvvis_plan(det, qepro, num_abs=9, num_flu=9, sample_type=sample_type, pump_list=pump_list, precursor_list=precursor_list, mixer=mixer))
+5/112: sample_type = 'Cs_Br_66mM_dilute_02'
+5/113: RE(xray_uvvis_plan(det, qepro, num_abs=9, num_flu=9, sample_type=sample_type, pump_list=pump_list, precursor_list=precursor_list, mixer=mixer))
+5/114:
+pump_list = [dds2_p1, dds2_p2, dds1_p1]
+syringe_list = [50, 50, 59]
+target_vol_list = ['30 ml', '30 ml', '30 ml']
+infuse_rates = [['100 ul/min', '100 ul/min', '600 ul/min']]
+precursor_list = ['CsPbOA_33mM', 'ToABr_66mM', 'Toluene']
+mixer = ['30 cm']
+syringe_mater_list=['steel', 'steel', 'steel']
+5/115: show_pump_status(syringe_list, pump_list, precursor_list, syringe_mater_list)
+5/116: RE(set_group_infuse2(syringe_list, pump_list, rate_list=infuse_rates))
+5/117:
+pump_list = [dds2_p1, dds2_p2, dds1_p1]
+syringe_list = [50, 50, 59]
+target_vol_list = ['30 ml', '30 ml', '30 ml']
+infuse_rates = ['100 ul/min', '100 ul/min', '600 ul/min']
+precursor_list = ['CsPbOA_33mM', 'ToABr_66mM', 'Toluene']
+mixer = ['30 cm']
+syringe_mater_list=['steel', 'steel', 'steel']
+5/118: RE(set_group_infuse2(syringe_list, pump_list, rate_list=infuse_rates))
+5/119: show_pump_status(syringe_list, pump_list, precursor_list, syringe_mater_list)
+5/120:
+pump_list = [dds2_p1, dds2_p2, dds1_p1]
+syringe_list = [50, 50, 50]
+target_vol_list = ['30 ml', '30 ml', '30 ml']
+infuse_rates = ['100 ul/min', '100 ul/min', '600 ul/min']
+precursor_list = ['CsPbOA_33mM', 'ToABr_66mM', 'Toluene']
+mixer = ['30 cm']
+syringe_mater_list=['steel', 'steel', 'steel']
+5/121: RE(set_group_infuse2(syringe_list, pump_list, rate_list=infuse_rates))
+5/122: show_pump_status(syringe_list, pump_list, precursor_list, syringe_mater_list)
+5/123: RE(start_group_infuse(pump_list))
+5/124: RE(stop_group(pump_list))
+5/125:
+pump_list = [dds2_p1, dds2_p2, dds1_p1]
+syringe_list = [50, 50, 50]
+target_vol_list = ['30 ml', '30 ml', '30 ml']
+infuse_rates = ['12 ul/min', '10 ul/min', '60 ul/min']
+precursor_list = ['CsPbOA_33mM', 'ToABr_66mM', 'Toluene']
+mixer = ['30 cm']
+syringe_mater_list=['steel', 'steel', 'steel']
+5/126: RE(set_group_infuse2(syringe_list, pump_list, rate_list=infuse_rates))
+5/127: show_pump_status(syringe_list, pump_list, precursor_list, syringe_mater_list)
+5/128:
+pump_list = [dds2_p1, dds2_p2]
+syringe_list = [50, 50]
+target_vol_list = ['30 ml', '30 ml']
+infuse_rates = ['100 ul/min', '100 ul/min', '600 ul/min']
+precursor_list = ['CsPbOA_33mM', 'ToABr_66mM', 'Toluene']
+mixer = ['30 cm']
+syringe_mater_list=['steel', 'steel', 'steel']////
+5/129:
+pump_list = [dds2_p1, dds2_p2, dds1_p1]
+syringe_list = [50, 50, 50]
+target_vol_list = ['30 ml', '30 ml', '30 ml']
+infuse_rates = ['100 ul/min', '100 ul/min', '600 ul/min']
+precursor_list = ['CsPbOA_33mM', 'ToABr_66mM', 'Toluene']
+mixer = ['30 cm']
+syringe_mater_list=['steel', 'steel', 'steel']////
+5/130:
+pump_list = [dds2_p1, dds2_p2, dds1_p1]
+syringe_list = [50, 50, 50]
+target_vol_list = ['30 ml', '30 ml', '30 ml']
+infuse_rates = ['100 ul/min', '100 ul/min', '600 ul/min']
+precursor_list = ['CsPbOA_33mM', 'ToABr_66mM', 'Toluene']
+mixer = ['30 cm']
+syringe_mater_list=['steel', 'steel', 'steel']
+5/131: set_target_list=[False, False, False]
+5/132: RE(set_group_infuse2(syringe_list, pump_list, rate_list=infuse_rates, set_target_list=set_target_list))
+5/133: show_pump_status(syringe_list, pump_list, precursor_list, syringe_mater_list)
+5/134: RE(set_group_infuse2(syringe_list, pump_list, rate_list=infuse_rates, set_target_list=set_target_list, target_vol_list=target_vol_list))
+5/135: show_pump_status(syringe_list, pump_list, precursor_list, syringe_mater_list)
+5/136:
+pump_list = [dds2_p1, dds2_p2, dds1_p1]
+syringe_list = [50, 50, 50]
+target_vol_list = ['30 ml', '30 ml', '30 ml']
+infuse_rates = ['100 ul/min', '100 ul/min', '600 ul/min']
+precursor_list = ['CsPbOA_33mM', 'ToABr_66mM', 'Toluene']
+mixer = ['30 cm']
+syringe_mater_list=['steel', 'steel', 'steel']
+5/137: RE(set_group_infuse2(syringe_list, pump_list, rate_list=infuse_rates, set_target_list=set_target_list, target_vol_list=target_vol_list))
+5/138: dds1.p1
+5/139: dds1_p1.read_infuse_rate.get()
+5/140: dds1_p1.read_infuse_rate.put(600)
+5/141: dds1_p1.infuse_rate.put(600)
+5/142: show_pump_status(syringe_list, pump_list, precursor_list, syringe_mater_list)
+5/143: RE(start_group_infuse(pump_list))
+5/144: sample_type = 'Cs_Br_66mM_dilute_04'
+5/145: RE(stop_group(pump_list))
+5/146: RE(start_group_infuse(pump_list))
+5/147: RE(stop_group(pump_list))
+5/148: show_pump_status(syringe_list, pump_list, precursor_list, syringe_mater_list)
+5/149: RE(start_group_infuse(pump_list))
+5/150: sample_type = 'Cs_Br_66mM_dilute_04'
+5/151: RE(xray_uvvis_plan(det, qepro, num_abs=9, num_flu=9, sample_type=sample_type, pump_list=pump_list, precursor_list=precursor_list, mixer=mixer))
+5/152: RE.abort()
+5/153: RE(stop_group(pump_list))
+5/154: 200/200*1+0
+5/155: 200/(200*1+0)
+5/156: (200*1+200*0)/200
+5/157: (200*1+200*1)/200
+5/158: (200*1+200*3)/200
+5/159: (200*1+200*2)/200
+5/160: (200*1+200*1.5)/200
+5/161: RE(take_ref_bkg_q(integration_time=300, num_spectra_to_average=9, ref_name='Toluene_02', csv_path=path))
+5/162: RE(start_group_infuse(pump_list))
+5/163: (200*1+200*3)/200
+5/164: (200*1+200*1)/200
+5/165: (200*1+200*1.5)/200
+5/166: (200*1+200*2.5)/200
+5/167: (200*1+200*2)/200
+5/168: sample_type = 'Cs_Br_66mM_dilute_04'
+5/169: RE(xray_uvvis_plan(det, qepro, num_abs=9, num_flu=9, sample_type=sample_type, pump_list=pump_list, precursor_list=precursor_list, mixer=mixer))
+5/170: infuse_rates = ['100 ul/min', '100 ul/min', '500 ul/min']
+5/171: RE(set_group_infuse2(syringe_list, pump_list, rate_list=infuse_rates, set_target_list=set_target_list, target_vol_list=target_vol_list))
+5/172: show_pump_status(syringe_list, pump_list, precursor_list, syringe_mater_list)
+5/173: dds1_p1.infuse_rate.put(500)
+5/174: sample_type = 'Cs_Br_66mM_dilute_03-5'
+5/175: (200*1+200*2.5)/200
+5/176: RE(xray_uvvis_plan(det, qepro, num_abs=9, num_flu=9, sample_type=sample_type, pump_list=pump_list, precursor_list=precursor_list, mixer=mixer))
+5/177: (200*1+200*2)/200
+5/178: dds1_p1.infuse_rate.put(400)
+5/179: sample_type = 'Cs_Br_66mM_dilute_03-0'
+5/180: RE(xray_uvvis_plan(det, qepro, num_abs=9, num_flu=9, sample_type=sample_type, pump_list=pump_list, precursor_list=precursor_list, mixer=mixer))
+5/181: (200*1+200*1.5)/200
+5/182: dds1_p1.infuse_rate.put(300)
+5/183: sample_type = 'Cs_Br_66mM_dilute_02-5'
+5/184: RE(xray_uvvis_plan(det, qepro, num_abs=9, num_flu=9, sample_type=sample_type, pump_list=pump_list, precursor_list=precursor_list, mixer=mixer))
+5/185: (200*1+200*1)/200
+5/186: dds1_p1.infuse_rate.put(200)
+5/187: sample_type = 'Cs_Br_66mM_dilute_02-0'
+5/188: RE(xray_uvvis_plan(det, qepro, num_abs=9, num_flu=9, sample_type=sample_type, pump_list=pump_list, precursor_list=precursor_list, mixer=mixer))
+5/189: (200*1+200*0.5)/200
+5/190: dds1_p1.infuse_rate.put(100)
+5/191: sample_type = 'Cs_Br_66mM_dilute_01-5'
+5/192: RE(xray_uvvis_plan(det, qepro, num_abs=9, num_flu=9, sample_type=sample_type, pump_list=pump_list, precursor_list=precursor_list, mixer=mixer))
+5/193: dds1_p1.pump_stop.put(1)
+5/194: sample_type = 'Cs_Br_66mM_dilute_01-0'
+5/195: RE(xray_uvvis_plan(det, qepro, num_abs=9, num_flu=9, sample_type=sample_type, pump_list=pump_list, precursor_list=precursor_list, mixer=mixer))
+5/196: RE(stop_group(pump_list))
+5/197: %run -i ~/.ipython/profile_collection/startup/12-pump_dds.py
+5/198: RE(set_group_infuse2(syringe_list, pump_list, rate_list=infuse_rates, set_target_list=set_target_list, target_vol_list=target_vol_list))//
+5/199: infuse_rates = ['67 ul/min', '80 ul/min', '39 ul/min']
+5/200: RE(set_group_infuse2(syringe_list, pump_list, rate_list=infuse_rates, set_target_list=set_target_list, target_vol_list=target_vol_list))
+5/201: show_pump_status(syringe_list, pump_list, precursor_list, syringe_mater_list)
+5/202: %run -i ~/.ipython/profile_collection/startup/31-flow_plan.py
+5/203: RE(set_group_infuse2(syringe_list, pump_list, rate_list=infuse_rates, set_target_list=set_target_list, target_vol_list=target_vol_list))
+5/204: show_pump_status(syringe_list, pump_list, precursor_list, syringe_mater_list)
+5/205: dds1_p1.name
+5/206: %run -i ~/.ipython/profile_collection/startup/31-flow_plan.py
+5/207: RE(set_group_infuse2(syringe_list, pump_list, rate_list=infuse_rates, set_target_list=set_target_list, target_vol_list=target_vol_list))
+5/208: %run -i ~/.ipython/profile_collection/startup/31-flow_plan.py
+5/209: RE(set_group_infuse2(syringe_list, pump_list, rate_list=infuse_rates, set_target_list=set_target_list, target_vol_list=target_vol_list))
+5/210: %run -i ~/.ipython/profile_collection/startup/31-flow_plan.py
+5/211: %run -i ~/.ipython/profile_collection/startup/31-flow_plan.py
+5/212: RE(set_group_infuse2(syringe_list, pump_list, rate_list=infuse_rates, set_target_list=set_target_list, target_vol_list=target_vol_list))
+5/213: %run -i ~/.ipython/profile_collection/startup/31-flow_plan.py
+5/214: RE(set_group_infuse2(syringe_list, pump_list, rate_list=infuse_rates, set_target_list=set_target_list, target_vol_list=target_vol_list))
+5/215: syringe_mater_list=['steel', 'steel', 'steel']
+5/216: RE(set_group_infuse2(syringe_list, pump_list, rate_list=infuse_rates, set_target_list=set_target_list, target_vol_list=target_vol_list, syringe_mater_list=syringe_mater_list))
+5/217: show_pump_status(syringe_list, pump_list, precursor_list, syringe_mater_list)
+5/218: %run -i ~/.ipython/profile_collection/startup/31-flow_plan.py
+5/219: RE(set_group_infuse2(syringe_list, pump_list, rate_list=infuse_rates, set_target_list=set_target_list, target_vol_list=target_vol_list, syringe_mater_list=syringe_mater_list))
+5/220: infuse_rates = ['45 ul/min', '46 ul/min', '47 ul/min']
+5/221: RE(set_group_infuse2(syringe_list, pump_list, rate_list=infuse_rates, set_target_list=set_target_list, target_vol_list=target_vol_list, syringe_mater_list=syringe_mater_list))
+5/222: show_pump_status(syringe_list, pump_list, precursor_list, syringe_mater_list)
+5/223: %run -i ~/.ipython/profile_collection/startup/31-flow_plan.py
+5/224: precursor_list = ['CsPbOA_33mM', 'ToABr_66mM', 'Toluene']
+5/225: infuse_rates = ['53 ul/min', '54 ul/min', '55 ul/min']
+5/226: RE(set_group_infuse2(syringe_list, pump_list, rate_list=infuse_rates, set_target_list=set_target_list, target_vol_list=target_vol_list, syringe_mater_list=syringe_mater_list))
+5/227: %run -i ~/.ipython/profile_collection/startup/31-flow_plan.py
+5/228: infuse_rates = ['89 ul/min', '90 ul/min', '91 ul/min']
+5/229: RE(set_group_infuse2(syringe_list, pump_list, rate_list=infuse_rates, set_target_list=set_target_list, target_vol_list=target_vol_list, syringe_mater_list=syringe_mater_list))
+5/230: show_pump_status(syringe_list, pump_list, precursor_list, syringe_mater_list)
+5/231: (200*1+500)/200
+5/232: (200*1+400)/200
+5/233: import pandas as pd
+5/234: pd.DataFrame({"a":1})
+5/235: pd.DataFrame({"a":1}, index=0)
+5/236: pd.DataFrame({"a":1}, index=[0])
+5/237: uid = '1f010124'
+5/238: qepro_dic, metadata_dic = read_qepro_by_stream(uid, stream_name='absorbance')
+5/239: metadata_dic
+5/240: pwd
+5/241: configure_kafka_publisher(RE, beamline_name="xpd-ldrd20-31")
+5/242: from nslsii import configure_kafka_publisher
+5/243: configure_kafka_publisher(RE, beamline_name="xpd-ldrd20-31")
+5/244: bluesky_kafka_configuration, kafka_publisher_details = configure_kafka_publisher(RE, beamline_name="xpd-ldrd20-31")
+5/245: bluesky_kafka_configuration
+5/246: kafka_publisher_details
+5/247: kafka_publisher_details()
+5/248: from bluesky_kafka import Publisher
+5/249: p = Publisher?
+5/250: kafka_publisher_details
+5/251: p = Publisher?
+5/252: p = Publisher(topic=kafka_publisher_details.beamline_topic=)
+5/253: p = Publisher(topic=kafka_publisher_details.beamline_topic)
+5/254: p = Publisher(topic=kafka_publisher_details.beamline_topic, bootstrap_servers=kafka_publisher_details.bootstrap.servers)
+5/255: p = Publisher(topic=kafka_publisher_details.beamline_topic, bootstrap_servers=kafka_publisher_details.bootstrap_servers)
+5/256: #p = Publisher(topic=kafka_publisher_details.beamline_topic, bootstrap_servers=kafka_publisher_details.bootstrap_servers, key=)
+5/257: p = Publisher(topic=kafka_publisher_details.beamline_topic, bootstrap_servers=kafka_publisher_details.bootstrap_servers, key="")
+5/258: kafka_publisher_details
+5/259: dict(kafka_publisher_details)
+5/260: kafka_publisher_details.beamline_topic
+5/261: kafka_publisher_details.bootstrap_servers
+5/262: RE.unsubscribe(4)
+5/263: RE.unsubscribe(3)
+5/264: RE.unsubscribe(2)
+5/265: RE.unsubscribe(1)
+5/266: kafka_publisher_details.bootstrap_servers
+5/267: kafka_publisher_details.producer_config
+5/268: p = Publisher(kafka_publisher_details.kafka_publisher_details.producer_config)
+5/269: p = Publisher(kafka_publisher_details.kafka_publisher_details.producer_config)
+ 9/1: db[-1]
+ 9/2: db[-1].table()
+ 9/3: db[-2].table()
+ 9/4: db[-1]
+ 9/5: db[-1].table()
+10/1: db[-1].table()
+10/2: db[-2].table()
+10/3: db[-3].table()
+10/4: db[-1].table()
+10/5: db[-1].table()
+10/6: db[-3].table()
+10/7: RE(bp.count([]))
+10/8: import bluesky.plans as bp
+10/9: RE(bp.count([]))
+10/10: db[-1]
+10/11: db[-1].start
+10/12: db[-2].start
+10/13: db[-3].start
+10/14: db[-4].start
+10/15: db[-1]
+10/16: db[-1].table()
+10/17: db[-2].table()
+10/18: db[-3].table()
+10/19: db[-4].table()
+10/20: db[-5].table()
+10/21: db[-6].table()
+10/22: db[-7].table()
+10/23: db[-6].start
+10/24: !vi /home/xf28id2/.ipython/profile_collection/startup/00-startup.py
+10/25: import databroker
+10/26: databroker.catalog['xpd-ldrd20-31']
+10/27: cat = databroker.catalog['xpd-ldrd20-31']
+10/28: cat
+10/29: cat[-1]
+10/30: %run -i ~/.ipython/profile_collection/scripts/_data_export.py
+10/31: read_qepro_by_stream(-1)
+10/32: read_qepro_by_stream(-2)
+10/33: read_qepro_by_stream(-3)
+10/34: read_qepro_by_stream(-4)
+10/35: read_qepro_by_stream(-5)
+10/36: read_qepro_by_stream(-6)
+10/37: read_qepro_by_stream("1f010124")
+10/38: !vi /home/xf28id2/tmp/test-uid.txt
+10/39: db["1f010124"]
+10/40: db["1f010124"].table()
+10/41: hdr = db["1f010124"]
+10/42: hdr.documents()
+10/43: docs = hdr.documents()
+10/44: next(docs)
+10/45: next(docs)
+10/46: next(docs)
+10/47: next(docs)
+10/48: next(docs)
+10/49: next(docs)
+10/50: next(docs)
+10/51: next(docs)
+10/52: next(docs)
+10/53: next(docs)
+10/54: next(docs)
+10/55: next(docs)
+10/56: next(docs)
+10/57: next(docs)
+10/58: next(docs)
+10/59: next(docs)
+10/60: next(docs)
+10/61: next(docs)
+10/62: next(docs)
+10/63: next(docs)
+10/64: next(docs)
+10/65: next(docs)
+10/66: next(docs)
+10/67: next(docs)
+10/68: next(docs)
+11/1: db["1f010124"].table()
+12/1: db["1f010124"].table()
+12/2: db_xpd = Broker.named("xpd")
+12/3: db_xpd[-1].table()
+13/1: db_xpd[-1].table()
+13/2: db["1f010124"].table()
+13/3: hdr = db["1f010124"]
+13/4: hdr.table()
+13/5: hdr.stream_names
+13/6: hdr.table(stream_name="fluorescence")
+13/7: hdr.table(stream_name="fluorescence").T
+13/8: hdr.table(stream_name="scattering").T
+13/9: hdr.table(stream_name="absorbance").T
+14/1: hdr = db["1f010124"]
+14/2: hdr.table(stream_name="absorbance").T
+14/3: hdr.stream_names
+14/4: hdr.table(stream_name="fluorescence").T
+14/5: from bluesky_kafka import Publisher
+14/6: Publisher.produce
+14/7: Publisher.produce?
+14/8: Publisher.produce??
+14/9: res
+14/10: RE._callbacks
+14/11: RE.context_managers
+14/12: type(res)
+14/13: type(res[0])
+14/14: type(res[1])
+14/15: type(res[2])
+14/16: res[1]
+14/17: res[0]
+14/18: p = Publisher(**res)
+14/19: p = Publisher(**res[0])
+14/20: kwargs = res[0]
+14/21: kwargs.pop("abort_run_on_kafka_exception")
+14/22: kwargs
+14/23: p = Publisher(**kwargs)
+14/24: p = Publisher?
+14/25: p = Publisher?
+14/26: p = Publisher()
+14/27: RE.dispatcher
+14/28: RE.dispatcher.cb_registry
+14/29: RE.dispatcher.cb_registry?
+14/30: RE.dispatcher.cb_registry()
+14/31: RE.dispatcher.cb_registry
+14/32: RE.dispatcher.cb_registry.callbacks
+14/33: RE.dispatcher.cb_registry.process
+14/34: RE.dispatcher.cb_registry.process()
+14/35: RE.dispatcher.cb_registry
+14/36: RE.dispatcher.cb_registry.process?
+14/37: p = Publisher()
+14/38: topic=res[1].beamline_topic
+14/39: topic
+14/40: topic=res[1].bootstrap_servers
+14/41: bootstrap_servers=res[1].bootstrap_servers
+14/42: bootstrap_servers
+14/43: res[1].key
+14/44: res[1].producer_config
+14/45: str(uuid.uuid4())
+14/46: import uuid
+14/47: str(uuid.uuid4())
+14/48: p = Publisher(topic=res[1].beamline_topic, bootstrap_servers=res[1].bootstrap_servers)
+14/49: p = Publisher(topic=res[1].beamline_topic, bootstrap_servers=res[1].bootstrap_servers, key="test")
+14/50: del p
+14/51: Publisher?
+14/52: p = Publisher(topic=res[1].beamline_topic, bootstrap_servers=res[1].bootstrap_servers, key="test", producer_config=res[1].config)
+14/53: res[1]
+14/54: p = Publisher(topic=res[1].beamline_topic, bootstrap_servers=res[1].bootstrap_servers, key="test", producer_config=res[1].producer_config)
+14/55: p
+14/56: hdr = db["1f010124"]
+14/57:
+for name, doc in hdr.documents():
+    p(name, doc)
+14/58:
+for name, doc in hdr.documents():
+    p(name, doc)
+14/59:
+for name, doc in hdr.documents():
+    p(name, doc)
+14/60: hdr.documents?
+10/69: uid = '1f010124'
+10/70: qepro_dic, metadata_dic = read_qepro_by_stream(uid, stream_name='absorbance')
+10/71: metadata_dic
+10/72: r0 = 'ul/min'
+10/73: r0.split('/')
+10/74: pump_status = metadata_dic['pump_status']
+10/75: pump_status
+10/76: pump_status = np.array(map(lambda status: status.lower().capitalize() == "Infusing", pump_status))
+10/77: pump_status
+10/78: pump_status = list(map(lambda status: status.lower().capitalize() == "Infusing", pump_status))
+10/79: pump_status = metadata_dic['pump_status']
+10/80: pump_status = list(map(lambda status: status.lower().capitalize() == "Infusing", pump_status))
+10/81: pump_status
+10/82: pump_status[0]*23
+10/83: pump_status[2]*23
+10/84: pump_status = np.float32(pump_status)
+10/85: pump_status
+10/86: %run -i ~/.ipython/profile_collection/scripts/_data_export.py
+10/87: %run -i ~/.ipython/profile_collection/startup/12-pump_dds.py
+10/88: rate_unit_converter()
+10/89: rate_unit_converter(r0='ml/min', r1='ul/min')
+10/90: rate_unit_converter(r0='ml/hr', r1='ul/min')
+10/91: metadata_dic
+10/92: uid = 'd83a1699'
+10/93: qepro_dic, metadata_dic = read_qepro_by_stream(uid, stream_name='absorbance')
+10/94: metadata_dic
+10/95: no_dimension_rate(metadata_dic)
+10/96: infuse_rate_unit = metadata_dic['infuse_rate_unit']
+10/97: infuse_rate_unit
+10/98: infuse_rate_unit[0]
+10/99: %run -i ~/.ipython/profile_collection/scripts/_data_export.py
+10/100: no_dimension_rate(metadata_dic)
+10/101: rate_unit_converter(r0='ml/hr', r1='ul/min')
+10/102: %run -i ~/.ipython/profile_collection/scripts/_data_export.py
+10/103: metadata_dic
+10/104: no_dimension_rate(metadata_dic)
+10/105: %run -i ~/.ipython/profile_collection/scripts/_data_export.py
+10/106: metadata_dic
+10/107: no_dimension_rate(metadata_dic)
+10/108: %run -i ~/.ipython/profile_collection/scripts/_data_export.py
+10/109: no_dimension_rate(metadata_dic)
+10/110: uid = 'ac75c188'
+10/111: qepro_dic, metadata_dic = read_qepro_by_stream(uid, stream_name='absorbance')
+10/112: metadata_dic
+10/113: no_dimension_rate(metadata_dic)
+10/114: 33.1788152-.871245829E-66+30.1342967+9196.02297
+10/115: p
+10/116: p = Publisher(topic=res[1].beamline_topic, bootstrap_servers=res[1].bootstrap_servers, key="test", producer_config=res[1].producer_config)
+15/1: res
+15/2: p
+15/3: p = Publisher(topic=res[1].beamline_topic, bootstrap_servers=res[1].bootstrap_servers, key="test", producer_config=res[1].producer_config)
+15/4: import Publisher
+15/5: from bluesky_kafka import Publisher
+15/6: p = Publisher(topic=res[1].beamline_topic, bootstrap_servers=res[1].bootstrap_servers, key="test", producer_config=res[1].producer_config)
+15/7: hdr = db["1f010124"]
+15/8: for name, doc in hdr.documents():p(name, doc)
+15/9: for name, doc in hdr.documents():p(name, doc)
+15/10: for name, doc in hdr.documents():p(name, doc)
+15/11: for name, doc in hdr.documents():p(name, doc)
+15/12:
+for name, doc in hdr.documents():
+    p(name, doc)
+15/13:
+for name, doc in hdr.documents():
+    p(name, doc)
+15/14: uid = 'ac75c188'
+15/15: qepro_dic, metadata_dic = read_qepro_by_stream(uid, stream_name='absorbance')
+15/16: %run -i ~/.ipython/profile_collection/scripts/_data_export.py
+15/17: qepro_dic, metadata_dic = read_qepro_by_stream(uid, stream_name='absorbance')
+15/18: metadata_dic
+15/19: RE(bp.count([]))
+15/20: import bluesky.plans as bp
+15/21: RE(bp.count([]))
+15/22: RE(take_a_uvvis_csv_q(sample_type='test', plot=False, spectrum_type='Corrected Sample', correction_type='Dark'))
+15/23: RE(take_a_uvvis_csv_q(sample_type='test', plot=False, spectrum_type='Absorbtion', correction_type='Refernce'))
+15/24: RE(take_a_uvvis_csv_q(sample_type='test', plot=False, spectrum_type='Absorbtion', correction_type='Refernce'))
+15/25: qepro.reference.get()
+15/26: qepro.x_axis.get()
+15/27: plt.figure()
+15/28: plt.plot(qepro_dic['QEPro_x_axis'][0], qepro_dic['QEPro_reference'][0])
+15/29: plt.show()
+15/30: plt.ion()
+15/31: plt.figure()
+15/32: plt.plot(qepro_dic['QEPro_x_axis'][0], qepro_dic['QEPro_reference'][0])
+15/33: plt.plot(qepro_dic['QEPro_x_axis'][0], qepro_dic['QEPro_sample'][0])
+15/34: plt.plot(qepro_dic['QEPro_x_axis'][0], qepro_dic['QEPro_output'][0])
+15/35: plt.figure()
+15/36: plt.plot(qepro.x_axis.get(), qepro.output.get())
+15/37: plt.plot(qepro.x_axis.get(), qepro.reference.get())
+15/38: plt.close('all')
+10/117: a = no_dimension_rate(metadata_dic)
+10/118: a.sum()
+10/119: np.argwhere(a<1)
+10/120: np.argwhere(a=1)
+10/121: np.argwhere(a>1)
+10/122: len(np.argwhere(a<0)) > 0
+10/123: %run -i ~/.ipython/profile_collection/scripts/_data_export.py
+10/124: metadata_dic
+10/125: device_to_ML_parameters(metadata_dic)
+10/126: a = 0.1
+10/127: b = 0.56
+10/128: ML_to_device_parameters([a,b,1-a-b], metadata_dic)
+10/129: ML_to_device_parameters([a,b,1-a-b], unit='ul/sec',metadata_dic)
+10/130: ML_to_device_parameters([a,b,1-a-b], metadata_dic, unit='ul/sec')
+10/131: ML_to_device_parameters([0.3, 0.95, 1-0.3-0.95], metadata_dic)
+10/132: ML_to_device_parameters([0.3, 0.95, 1-0.3-0.95], metadata_dic, check_negative=False)
+10/133: metadata_dic
+10/134: uid = '0e3ce715'
+10/135: qepro_dic, metadata_dic = read_qepro_by_stream(uid, stream_name='fluorescence')
+10/136: metadata_dic
+10/137: uid = '803e7fcb'
+10/138: qepro_dic, metadata_dic = read_qepro_by_stream(uid, stream_name='fluorescence')
+10/139: metadata_dic
+10/140: 'CsPb'.lower()
+10/141: metadata_dic
+10/142: %run -i ~/.ipython/profile_collection/scripts/_data_export.py
+10/143: m = device_to_ML_parameters(metadata_dic)
+10/144: %run -i ~/.ipython/profile_collection/scripts/_data_export.py
+10/145: m = device_to_ML_parameters(metadata_dic)
+10/146: m
+10/147: len(m)
+10/148: %run -i ~/.ipython/profile_collection/scripts/_data_export.py
+10/149: m = device_to_ML_parameters(metadata_dic)
+10/150: m
+10/151: uid = '1f010124'
+10/152: qepro_dic, metadata_dic = read_qepro_by_stream(uid, stream_name='fluorescence')
+10/153: metadata_dic
+10/154: uid = 'd83a1699'
+10/155: qepro_dic, metadata_dic = read_qepro_by_stream(uid, stream_name='fluorescence')
+10/156: metadata_dic
+10/157: m = device_to_ML_parameters(metadata_dic)
+10/158: m
+10/159: uid = 'ac75c188'
+10/160: metadata_dic
+10/161: qepro_dic, metadata_dic = read_qepro_by_stream(uid, stream_name='fluorescence')
+10/162: metadata_dic
+10/163: m = device_to_ML_parameters(metadata_dic)
+10/164: m
+10/165: uid_list = ['feecd7bc', '76ab35c2', '2603b123', 'fdfb3fad', 'a634399c', '47144d19']
+10/166:
+for uid in uid_list:
+    qepro_dic, metadata_dic = read_qepro_by_stream(uid, stream_name='fluorescence')
+    metadata_dic['infuse_rate_unit']
+10/167:
+for uid in uid_list:
+    qepro_dic, metadata_dic = read_qepro_by_stream(uid, stream_name='fluorescence')
+    print(metadata_dic['infuse_rate_unit'])
+10/168: metadata_dic
+10/169: %run -i ~/.ipython/profile_collection/scripts/_data_export.py
+10/170: m = device_to_ML_parameters(metadata_dic)
+10/171: m
+10/172: d = ML_to_device_parameters(m, metadata_dic)
+10/173: d
+10/174: uid = 'a634399c'
+10/175: qepro_dic, metadata_dic = read_qepro_by_stream(uid, stream_name='fluorescence')
+10/176: metadata_dic
+10/177: m = device_to_ML_parameters(metadata_dic)
+10/178: m
+10/179: d = ML_to_device_parameters(m, metadata_dic)
+10/180: d
+10/181: np.round(d, decimals=2)
+10/182: np.round(d, decimals=6)
+10/183: np.round(d, decimals=2)
+10/184: uid = 'a480718f'
+10/185: qepro_dic, metadata_dic = read_qepro_by_stream(uid, stream_name='fluorescence')
+10/186: metadata_dic
+10/187: m = device_to_ML_parameters(metadata_dic)
+10/188: m
+10/189: d = ML_to_device_parameters(m, metadata_dic)
+10/190: d
+10/191: 0 == 0.0
+15/39: hdr = db["47144d19"]
+15/40:
+for name, doc in hdr.documents():
+    p(name, doc)
+15/41: hdr.documents()
+15/42: list(hdr.documents())
+15/43:
+for name, doc in hdr.documents():
+    p(name, doc)
+15/44: import Publisher
+15/45: from bluesky_kafka import Publisher
+15/46: p = Publisher(topic=res[1].beamline_topic, bootstrap_servers=res[1].bootstrap_servers, key="test", producer_config=res[1].producer_config)
+15/47: hdr = db["47144d19"]
+15/48:
+for name, doc in hdr.documents():
+    p(name, doc)
+15/49: hdr = db["d83a1699"]
+15/50:
+for name, doc in hdr.documents():
+    p(name, doc)
+15/51:
+for name, doc in hdr.documents():
+    p(name, doc)
+15/52: hdr = db["ac75c188"]
+15/53:
+for name, doc in hdr.documents():
+    p(name, doc)
+15/54: hdr = db["47144d19"]
+15/55:
+for name, doc in hdr.documents():
+    p(name, doc)
+15/56:
+for name, doc in hdr.documents():
+    p(name, doc)
+15/57:
+for name, doc in hdr.documents():
+    p(name, doc)
+15/58:
+for name, doc in hdr.documents():
+    p(name, doc)
+15/59: hdr = db["a634399c"]
+15/60:
+for name, doc in hdr.documents():
+    p(name, doc)
+15/61: qepro?
+15/62: dds1_p1.infuse_rate.get()
+15/63: dds1_p2.infuse_rate.get()
+15/64: dds1_p1.infuse_rate.put(1500.)
+15/65: dds1_p2.infuse_rate.put(1500.)
+15/66: dds2_p1.infuse_rate.put(1500.)
+15/67: dds2_p2.infuse_rate.put(1500.)
+15/68: pump_list = [dds1_p1, dds1_p2, dds2_p1]
+15/69: infuse_rates = ['1500 ul/min', '0 ul/min', '0 ul/min']
+15/70: syringe_list = [50, 50, 50]
+15/71: syringe_mater_list=['steel', 'steel', 'steel']
+15/72: infuse_rates = ['1500 ul/min', '1500 ul/min', '1000 ul/min']
+15/73: target_vol_list = ['30 ml', '30 ml', '30 ml']
+15/74: RE(set_group_infuse2(syringe_list, pump_list, rate_list=infuse_rates, set_target_list=set_target_list, target_vol_list=target_vol_list, syringe_mater_list=syringe_mater_list))//
+15/75: set_target_list=[False, False, False]
+15/76: RE(set_group_infuse2(syringe_list, pump_list, rate_list=infuse_rates, set_target_list=set_target_list, target_vol_list=target_vol_list, syringe_mater_list=syringe_mater_list))
+15/77: pump_list = [dds1_p1, dds1_p2, dds2_p1]
+16/1: from bluesky_kafka import Publisher
+16/2: p = Publisher(topic=res[1].beamline_topic, bootstrap_servers=res[1].bootstrap_servers, key="test", producer_config=res[1].producer_config)
+16/3: pump_list = [dds1_p1, dds1_p2, dds2_p1]
+16/4: syringe_mater_list=['steel', 'steel', 'steel']
+16/5: infuse_rates = ['1500 ul/min', '1500 ul/min', '1000 ul/min']
+16/6: target_vol_list = ['30 ml', '30 ml', '30 ml']
+16/7: syringe_mater_list=['steel', 'steel', 'steel']
+16/8: RE(set_group_infuse2(syringe_list, pump_list, rate_list=infuse_rates, set_target_list=set_target_list, target_vol_list=target_vol_list, syringe_mater_list=syringe_mater_list))
+16/9: syringe_list = [50, 50, 50]
+16/10: RE(set_group_infuse2(syringe_list, pump_list, rate_list=infuse_rates, set_target_list=set_target_list, target_vol_list=target_vol_list, syringe_mater_list=syringe_mater_list))
+16/11: set_target_list=[False, False, False]
+16/12: RE(set_group_infuse2(syringe_list, pump_list, rate_list=infuse_rates, set_target_list=set_target_list, target_vol_list=target_vol_list, syringe_mater_list=syringe_mater_list))
+16/13: dds1_p1.infuse_rate.put(1500.)
+16/14: dds1_p1.infuse_rate_unit.put('ul/min')
+16/15: dds1_p1.infuse_rate.put(2000.)
+16/16: dds1_p1.infuse_rate_unit.put('ul/min')
+16/17: dds1_p1.infuse_rate.put(1600.)
+16/18: dds1_p1.infuse_pump2.put(1)
+16/19: RE(start_group_infuse([dds1_p1], '1600 ul/min'))
+16/20: dds1_p1.infuse_rate.get()
+16/21: RE(stop_group(pump_list))
+16/22: dds1_p1.infuse_rate_unit('ul/min')
+16/23: dds1_p1.infuse_rate_unit.put('ul/min')
+16/24: dds1_p1.infuse_rate.put(1500)
+16/25: dds2_p2.infuse_rate.put(1500.)
+16/26: dds1_p1.infuse_rate.put(1000)
+16/27: dds1_p2.infuse_rate_unit.put('ul/min')
+16/28: dds2_p1.infuse_rate_unit.put('ul/min')
+16/29: RE(take_a_uvvis_csv_q(sample_type='test', plot=False, spectrum_type='Absorbtion', correction_type='Refernce'))
+16/30: RE(xray_uvvis_plan(det, qepro, num_abs=4, num_flu=4, sample_type='quinine_1E-4M', pump_list=pump_list, precursor_list=precursor_list, mixer='None'))//
+16/31: precursor_list = ['CsPbOA_33mM', 'ToABr_66mM', 'Toluene']
+16/32: RE(xray_uvvis_plan(det, qepro, num_abs=4, num_flu=4, sample_type='quinine_1E-4M', pump_list=pump_list, precursor_list=precursor_list, mixer='None'))
+16/33: uid = 'ff06a261-22f9-4bd5-b2da-4db571cd0525'
+16/34: qepro_dic, metadata_dic = read_qepro_by_stream(uid, stream_name='absorbance')
+16/35: %run -i ~/.ipython/profile_collection/scripts/_data_export.py
+16/36: qepro_dic, metadata_dic = read_qepro_by_stream(uid, stream_name='absorbance')
+16/37: metadata_dic
+16/38: pump_list = [dds1_p1, dds1_p2, dds2_p1]
+16/39: show_pump_status(syringe_list, pump_list, precursor_list, syringe_mater_list)
+16/40: dds1_p1.set_infuse2(50, infuse_rate=135)
+16/41: RE(dds1_p1.set_infuse2(50, infuse_rate=135)))
+16/42: RE(dds1_p1.set_infuse2(50, infuse_rate=135))
+16/43: RE(dds1_p1.set_infuse2(50, infuse_rate=135, infuse_unit='ul/min'))
+16/44: RE(dds1_p1.set_infuse2(500, infuse_rate=135, infuse_unit='ul/min'))
+16/45: RE(dds1_p1.set_infuse2(50, infuse_rate=135, infuse_unit='ul/min'))
+16/46: infuse_unit = 'ul/min'
+16/47: max_unit = 'ml/min'
+16/48: const1_max = rate_unit_converter(r0=infuse_unit, r1=max_unit)
+16/49: const1_max
+17/1: pump_list = [dds1_p1, dds1_p2, dds2_p1]
+17/2: syringe_list = [50, 50, 50]
+17/3: syringe_mater_list=['steel', 'steel', 'steel']
+17/4: set_target_list=[False, False, False]
+17/5: infuse_rates = ['1500 ul/min', '1500 ul/min', '1000 ul/min']
+17/6: target_vol_list = ['30 ml', '30 ml', '30 ml']
+17/7: RE(set_group_infuse2(syringe_list, pump_list, rate_list=infuse_rates, set_target_list=set_target_list, target_vol_list=target_vol_list, syringe_mater_list=syringe_mater_list))
+17/8: show_pump_status(syringe_list, pump_list, precursor_list, syringe_mater_list)
+17/9: precursor_list = ['CsPbOA_33mM', 'ToABr_66mM', 'Toluene']
+17/10: show_pump_status(syringe_list, pump_list, precursor_list, syringe_mater_list)
+17/11: p = Publisher(topic=res[1].beamline_topic, bootstrap_servers=res[1].bootstrap_servers, key="test", producer_config=res[1].producer_config)//
+17/12:
+for name, doc in hdr.documents():
+    p(name, doc)//
+17/13: 23.2+0.8+6
+18/1: from bluesky_queueserver.manager.comms import zmq_single_request
+18/2: zmq_single_request(method='status')
+18/3: zmq_single_request(method='environment_open')
+18/4: zmq_single_request(method='status')
+18/5: zmq_single_request(method='plans_allowed', params={'user_group':"primary"})
+18/6: %run -i ~/.ipython/profile_collection/scripts/queue_test_004.py
+18/7: zmq_single_request(method='status')
+18/8: zmq_single_request(method='queue_clear')
+18/9:
+sl = 50            # syringe_list
+pl = 'dds1_p1'     # pump_list
+ir = '99 ul/min'   # infuse_rate
+tvl = '30 ml'      # target_vol_list
+stl = False        # set_target_list
+zmq_single_request(method='queue_item_add', 
+                   params={
+                        'item':{"name":"set_group_infuse2", 
+                                "args": [[sl], [pl]], 
+                                "kwargs": {"rate_list":[ir], "target_vol_list":[tvl], "set_target_list":[stl]}, 
+                                "item_type":"plan"
+                                }, 'user_group':'primary', 'user':'chlin'})
+18/10: %run -i ~/.ipython/profile_collection/scripts/queue_test_004.py
+18/11: zmq_single_request(method='queue_get')
+18/12: zmq_single_request(method='status')
+18/13: zmq_single_request(method='environment_close')
+18/14: zmq_single_request(method='status')
+18/15: zmq_single_request(method='environment_open')
+18/16: zmq_single_request(method='status')
+18/17: zmq_single_request(method='environment_close')
+19/1: from bluesky_queueserver.manager.comms import zmq_single_request
+19/2: zmq_single_request(method='status')
+19/3: zmq_single_request(method='environment_open')
+19/4: zmq_single_request(method='status')
+19/5:
+sl = 50            # syringe_list
+pl = 'dds1_p1'     # pump_list
+ir = '99 ul/min'   # infuse_rate
+tvl = '30 ml'      # target_vol_list
+stl = False        # set_target_list
+zmq_single_request(method='queue_item_add', 
+                   params={
+                        'item':{"name":"set_group_infuse2", 
+                                "args": [[sl], [pl]], 
+                                "kwargs": {"rate_list":[ir], "target_vol_list":[tvl], "set_target_list":[stl]}, 
+                                "item_type":"plan"
+                                }, 'user_group':'primary', 'user':'chlin'})
+19/6:
+zmq_single_request(method='queue_item_add', 
+                params={
+                        'item':{"name":"start_group_infuse", 
+                                "args": [[pl], [ir],  
+                                "item_type":"plan"
+                                }, 'user_group':'primary', 'user':'chlin'}))
+19/7:
+zmq_single_request(method='queue_item_add', params={'item':{"name":"start_group_infuse", "args": [[pl], [ir]],  
+                                "item_type":"plan"
+                                }, 'user_group':'primary', 'user':'chlin'})
+19/8: zmq_single_request(method='queue_start')
+19/9: RE(stop_group([dds1_p1]))
+19/10: zmq_single_request(method='queue_clear')
+19/11: zmq_single_request(method='status')
+19/12: %run -i ~/.ipython/profile_collection/scripts/queue_test_004.py
+19/13: zmq_single_request(method='status')
+19/14: zmq_single_request(method='queue_get')
+19/15: zmq_single_request(method='queue_clear')
+19/16: zmq_single_request(method='history_clear')
+19/17: zmq_single_request(method='status')
+19/18: %run -i ~/.ipython/profile_collection/scripts/queue_test_004.py
+19/19: zmq_single_request(method='queue_get')
+19/20: zmq_single_request(method='queue_start')
+19/21: zmq_single_request(method='queue_clear')
+19/22: zmq_single_request(method='history_clear')
+19/23: zmq_single_request(method='status')
+19/24: %run -i ~/.ipython/profile_collection/scripts/queue_test_004.py
+19/25: zmq_single_request(method='queue_start')
+19/26: RE(stop_group([dds1_p1]))//
+19/27: pump_list = [dds1_p1, dds1_p2, dds2_p1]
+19/28: RE(stop_group(pump_list))
+19/29: pump_list = [dds1_p1, dds2_p2, dds2_p1]
+19/30: RE(stop_group(pump_list))
+19/31: zmq_single_request(method='queue_clear')
+19/32: zmq_single_request(method='history_clear')
+19/33: %run -i ~/.ipython/profile_collection/scripts/queue_test_004.py
+19/34: zmq_single_request(method='queue_start')
+19/35: RE(stop_group(pump_list))
+19/36: RE(stop_group(pump_list))
+19/37: pump_list = [dds1_p1, dds2_p2, dds2_p1]
+19/38: RE(stop_group(pump_list))
+19/39: zmq_single_request(method='environment_open')
+19/40: zmq_single_request(method='status')
+19/41: zmq_single_request(method='queue_clear')
+19/42: zmq_single_request(method='history_clear')
+19/43: zmq_single_request(method='status')
+19/44: %run -i ~/.ipython/profile_collection/scripts/queue_test_004.py
+19/45: zmq_single_request(method='queue_start')
+19/46: from bluesky_kafka import Publisher
+19/47: p = Publisher(topic=res[1].beamline_topic, bootstrap_servers=res[1].bootstrap_servers, key="test", producer_config=res[1].producer_config)
+19/48: hdr = db["a634399c"]
+19/49: RE(take_ref_bkg_q(integration_time=300, num_spectra_to_average=9, ref_name='Toluene_02', csv_path=path))//
+19/50: path = '/home/xf28id2/Documents/ChengHung/20231030_kafka_ML'
+19/51: RE(take_ref_bkg_q(integration_time=300, num_spectra_to_average=9, ref_name='Toluene_02', csv_path=path))
+19/52: uid = '7d1c500f-8da9-4005-80f7-bb609e8bbdd8'
+19/53: qepro_dic, metadata_dic = read_qepro_by_stream(uid, stream_name='primary')
+19/54: %run -i ~/.ipython/profile_collection/scripts/_data_export.py
+19/55: qepro_dic, metadata_dic = read_qepro_by_stream(uid, stream_name='primary')
+19/56: qepro_dic
+19/57: 182/60
+19/58: zmq_single_request(method='environment_close')
+19/59: zmq_single_request(method='environment_open')
+19/60: %run -i ~/.ipython/profile_collection/scripts/queue_test_004.py
+19/61: zmq_single_request(method='queue_get')
+19/62: zmq_single_request(method='queue_start')
+19/63: zmq_single_request(method='queue_clear')
+19/64: zmq_single_request(method='environment_open')
+19/65: zmq_single_request(method='status')
+19/66: zmq_single_request(method='queue_clear')
+19/67: zmq_single_request(method='history_clear')
+19/68: zmq_single_request(method='status')
+19/69: %run -i ~/.ipython/profile_collection/scripts/queue_test_004.py
+19/70: zmq_single_request(method='queue_start')
+19/71: pump_list = [dds1_p1, dds2_p2, dds2_p1]
+19/72: RE(stop_group(pump_list))
+19/73: zmq_single_request(method='environment_open')
+19/74: zmq_single_request(method='queue_clear')
+19/75: zmq_single_request(method='queue_clear')
+19/76: zmq_single_request(method='history_clear')
+19/77: zmq_single_request(method='status')
+19/78: %run -i ~/.ipython/profile_collection/scripts/queue_test_004.py
+19/79: zmq_single_request(method='queue_start')
+19/80: RE(stop_group(pump_list))
+19/81: pump_list = [dds1_p1, dds2_p2, dds2_p1]
+19/82: RE(stop_group(pump_list))
+19/83: zmq_single_request(method='environment_open')
+19/84: zmq_single_request(method='queue_start')
+19/85: zmq_single_request(method='environment_open')
+19/86: zmq_single_request(method='queue_clear')
+19/87: zmq_single_request(method='history_clear')
+19/88: RE(take_ref_bkg_q(integration_time=300, num_spectra_to_average=9, ref_name='Toluene', csv_path=path))//
+19/89: path = '/home/xf28id2/Documents/ChengHung/20231031_kafka_ML'
+19/90: RE(take_ref_bkg_q(integration_time=300, num_spectra_to_average=9, ref_name='Toluene', csv_path=path))
+19/91: zmq_single_request(method='status')
+19/92: zmq_single_request(method='queue_clear')
+19/93: zmq_single_request(method='history_clear')
+19/94: pump_list = [dds1_p1, dds2_p2, dds2_p1]
+19/95: RE(stop_group(pump_list))
+19/96: %run -i ~/.ipython/profile_collection/scripts/queue_test_004.py
+19/97: zmq_single_request(method='queue_start')
+19/98: zmq_single_request(method='queue_stop')
+19/99: hdr = db["7d1edd3c"]
+19/100: p = Publisher(topic=res[1].beamline_topic, bootstrap_servers=res[1].bootstrap_servers, key="test", producer_config=res[1].producer_config)
+19/101:
+for name, doc in hdr.documents():
+    p(name, doc)
+19/102:
+for name, doc in hdr.documents():
+    p(name, doc)
+19/103: zmq_single_request(method='queue_stop')
+19/104: zmq_single_request(method='queue_stop')
+19/105: zmq_single_request(method='queue_stop')
+19/106: zmq_single_request(method='environment_close')
+19/107:
+for name, doc in hdr.documents():
+    p(name, doc)
+19/108:
+for name, doc in hdr.documents():
+    p(name, doc)
+19/109:
+for name, doc in hdr.documents():
+    p(name, doc)
+19/110:
+for name, doc in hdr.documents():
+    p(name, doc)
+19/111:
+for name, doc in hdr.documents():
+    p(name, doc)
+19/112: %run -i ~/.ipython/profile_collection/scripts/queue_test_004.py
+19/113: zmq_single_request(method='environment_open')
+19/114: zmq_single_request(method='queue_clear')
+19/115: zmq_single_request(method='history_clear')
+19/116: %run -i ~/.ipython/profile_collection/scripts/queue_test_004.py
+19/117: zmq_single_request(method='status')
+19/118: zmq_single_request(method='queue_start')
+20/1: from bluesky_kafka import Publisher
+20/2: p = Publisher(topic=res[1].beamline_topic, bootstrap_servers=res[1].bootstrap_servers, key="test", producer_config=res[1].producer_config)
+20/3: hdr = db["1c4a0a69"]
+20/4:
+for name, doc in hdr.documents():
+    p(name, doc)
+20/5: hdr = db["76406fa5"]
+20/6:
+for name, doc in hdr.documents():
+    p(name, doc)
+20/7: hdr = db["f06b5511"]
+20/8:
+for name, doc in hdr.documents():
+    p(name, doc)
+20/9: %run -i ~/.ipython/profile_collection/scripts/_data_export.py
+20/10: uid = 'f06b5511'
+20/11: qepro_dic, metadata_dic = read_qepro_by_stream(uid, stream_name='fluorescence')
+20/12: metadata_dic
+19/119: zmq_single_request(method='queue_clear')
+19/120: zmq_single_request(method='history_clear')
+19/121: zmq_single_request(method='status')
+19/122: %run -i ~/.ipython/profile_collection/scripts/queue_test_004.py
+19/123: zmq_single_request(method='queue_start')
+19/124: zmq_single_request(method='queue_stop')
+19/125: zmq_single_request(method='queue_clear')
+19/126: zmq_single_request(method='history_clear')
+19/127: zmq_single_request(method='status')
+19/128: pump_list = [dds1_p1, dds2_p2, dds2_p1]
+19/129: RE(stop_group(pump_list))
+19/130: dds1_p1.set_infuse2(50, infuse_rate=100)
+19/131: RE(dds1_p1.set_infuse2(50, infuse_rate=100))
+19/132: dds1_p1.read_infuse_rate.get()
+19/133: show_pump_status(syringe_list, pump_list, precursor_list, syringe_mater_list)
+19/134: syringe_mater_list=['steel', 'steel', 'steel']
+19/135: precursor_list = ['CsPbOA_33mM', 'ToABr_66mM', 'Toluene']
+19/136: syringe_list = [50, 50, 50]
+19/137: show_pump_status(syringe_list, pump_list, precursor_list, syringe_mater_list)
+19/138: RE(dds1_p1.infuse_pump2())
+19/139: show_pump_status(syringe_list, pump_list, precursor_list, syringe_mater_list)
+19/140: pump_list = [dds1_p1, dds2_p2, dds2_p1]
+19/141: precursor_list = ['CsPbOA_33mM', 'ToABr_66mM', 'Toluene']
+19/142: pump_list = [dds2_p1, dds2_p2, dds1_p1]
+19/143: show_pump_status(syringe_list, pump_list, precursor_list, syringe_mater_list)
+19/144: precursor_list = ['CsPbOA_06mM', 'ToABr_13mM', 'Toluene']
+19/145: show_pump_status(syringe_list, pump_list, precursor_list, syringe_mater_list)
+19/146: zmq_single_request(method='status')
+19/147: zmq_single_request(method='history_clear')
+19/148: zmq_single_request(method='queue_clear')
+19/149: %run -i ~/.ipython/profile_collection/scripts/queue_test_004.py
+19/150: zmq_single_request(method='queue_start')//
+19/151: 0.5*1.5*7
+19/152: zmq_single_request(method='queue_start')
+19/153: %run -i ~/.ipython/profile_collection/scripts/queue_test_004.py
+19/154: zmq_single_request(method='queue_start')
+19/155: hdr = db["0cb3c3a8"]
+19/156:
+for name, doc in hdr.documents():
+    p(name, doc)
+19/157: zmq_single_request(method='queue_stop')
+19/158: zmq_single_request(method='queue_clear')
+19/159: zmq_single_request(method='history_clear')
+19/160: %run -i ~/.ipython/profile_collection/scripts/queue_test_004.py
+19/161: zmq_single_request(method='status')
+19/162: zmq_single_request(method='queue_start')
+19/163: %run -i ~/.ipython/profile_collection/scripts/queue_test_004.py
+19/164: zmq_single_request(method='status')
+19/165: zmq_single_request(method='queue_start')
+19/166: qepro.x_axis.get()
+19/167: qepro.status.get()
+19/168: pump_list = [dds2_p1, dds2_p2, dds1_p1]
+19/169: RE(stop_group(pump_list))
+19/170: dds1_p1.set_infuse2(50, infuse_rate=100)
+19/171: RE(dds1_p1.set_infuse2(50, infuse_rate=100))
+19/172: RE(dds1_p1.infuse_pump2())
+19/173: show_pump_status(syringe_list, pump_list, precursor_list, syringe_mater_list)
+19/174: syringe_list = [50, 50, 50]
+19/175: precursor_list = ['CsPbOA_06mM', 'ToABr_13mM', 'Toluene']
+19/176: syringe_mater_list=['steel', 'steel', 'steel']
+19/177: pump_list = [dds2_p1, dds2_p2, dds1_p1]
+19/178: show_pump_status(syringe_list, pump_list, precursor_list, syringe_mater_list)
+19/179: zmq_single_request(method='queue_stop')
+19/180: zmq_single_request(method='queue_clear')
+19/181: zmq_single_request(method='history_clear')
+19/182: zmq_single_request(method='status')
+19/183: qepro.status.get()
+19/184: qepro.strobe.get()
+19/185: qepro.describe()
+19/186: %run -i ~/.ipython/profile_collection/scripts/queue_test_004.py
+19/187: zmq_single_request(method='status')
+19/188: zmq_single_request(method='queue_start')
+19/189: zmq_single_request(method='queue_start')//
+19/190: zmq_single_request(method='status')
+19/191: %run -i ~/.ipython/profile_collection/scripts/queue_test_004.py
+19/192: zmq_single_request(method='queue_start')
+19/193: qepro.collect_mode.put(0)
+19/194: qepro.acquire.get()
+19/195: qepro.collect_mode.get()
+19/196: zmq_single_request(method='queue_clear')
+19/197: %run -i ~/.ipython/profile_collection/scripts/queue_test_004.py
+19/198: zmq_single_request(method='queue_start')
+19/199: zmq_single_request(method='queue_stop')
+19/200: zmq_single_request(method='queue_clear')
+19/201: zmq_single_request(method='history_clear')
+19/202: zmq_single_request(method='environment_open')
+19/203: zmq_single_request(method='environment_open')
+19/204: zmq_single_request(method='status')
+19/205: %run -i ~/.ipython/profile_collection/scripts/queue_test_004.py
+19/206: zmq_single_request(method='status')
+19/207: zmq_single_request(method='queue_start')
+19/208: zmq_single_request(method='queue_stop')
+19/209: dds2_p1.infuse_rate.get()
+19/210: dds2_p2.infuse_rate.get()
+19/211: dds2_p2.status.get()
+19/212: 199/60
+19/213: zmq_single_request(method='queue_start')
+19/214: path = '/home/xf28id2/Documents/ChengHung/20231103_OA_color'
+19/215: RE(take_ref_bkg_q(integration_time=15, num_spectra_to_average=9, ref_name='Toluene_cuvette', csv_path=path))
+19/216: RE(take_ref_bkg_q(integration_time=15, num_spectra_to_average=9, ref_name='Toluene_cuvette', csv_path=path))
+19/217: RE(take_ref_bkg_q(integration_time=20, num_spectra_to_average=9, ref_name='Toluene_cuvette', csv_path=path))
+19/218: RE(xray_uvvis_plan(det, qepro, num_abs=4, num_flu=4, sample_type='new_TOABr_dilute_10', mixer='None'))
+19/219: RE(xray_uvvis_plan(det, qepro, num_abs=4, num_flu=4, sample_type='new_TOABr_dilute_20', mixer='None'))
+19/220: RE(xray_uvvis_plan(det, qepro, num_abs=4, num_flu=4, sample_type='old_TOABr_dilute_20', mixer='None'))
+19/221: RE(xray_uvvis_plan(det, qepro, num_abs=4, num_flu=4, sample_type='new_TOABr_dilute_30', mixer='None'))
+19/222: RE(xray_uvvis_plan(det, qepro, num_abs=4, num_flu=4, sample_type='new_TOABr_dilute_30', mixer='None'))
+19/223: RE(xray_uvvis_plan(det, qepro, num_abs=4, num_flu=4, sample_type='new_TOABr_dilute_20', mixer='None'))
+19/224: RE(xray_uvvis_plan(det, qepro, num_abs=4, num_flu=4, sample_type='0706_CsPb_0923_TOABr_dilute_20', mixer='None'))
+19/225: show_pump_status(syringe_list, pump_list, precursor_list, syringe_mater_list)
+19/226: pump_list = [dds2_p1, dds2_p2, dds1_p1]
+19/227: dds2_p2.status.get()
+19/228: show_pump_status(syringe_list, pump_list, precursor_list, syringe_mater_list)
+19/229: RE(dds2_p2.infuse_pump2())
+19/230: RE(dds2_p2.stop_pump())
+19/231: RE(dds2_p2.infuse_pump2())
+19/232: RE(dds2_p2.stop_pump2())
+19/233: RE(dds2_p2.infuse_pump2())
+19/234: RE(dds2_p2.stop_pump2())
+21/1: from bluesky_kafka import Publisher
+21/2: p = Publisher(topic=res[1].beamline_topic, bootstrap_servers=res[1].bootstrap_servers, key="test", producer_config=res[1].producer_config)
+21/3: hdr = db["1c4a0a69-bd4c-4754-9866-c871f84214d9"]
+21/4:
+for name, doc in hdr.documents():
+    p(name, doc)
+21/5: x = {1:2}
+21/6: str(x)
+21/7: dict(str(x))
+21/8: eval(str(x))
+21/9: x = eval(str(x))
+21/10: x
+21/11: x[1]
+21/12: import json
+21/13: json.dumps?
+22/1: from bluesky_kafka import Publisher
+22/2: p = Publisher(topic=res[1].beamline_topic, bootstrap_servers=res[1].bootstrap_servers, key="test", producer_config=res[1].producer_config)
+22/3: hdr = db["1c4a0a69-bd4c-4754-9866-c871f84214d9"]
+22/4:
+for name, doc in hdr.documents():
+    p(name, doc)
+22/5:
+for name, doc in hdr.documents():
+    p(name, doc)
+22/6: touch ~/data/87510938571398.txt
+22/7: from bluesky_kafka import Publisher
+22/8: p = Publisher(topic=res[1].beamline_topic, bootstrap_servers=res[1].bootstrap_servers, key="test", producer_config=res[1].producer_config)
+22/9:
+for name, doc in hdr.documents():
+    p(name, doc)
+22/10:
+for name, doc in hdr.documents():
+    p(name, doc)
+22/11:
+for name, doc in hdr.documents():
+    p(name, doc)
+22/12:
+for name, doc in hdr.documents():
+    p(name, doc)
+22/13:
+for name, doc in hdr.documents():
+    p(name, doc)
+22/14: import pandas as pd
+22/15: pd.read_excel("")
+22/16: ls /home/xf28id2/Documents/ChengHung/inputs_qserver_kafka_ML.xlsx
+22/17: pd.read_excel("/home/xf28id2/Documents/ChengHung/inputs_qserver_kafka_ML.xlsx")
+22/18: pd.read_excel?
+22/19: ;1R
+22/20: pd.read_excel("/home/xf28id2/Documents/ChengHung/inputs_qserver_kafka_ML.xlsx", sheet_name="Datagrid_set_uid")
+22/21: df = pd.read_excel("/home/xf28id2/Documents/ChengHung/inputs_qserver_kafka_ML.xlsx", sheet_name="Datagrid_set_uid")
+22/22: df.columns
+22/23: df.loc[:, 40]
+22/24: df.loc[:, 40].iloc[9:]
+22/25: df.loc[:, 40].iloc[9:].values
+22/26: list(df.loc[:, 40].iloc[9:].values)
+22/27: uids = list(df.loc[:, 40].iloc[9:].values)
+22/28: len(uids)
+22/29:
+for uid in uids:
+    hdr = db[uid]
+    for name, doc in hdr.documents():
+         p(name, doc)
+   1: df = pd.read_excel("/home/xf28id2/Documents/ChengHung/inputs_qserver_kafka_ML.xlsx", sheet_name="Datagrid_set_uid")
+   2: uids = list(df.loc[:, 40].iloc[9:].values)
+   3: len(uids)
+   4: from bluesky_kafka import Publisher
+   5: p = Publisher(topic=res[1].beamline_topic, bootstrap_servers=res[1].bootstrap_servers, key="test", producer_config=res[1].producer_config)
+   6:
+for uid in uids:
+    hdr = db[uid]
+    for name, doc in hdr.documents():
+         p(name, doc)
+   7:
+for uid in uids:
+    hdr = db[uid]
+    for name, doc in hdr.documents():
+         p(name, doc)
+   8:
+for uid in uids:
+    hdr = db[uid]
+    for name, doc in hdr.documents():
+         p(name, doc)
+   9:
+for uid in uids:
+    hdr = db[uid]
+    for name, doc in hdr.documents():
+         p(name, doc)
+  10:
+for uid in uids:
+    hdr = db[uid]
+    for name, doc in hdr.documents():
+         p(name, doc)
+  11: %history -g -f /home/xf28id2/Documents/ChengHung/kafka
+  12: %history -g -f /home/xf28id2/Documents/ChengHung/kafka_publisher.txt

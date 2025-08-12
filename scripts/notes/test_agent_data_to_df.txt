@@ -1,0 +1,2651 @@
+ 2/1:
+import glob
+import os
+
+# import matplotlib as mpl
+import matplotlib.pyplot as plt
+import palettable.colorbrewer.diverging as pld
+
+import numpy as np
+import pandas as pd
+
+# from sklearn import preprocessing
+# from scipy import integrate  
+# import scipy.signal as scipy
+# from scipy.optimize import curve_fit
+
+%matplotlib widget
+ 2/2:
+## Plotting parameters
+
+palette = pld.RdYlGn_4_r
+cmap = palette.mpl_colormap
+transparency = 0.7
+labelsize = 22
+spinewidth = 2
+fontsize = 26
+legendsize = 13
+fontweight = 'bold'
+labelpad = 6
+pad = 10
+linewidth = 2.2
+markersize = 6
+ 2/3:
+## In the current working folder (cwd)
+## Find the datafiles of .cal for best fitting
+# cwd = os.getcwd()
+cwd = '/home/xf28id2/Documents/ChengHung/20230508_DSE_upload/I_00uL/DFA_24_01'
+cal_files = glob.glob(cwd + '/**.cal')
+cal_files.sort()
+print(*cal_files, sep = '\n')  ## Print one element per line
+
+
+## Find the datafiles of 2D size distribution
+mtx_files = glob.glob(cwd + '/**.mtx')
+mtx_files.sort()
+print(*mtx_files, sep = '\n')  ## Print one element per line
+ 2/4:
+## Read **_Best.cal into pandas dataframe
+df0 = pd.read_csv(cal_files[0], header=None, skiprows=2, sep=' ')
+df = df0.dropna(axis=1).rename(columns={0:'theta', 2:'obs', 8:'cal', 14:'cal1', 20:'cal2', 26:'bkg'})
+
+
+## Read **_plot2D.mtx into pandas dataframe
+df1 = pd.read_csv(mtx_files[0], skiprows=1, sep=' ', skipinitialspace=True)
+updated_labels = df1.columns.values.tolist()
+del updated_labels[0]
+updated_labels.append('None')
+df1.columns = updated_labels
+ 2/5:
+## Plot **_Best.cal
+f1, ax1 = plt.subplots(1, 1, figsize = (10, 6))
+data_range = 1200 #648 # < 12 degree
+ax1.plot(df.theta[:data_range], df.obs[:data_range], label='Observation', marker='o',color='dimgrey', fillstyle='none', linestyle='None', markersize=markersize)
+ax1.plot(df.theta[:data_range], df.cal[:data_range], 'r-', label='DSE Simulation', linewidth=linewidth)
+ax1.plot(df.theta[:data_range], df.bkg[:data_range], 'g-', label='Background', linewidth=linewidth)
+
+y_offset = 1500
+difference = df.obs - df.cal + y_offset
+ax1.plot(df.theta[:data_range], difference[:data_range], 'b-', label='Difference', linewidth=linewidth)
+ax1.hlines(y=0+y_offset, xmin=df.theta[0], xmax=df.theta[data_range], color='k', linestyle='-')
+
+legend_properties = {'size':legendsize, 'weight':'bold'}
+# ax1.legend(prop=legend_properties, bbox_to_anchor=(0.31, 0.30))
+
+# ax1.set_xticks([])
+ax1.tick_params(axis='x', direction='in', labelsize=labelsize)
+#plt.setp(ax1.get_xticklabels(), fontweight="bold")
+ax1.spines["bottom"].set_linewidth(spinewidth)
+ax1.set_yticks([])
+ax1.spines["left"].set_linewidth(spinewidth)
+ax1.spines["top"].set_linewidth(spinewidth)
+ax1.spines["right"].set_linewidth(spinewidth)
+#ax1.spines['left'].set_visible(False)
+
+imag_name = 'Best_cal_06-6.png'
+# plt.savefig(imag_name, dpi = 600,  transparent=True)
+
+'''
+## Plot **.mtx as an inset 2D plot in ax1
+from mpl_toolkits.axes_grid.inset_locator import inset_axes, InsetPosition
+## Method 1:
+ax2 = plt.axes(projection='3d')
+#ax2 = plt.axes([0,0,1,1])
+ip = InsetPosition(ax1, [0.45, 0.45, 0.45, 0.45])
+ax2.set_axes_locator(ip)
+## Method 2:
+ax2 = inset_axes(ax1, width="120%", height="120%",
+                   bbox_to_anchor=(0.45, 0.45, 0.45, 0.45),
+                   bbox_transform=ax1.transAxes, loc=10)
+'''
+ 2/6:
+## In the current working folder (cwd)
+## Find the datafiles of .cal for best fitting
+# cwd = os.getcwd()
+cwd = '/home/xf28id2/Documents/ChengHung/20230508_DSE_upload/I_00uL/DFA_24_01'
+cal_files = glob.glob(cwd + '/**Best.cal')
+cal_files.sort()
+print(*cal_files, sep = '\n')  ## Print one element per line
+
+
+## Find the datafiles of 2D size distribution
+mtx_files = glob.glob(cwd + '/**.mtx')
+mtx_files.sort()
+print(*mtx_files, sep = '\n')  ## Print one element per line
+ 2/7:
+## Read **_Best.cal into pandas dataframe
+df0 = pd.read_csv(cal_files[0], header=None, skiprows=2, sep=' ')
+df = df0.dropna(axis=1).rename(columns={0:'theta', 2:'obs', 8:'cal', 14:'cal1', 20:'cal2', 26:'bkg'})
+
+
+## Read **_plot2D.mtx into pandas dataframe
+df1 = pd.read_csv(mtx_files[0], skiprows=1, sep=' ', skipinitialspace=True)
+updated_labels = df1.columns.values.tolist()
+del updated_labels[0]
+updated_labels.append('None')
+df1.columns = updated_labels
+ 2/8:
+## Plot **_Best.cal
+f1, ax1 = plt.subplots(1, 1, figsize = (10, 6))
+data_range = 1200 #648 # < 12 degree
+ax1.plot(df.theta[:data_range], df.obs[:data_range], label='Observation', marker='o',color='dimgrey', fillstyle='none', linestyle='None', markersize=markersize)
+ax1.plot(df.theta[:data_range], df.cal[:data_range], 'r-', label='DSE Simulation', linewidth=linewidth)
+ax1.plot(df.theta[:data_range], df.bkg[:data_range], 'g-', label='Background', linewidth=linewidth)
+
+y_offset = 1500
+difference = df.obs - df.cal + y_offset
+ax1.plot(df.theta[:data_range], difference[:data_range], 'b-', label='Difference', linewidth=linewidth)
+ax1.hlines(y=0+y_offset, xmin=df.theta[0], xmax=df.theta[data_range], color='k', linestyle='-')
+
+legend_properties = {'size':legendsize, 'weight':'bold'}
+# ax1.legend(prop=legend_properties, bbox_to_anchor=(0.31, 0.30))
+
+# ax1.set_xticks([])
+ax1.tick_params(axis='x', direction='in', labelsize=labelsize)
+#plt.setp(ax1.get_xticklabels(), fontweight="bold")
+ax1.spines["bottom"].set_linewidth(spinewidth)
+ax1.set_yticks([])
+ax1.spines["left"].set_linewidth(spinewidth)
+ax1.spines["top"].set_linewidth(spinewidth)
+ax1.spines["right"].set_linewidth(spinewidth)
+#ax1.spines['left'].set_visible(False)
+
+imag_name = 'Best_cal_06-6.png'
+# plt.savefig(imag_name, dpi = 600,  transparent=True)
+
+'''
+## Plot **.mtx as an inset 2D plot in ax1
+from mpl_toolkits.axes_grid.inset_locator import inset_axes, InsetPosition
+## Method 1:
+ax2 = plt.axes(projection='3d')
+#ax2 = plt.axes([0,0,1,1])
+ip = InsetPosition(ax1, [0.45, 0.45, 0.45, 0.45])
+ax2.set_axes_locator(ip)
+## Method 2:
+ax2 = inset_axes(ax1, width="120%", height="120%",
+                   bbox_to_anchor=(0.45, 0.45, 0.45, 0.45),
+                   bbox_transform=ax1.transAxes, loc=10)
+'''
+ 2/9:
+# cwd = os.getcwd()
+cwd = '/home/xf28id2/Documents/ChengHung/20230508_DSE_upload/I_00uL/DFA_24_01'
+cal_files = glob.glob(cwd + '/**Best.cal')
+cal_files.sort()
+print(*cal_files, sep = '\n')  ## Print one element per line
+
+
+## Find the datafiles of 2D size distribution
+mtx_files = glob.glob(cwd + '/**.mtx')
+mtx_files.sort()
+print(*mtx_files, sep = '\n')  ## Print one element per line
+2/10:
+palette = pld.RdYlGn_4_r
+cmap = palette.mpl_colormap
+transparency = 0.7
+labelsize = 22
+spinewidth = 2
+fontsize = 26
+legendsize = 13
+fontweight = 'bold'
+labelpad = 6
+pad = 10
+linewidth = 2.2
+markersize = 6
+2/11:
+df0 = pd.read_csv(cal_files[0], header=None, skiprows=2, sep=' ')
+df = df0.dropna(axis=1).rename(columns={0:'theta', 2:'obs', 8:'cal', 14:'cal1', 20:'cal2', 26:'bkg'})
+
+
+## Read **_plot2D.mtx into pandas dataframe
+df1 = pd.read_csv(mtx_files[0], skiprows=1, sep=' ', skipinitialspace=True)
+updated_labels = df1.columns.values.tolist()
+del updated_labels[0]
+updated_labels.append('None')
+df1.columns = updated_labels
+2/12: df
+2/13: df0
+2/14: df0[0]
+2/15: df0[:0]
+2/16: df0[:1]
+2/17: df0.dropna(axis=1)
+2/18: df
+2/19:
+df0 = pd.read_csv(cal_files[0], header=None, skiprows=2, sep=' ')
+df = df0.dropna(axis=1).rename(columns={0:'theta', 2:'obs', 8:'cal', 14:'cal1', 19:'cal2', 24:'bkg'})
+
+
+## Read **_plot2D.mtx into pandas dataframe
+df1 = pd.read_csv(mtx_files[0], skiprows=1, sep=' ', skipinitialspace=True)
+updated_labels = df1.columns.values.tolist()
+del updated_labels[0]
+updated_labels.append('None')
+df1.columns = updated_labels
+2/20: df
+2/21: df1
+2/22:
+# fn_cal = cwd + '/CsPbBr3_20211114-120845_DSE_0608_06-6.xy'
+# fn_bkg = cwd + '/Tol_Ol_Solvent_20211113-184203_DSE_0608_06-6.xy'
+
+# df_cal = pd.DataFrame()
+# df_cal['tth'] = df['theta']
+# df_cal['Int_cal'] = df['cal']
+
+# df_bkg = pd.DataFrame()
+# df_bkg['tth'] = df['theta']
+# df_bkg['Int_bkg'] = df['bkg']
+
+# df_cal.to_csv(fn_cal, sep=' ', header=False, index=False, float_format='{:.8e}'.format)
+# df_bkg.to_csv(fn_bkg, sep=' ', header=False, index=False, float_format='{:.8e}'.format)
+2/23:
+## Plot **_Best.cal
+f1, ax1 = plt.subplots(1, 1, figsize = (10, 6))
+data_range = 1200 #648 # < 12 degree
+ax1.plot(df.theta[:data_range], df.obs[:data_range], label='Observation', marker='o',color='dimgrey', fillstyle='none', linestyle='None', markersize=markersize)
+ax1.plot(df.theta[:data_range], df.cal[:data_range], 'r-', label='DSE Simulation', linewidth=linewidth)
+ax1.plot(df.theta[:data_range], df.bkg[:data_range], 'g-', label='Background', linewidth=linewidth)
+
+y_offset = 1500
+difference = df.obs - df.cal + y_offset
+ax1.plot(df.theta[:data_range], difference[:data_range], 'b-', label='Difference', linewidth=linewidth)
+ax1.hlines(y=0+y_offset, xmin=df.theta[0], xmax=df.theta[data_range], color='k', linestyle='-')
+
+legend_properties = {'size':legendsize, 'weight':'bold'}
+# ax1.legend(prop=legend_properties, bbox_to_anchor=(0.31, 0.30))
+
+# ax1.set_xticks([])
+ax1.tick_params(axis='x', direction='in', labelsize=labelsize)
+#plt.setp(ax1.get_xticklabels(), fontweight="bold")
+ax1.spines["bottom"].set_linewidth(spinewidth)
+ax1.set_yticks([])
+ax1.spines["left"].set_linewidth(spinewidth)
+ax1.spines["top"].set_linewidth(spinewidth)
+ax1.spines["right"].set_linewidth(spinewidth)
+#ax1.spines['left'].set_visible(False)
+
+imag_name = 'Best_cal_06-6.png'
+# plt.savefig(imag_name, dpi = 600,  transparent=True)
+
+'''
+## Plot **.mtx as an inset 2D plot in ax1
+from mpl_toolkits.axes_grid.inset_locator import inset_axes, InsetPosition
+## Method 1:
+ax2 = plt.axes(projection='3d')
+#ax2 = plt.axes([0,0,1,1])
+ip = InsetPosition(ax1, [0.45, 0.45, 0.45, 0.45])
+ax2.set_axes_locator(ip)
+## Method 2:
+ax2 = inset_axes(ax1, width="120%", height="120%",
+                   bbox_to_anchor=(0.45, 0.45, 0.45, 0.45),
+                   bbox_transform=ax1.transAxes, loc=10)
+'''
+2/24:
+## Plot **_Best.cal
+f1, ax1 = plt.subplots(1, 1, figsize = (10, 6))
+data_range = 1200 #648 # < 12 degree
+ax1.plot(df.theta[:data_range], df.obs[:data_range], label='Observation', marker='o',color='dimgrey', fillstyle='none', linestyle='None', markersize=markersize)
+ax1.plot(df.theta[:data_range], df.cal[:data_range], 'r-', label='DSE Simulation', linewidth=linewidth)
+ax1.plot(df.theta[:data_range], df.bkg[:data_range], 'g-', label='Background', linewidth=linewidth)
+
+y_offset = 1500
+difference = df.obs - df.cal + y_offset
+ax1.plot(df.theta[:data_range], difference[:data_range], 'b-', label='Difference', linewidth=linewidth)
+ax1.hlines(y=0+y_offset, xmin=df.theta[0], xmax=df.theta[data_range], color='k', linestyle='-')
+
+legend_properties = {'size':legendsize, 'weight':'bold'}
+ax1.legend(prop=legend_properties, bbox_to_anchor=(0.31, 0.30))
+
+# ax1.set_xticks([])
+ax1.tick_params(axis='x', direction='in', labelsize=labelsize)
+#plt.setp(ax1.get_xticklabels(), fontweight="bold")
+ax1.spines["bottom"].set_linewidth(spinewidth)
+ax1.set_yticks([])
+ax1.spines["left"].set_linewidth(spinewidth)
+ax1.spines["top"].set_linewidth(spinewidth)
+ax1.spines["right"].set_linewidth(spinewidth)
+#ax1.spines['left'].set_visible(False)
+
+imag_name = 'Best_cal_06-6.png'
+# plt.savefig(imag_name, dpi = 600,  transparent=True)
+
+'''
+## Plot **.mtx as an inset 2D plot in ax1
+from mpl_toolkits.axes_grid.inset_locator import inset_axes, InsetPosition
+## Method 1:
+ax2 = plt.axes(projection='3d')
+#ax2 = plt.axes([0,0,1,1])
+ip = InsetPosition(ax1, [0.45, 0.45, 0.45, 0.45])
+ax2.set_axes_locator(ip)
+## Method 2:
+ax2 = inset_axes(ax1, width="120%", height="120%",
+                   bbox_to_anchor=(0.45, 0.45, 0.45, 0.45),
+                   bbox_transform=ax1.transAxes, loc=10)
+'''
+2/25:
+palette = pld.RdYlGn_4_r
+cmap = palette.mpl_colormap
+transparency = 0.7
+labelsize = 16
+spinewidth = 2
+fontsize = 26
+legendsize = 13
+fontweight = 'bold'
+labelpad = 6
+pad = 10
+linewidth = 2.2
+markersize = 6
+2/26:
+f1, ax1 = plt.subplots(1, 1, figsize = (10, 6))
+data_range = 1200 #648 # < 12 degree
+ax1.plot(df.theta[:data_range], df.obs[:data_range], label='Observation', marker='o',color='dimgrey', fillstyle='none', linestyle='None', markersize=markersize)
+ax1.plot(df.theta[:data_range], df.cal[:data_range], 'r-', label='DSE Simulation', linewidth=linewidth)
+ax1.plot(df.theta[:data_range], df.bkg[:data_range], 'g-', label='Background', linewidth=linewidth)
+
+y_offset = 1500
+difference = df.obs - df.cal + y_offset
+ax1.plot(df.theta[:data_range], difference[:data_range], 'b-', label='Difference', linewidth=linewidth)
+ax1.hlines(y=0+y_offset, xmin=df.theta[0], xmax=df.theta[data_range], color='k', linestyle='-')
+
+legend_properties = {'size':legendsize, 'weight':'bold'}
+ax1.legend(prop=legend_properties, bbox_to_anchor=(0.31, 0.30))
+
+# ax1.set_xticks([])
+ax1.tick_params(axis='x', direction='in', labelsize=labelsize)
+#plt.setp(ax1.get_xticklabels(), fontweight="bold")
+ax1.spines["bottom"].set_linewidth(spinewidth)
+ax1.set_yticks([])
+ax1.spines["left"].set_linewidth(spinewidth)
+ax1.spines["top"].set_linewidth(spinewidth)
+ax1.spines["right"].set_linewidth(spinewidth)
+#ax1.spines['left'].set_visible(False)
+
+# imag_name = 'Best_cal_06-6.png'
+# plt.savefig(imag_name, dpi = 600,  transparent=True)
+
+'''
+## Plot **.mtx as an inset 2D plot in ax1
+from mpl_toolkits.axes_grid.inset_locator import inset_axes, InsetPosition
+## Method 1:
+ax2 = plt.axes(projection='3d')
+#ax2 = plt.axes([0,0,1,1])
+ip = InsetPosition(ax1, [0.45, 0.45, 0.45, 0.45])
+ax2.set_axes_locator(ip)
+## Method 2:
+ax2 = inset_axes(ax1, width="120%", height="120%",
+                   bbox_to_anchor=(0.45, 0.45, 0.45, 0.45),
+                   bbox_transform=ax1.transAxes, loc=10)
+'''
+2/27:
+palette = pld.RdYlGn_4_r
+cmap = palette.mpl_colormap
+transparency = 0.7
+labelsize = 12
+spinewidth = 2
+fontsize = 12
+legendsize = 12
+fontweight = 'bold'
+labelpad = 6
+pad = 10
+linewidth = 2.2
+markersize = 6
+2/28:
+f1, ax1 = plt.subplots(1, 1, figsize = (10, 6))
+data_range = 1200 #648 # < 12 degree
+ax1.plot(df.theta[:data_range], df.obs[:data_range], label='Observation', marker='o',color='dimgrey', fillstyle='none', linestyle='None', markersize=markersize)
+ax1.plot(df.theta[:data_range], df.cal[:data_range], 'r-', label='DSE Simulation', linewidth=linewidth)
+ax1.plot(df.theta[:data_range], df.bkg[:data_range], 'g-', label='Background', linewidth=linewidth)
+
+y_offset = 1500
+difference = df.obs - df.cal + y_offset
+ax1.plot(df.theta[:data_range], difference[:data_range], 'b-', label='Difference', linewidth=linewidth)
+ax1.hlines(y=0+y_offset, xmin=df.theta[0], xmax=df.theta[data_range], color='k', linestyle='-')
+
+legend_properties = {'size':legendsize, 'weight':'bold'}
+ax1.legend(prop=legend_properties, bbox_to_anchor=(0.31, 0.30))
+
+# ax1.set_xticks([])
+ax1.tick_params(axis='x', direction='in', labelsize=labelsize)
+#plt.setp(ax1.get_xticklabels(), fontweight="bold")
+ax1.spines["bottom"].set_linewidth(spinewidth)
+ax1.set_yticks([])
+ax1.spines["left"].set_linewidth(spinewidth)
+ax1.spines["top"].set_linewidth(spinewidth)
+ax1.spines["right"].set_linewidth(spinewidth)
+#ax1.spines['left'].set_visible(False)
+
+# imag_name = 'Best_cal_06-6.png'
+# plt.savefig(imag_name, dpi = 600,  transparent=True)
+
+'''
+## Plot **.mtx as an inset 2D plot in ax1
+from mpl_toolkits.axes_grid.inset_locator import inset_axes, InsetPosition
+## Method 1:
+ax2 = plt.axes(projection='3d')
+#ax2 = plt.axes([0,0,1,1])
+ip = InsetPosition(ax1, [0.45, 0.45, 0.45, 0.45])
+ax2.set_axes_locator(ip)
+## Method 2:
+ax2 = inset_axes(ax1, width="120%", height="120%",
+                   bbox_to_anchor=(0.45, 0.45, 0.45, 0.45),
+                   bbox_transform=ax1.transAxes, loc=10)
+'''
+2/29:
+# palette = pld.RdYlGn_4_r
+palette = pld.Spectral_10_r
+cmap = palette.mpl_colormap
+transparency = 0.7
+labelsize = 12
+spinewidth = 2
+fontsize = 12
+legendsize = 12
+fontweight = 'bold'
+labelpad = 6
+pad = 10
+linewidth = 2.2
+markersize = 6
+2/30: cmap
+2/31:
+f2, ax2 = plt.subplots(1, 2, figsize = (10, 5), gridspec_kw={'width_ratios': [1,1]}, constrained_layout=True)
+# ax2.flatten()
+# titles = ['CsPbBr3_mp-56762901', 'CsPbI3_mp-112076802']
+# tick_step = [0.01, 0.08]
+
+titles = ['CsPbBr3_Topas_24']
+tick_step = [0.01]
+
+for i in range(len(df1)):
+# for i in range(1):
+    df_reshape = df1[i].pivot(index='Base_Diam.(e.c.)[nm]', columns='Height[nm]', values='norm_mass_frac')
+    
+    X = np.array(df_reshape.index)
+    Y = np.array(df_reshape.columns)
+    X, Y = np.meshgrid(Y, X)
+    Z = np.array(df_reshape)
+    Z[Z==0.0] = -0.01
+    # cs = ax2[i].contourf(X, Y, Z, cmap=cmap)
+    # cs = ax2[i].contourf(X, Y, Z, levels=36, cmap=cmap)
+    cs = ax2[i].contourf(X, Y, Z, vmax = 0.6, levels=36, cmap=cmap)
+    
+    ax2[i].set_title(titles[i]+'\n'+'Mass Distribution', {'fontsize': 14, 'fontweight': 'normal'})
+    #ax2[i].set_xticks([])
+    ax2[i].tick_params(axis='both', direction='in', labelsize=labelsize-4)
+    # ax2[i].set_yticks([])
+    # ax2[i].tick_params(axis='y', direction='in', labelsize=labelsize-4)
+    # ax2[i].set_zticks(np.arange(0.01, np.nanmax(Z), 0.02))
+    # ax2[i].tick_params(axis='z', direction='in', labelsize=labelsize-4)
+
+
+    # cbar = f2.colorbar(cs, shrink=1, aspect=20, ax=ax2[i])
+    # cbar.set_ticks(np.arange(0, np.nanmax(Z), tick_step[i]))
+    # cbar.ax.tick_params(labelsize=labelsize-6)
+
+
+cbar = f2.colorbar(cs, shrink=1, aspect=20)
+cbar.set_ticks(np.arange(0, np.nanmax(Z), tick_step[i]))
+cbar.ax.tick_params(labelsize=labelsize-6)    
+
+ax2[0].set_xlim(1, 25)   ## L_c
+ax2[0].set_ylim(1.2, 25)   ## D_ab
+    
+ax2[1].set_xlim(1, 5)   ## L_c
+ax2[1].set_ylim(1.2, 5)   ## D_ab
+
+imag_name = 'ZnI2_64uL_min_DFA_01 size_bar.png'
+# plt.savefig(cwd+imag_name, dpi = 600,  transparent=True)
+2/32: len(df1)
+2/33:
+f2, ax2 = plt.subplots(1, 2, figsize = (10, 5), gridspec_kw={'width_ratios': [1,1]}, constrained_layout=True)
+# ax2.flatten()
+# titles = ['CsPbBr3_mp-56762901', 'CsPbI3_mp-112076802']
+# tick_step = [0.01, 0.08]
+
+titles = ['CsPbBr3_Topas_24']
+tick_step = [0.01]
+
+for i in range(len(titles)):
+# for i in range(1):
+    df_reshape = df1[i].pivot(index='Base_Diam.(e.c.)[nm]', columns='Height[nm]', values='norm_mass_frac')
+    
+    X = np.array(df_reshape.index)
+    Y = np.array(df_reshape.columns)
+    X, Y = np.meshgrid(Y, X)
+    Z = np.array(df_reshape)
+    Z[Z==0.0] = -0.01
+    # cs = ax2[i].contourf(X, Y, Z, cmap=cmap)
+    # cs = ax2[i].contourf(X, Y, Z, levels=36, cmap=cmap)
+    cs = ax2[i].contourf(X, Y, Z, vmax = 0.6, levels=36, cmap=cmap)
+    
+    ax2[i].set_title(titles[i]+'\n'+'Mass Distribution', {'fontsize': 14, 'fontweight': 'normal'})
+    #ax2[i].set_xticks([])
+    ax2[i].tick_params(axis='both', direction='in', labelsize=labelsize-4)
+    # ax2[i].set_yticks([])
+    # ax2[i].tick_params(axis='y', direction='in', labelsize=labelsize-4)
+    # ax2[i].set_zticks(np.arange(0.01, np.nanmax(Z), 0.02))
+    # ax2[i].tick_params(axis='z', direction='in', labelsize=labelsize-4)
+
+
+    # cbar = f2.colorbar(cs, shrink=1, aspect=20, ax=ax2[i])
+    # cbar.set_ticks(np.arange(0, np.nanmax(Z), tick_step[i]))
+    # cbar.ax.tick_params(labelsize=labelsize-6)
+
+
+cbar = f2.colorbar(cs, shrink=1, aspect=20)
+cbar.set_ticks(np.arange(0, np.nanmax(Z), tick_step[i]))
+cbar.ax.tick_params(labelsize=labelsize-6)    
+
+ax2[0].set_xlim(1, 25)   ## L_c
+ax2[0].set_ylim(1.2, 25)   ## D_ab
+    
+ax2[1].set_xlim(1, 5)   ## L_c
+ax2[1].set_ylim(1.2, 5)   ## D_ab
+
+imag_name = 'ZnI2_64uL_min_DFA_01 size_bar.png'
+# plt.savefig(cwd+imag_name, dpi = 600,  transparent=True)
+2/34: len(titles)
+2/35: df1[0]
+2/36:
+f2, ax2 = plt.subplots(1, 2, figsize = (10, 5), gridspec_kw={'width_ratios': [1,1]}, constrained_layout=True)
+# ax2.flatten()
+# titles = ['CsPbBr3_mp-56762901', 'CsPbI3_mp-112076802']
+# tick_step = [0.01, 0.08]
+
+titles = ['CsPbBr3_Topas_24']
+tick_step = [0.01]
+
+for i in range(len(titles)):
+# for i in range(1):
+    df_reshape = df1.pivot(index='Base_Diam.(e.c.)[nm]', columns='Height[nm]', values='norm_mass_frac')
+    
+    X = np.array(df_reshape.index)
+    Y = np.array(df_reshape.columns)
+    X, Y = np.meshgrid(Y, X)
+    Z = np.array(df_reshape)
+    Z[Z==0.0] = -0.01
+    # cs = ax2[i].contourf(X, Y, Z, cmap=cmap)
+    # cs = ax2[i].contourf(X, Y, Z, levels=36, cmap=cmap)
+    cs = ax2[i].contourf(X, Y, Z, vmax = 0.6, levels=36, cmap=cmap)
+    
+    ax2[i].set_title(titles[i]+'\n'+'Mass Distribution', {'fontsize': 14, 'fontweight': 'normal'})
+    #ax2[i].set_xticks([])
+    ax2[i].tick_params(axis='both', direction='in', labelsize=labelsize-4)
+    # ax2[i].set_yticks([])
+    # ax2[i].tick_params(axis='y', direction='in', labelsize=labelsize-4)
+    # ax2[i].set_zticks(np.arange(0.01, np.nanmax(Z), 0.02))
+    # ax2[i].tick_params(axis='z', direction='in', labelsize=labelsize-4)
+
+
+    # cbar = f2.colorbar(cs, shrink=1, aspect=20, ax=ax2[i])
+    # cbar.set_ticks(np.arange(0, np.nanmax(Z), tick_step[i]))
+    # cbar.ax.tick_params(labelsize=labelsize-6)
+
+
+cbar = f2.colorbar(cs, shrink=1, aspect=20)
+cbar.set_ticks(np.arange(0, np.nanmax(Z), tick_step[i]))
+cbar.ax.tick_params(labelsize=labelsize-6)    
+
+ax2[0].set_xlim(1, 25)   ## L_c
+ax2[0].set_ylim(1.2, 25)   ## D_ab
+    
+ax2[1].set_xlim(1, 5)   ## L_c
+ax2[1].set_ylim(1.2, 5)   ## D_ab
+
+imag_name = 'ZnI2_64uL_min_DFA_01 size_bar.png'
+# plt.savefig(cwd+imag_name, dpi = 600,  transparent=True)
+2/37: df1.values
+2/38: df1.index
+2/39: df1.index()
+2/40: df1.labels
+2/41: df1.label
+2/42: df1.columns.values
+2/43:
+f2, ax2 = plt.subplots(1, 2, figsize = (10, 5), gridspec_kw={'width_ratios': [1,1]}, constrained_layout=True)
+# ax2.flatten()
+# titles = ['CsPbBr3_mp-56762901', 'CsPbI3_mp-112076802']
+# tick_step = [0.01, 0.08]
+
+titles = ['CsPbBr3_Topas_24']
+tick_step = [0.01]
+
+for i in range(len(titles)):
+# for i in range(1):
+    df_reshape = df1.pivot(index='Base_Diam.(e.c.)[nm]', columns='Height[nm]', values='Mass_frac')
+    
+    X = np.array(df_reshape.index)
+    Y = np.array(df_reshape.columns)
+    X, Y = np.meshgrid(Y, X)
+    Z = np.array(df_reshape)
+    Z[Z==0.0] = -0.01
+    # cs = ax2[i].contourf(X, Y, Z, cmap=cmap)
+    # cs = ax2[i].contourf(X, Y, Z, levels=36, cmap=cmap)
+    cs = ax2[i].contourf(X, Y, Z, vmax = 0.6, levels=36, cmap=cmap)
+    
+    ax2[i].set_title(titles[i]+'\n'+'Mass Distribution', {'fontsize': 14, 'fontweight': 'normal'})
+    #ax2[i].set_xticks([])
+    ax2[i].tick_params(axis='both', direction='in', labelsize=labelsize-4)
+    # ax2[i].set_yticks([])
+    # ax2[i].tick_params(axis='y', direction='in', labelsize=labelsize-4)
+    # ax2[i].set_zticks(np.arange(0.01, np.nanmax(Z), 0.02))
+    # ax2[i].tick_params(axis='z', direction='in', labelsize=labelsize-4)
+
+
+    # cbar = f2.colorbar(cs, shrink=1, aspect=20, ax=ax2[i])
+    # cbar.set_ticks(np.arange(0, np.nanmax(Z), tick_step[i]))
+    # cbar.ax.tick_params(labelsize=labelsize-6)
+
+
+cbar = f2.colorbar(cs, shrink=1, aspect=20)
+cbar.set_ticks(np.arange(0, np.nanmax(Z), tick_step[i]))
+cbar.ax.tick_params(labelsize=labelsize-6)    
+
+ax2[0].set_xlim(1, 25)   ## L_c
+ax2[0].set_ylim(1.2, 25)   ## D_ab
+    
+ax2[1].set_xlim(1, 5)   ## L_c
+ax2[1].set_ylim(1.2, 5)   ## D_ab
+
+imag_name = 'ZnI2_64uL_min_DFA_01 size_bar.png'
+# plt.savefig(cwd+imag_name, dpi = 600,  transparent=True)
+2/44:
+f2, ax2 = plt.subplots(1, 2, figsize = (10, 5), gridspec_kw={'width_ratios': [1,1]}, constrained_layout=True)
+# ax2.flatten()
+# titles = ['CsPbBr3_mp-56762901', 'CsPbI3_mp-112076802']
+# tick_step = [0.01, 0.08]
+
+titles = ['CsPbBr3_Topas_24']
+tick_step = [0.01]
+
+for i in range(len(titles)):
+# for i in range(1):
+    df_reshape = df1.pivot(index='Base_Diam.(e.c.)[nm]', columns='Height[nm]', values='Mass_Frac.')
+    
+    X = np.array(df_reshape.index)
+    Y = np.array(df_reshape.columns)
+    X, Y = np.meshgrid(Y, X)
+    Z = np.array(df_reshape)
+    Z[Z==0.0] = -0.01
+    # cs = ax2[i].contourf(X, Y, Z, cmap=cmap)
+    # cs = ax2[i].contourf(X, Y, Z, levels=36, cmap=cmap)
+    cs = ax2[i].contourf(X, Y, Z, vmax = 0.6, levels=36, cmap=cmap)
+    
+    ax2[i].set_title(titles[i]+'\n'+'Mass Distribution', {'fontsize': 14, 'fontweight': 'normal'})
+    #ax2[i].set_xticks([])
+    ax2[i].tick_params(axis='both', direction='in', labelsize=labelsize-4)
+    # ax2[i].set_yticks([])
+    # ax2[i].tick_params(axis='y', direction='in', labelsize=labelsize-4)
+    # ax2[i].set_zticks(np.arange(0.01, np.nanmax(Z), 0.02))
+    # ax2[i].tick_params(axis='z', direction='in', labelsize=labelsize-4)
+
+
+    # cbar = f2.colorbar(cs, shrink=1, aspect=20, ax=ax2[i])
+    # cbar.set_ticks(np.arange(0, np.nanmax(Z), tick_step[i]))
+    # cbar.ax.tick_params(labelsize=labelsize-6)
+
+
+cbar = f2.colorbar(cs, shrink=1, aspect=20)
+cbar.set_ticks(np.arange(0, np.nanmax(Z), tick_step[i]))
+cbar.ax.tick_params(labelsize=labelsize-6)    
+
+ax2[0].set_xlim(1, 25)   ## L_c
+ax2[0].set_ylim(1.2, 25)   ## D_ab
+    
+ax2[1].set_xlim(1, 5)   ## L_c
+ax2[1].set_ylim(1.2, 5)   ## D_ab
+
+imag_name = 'ZnI2_64uL_min_DFA_01 size_bar.png'
+# plt.savefig(cwd+imag_name, dpi = 600,  transparent=True)
+2/45:
+f2, ax2 = plt.subplots(1, 2, figsize = (10, 5), gridspec_kw={'width_ratios': [1,1]}, constrained_layout=True)
+# ax2.flatten()
+# titles = ['CsPbBr3_mp-56762901', 'CsPbI3_mp-112076802']
+# tick_step = [0.01, 0.08]
+
+titles = ['CsPbBr3_Topas_24']
+tick_step = [0.01]
+
+for i in range(len(titles)):
+# for i in range(1):
+    df_reshape = df1.pivot(index='Base_Diam.(e.c.)[nm]', columns='Height[nm]', values='Mass_Frac.')
+    
+    X = np.array(df_reshape.index)
+    Y = np.array(df_reshape.columns)
+    X, Y = np.meshgrid(Y, X)
+    Z = np.array(df_reshape)
+    Z[Z==0.0] = -0.01
+    # cs = ax2[i].contourf(X, Y, Z, cmap=cmap)
+    # cs = ax2[i].contourf(X, Y, Z, levels=36, cmap=cmap)
+    cs = ax2[i].contourf(X, Y, Z, vmax = 0.02, levels=36, cmap=cmap)
+    
+    ax2[i].set_title(titles[i]+'\n'+'Mass Distribution', {'fontsize': 14, 'fontweight': 'normal'})
+    #ax2[i].set_xticks([])
+    ax2[i].tick_params(axis='both', direction='in', labelsize=labelsize-4)
+    # ax2[i].set_yticks([])
+    # ax2[i].tick_params(axis='y', direction='in', labelsize=labelsize-4)
+    # ax2[i].set_zticks(np.arange(0.01, np.nanmax(Z), 0.02))
+    # ax2[i].tick_params(axis='z', direction='in', labelsize=labelsize-4)
+
+
+    # cbar = f2.colorbar(cs, shrink=1, aspect=20, ax=ax2[i])
+    # cbar.set_ticks(np.arange(0, np.nanmax(Z), tick_step[i]))
+    # cbar.ax.tick_params(labelsize=labelsize-6)
+
+
+cbar = f2.colorbar(cs, shrink=1, aspect=20)
+cbar.set_ticks(np.arange(0, np.nanmax(Z), tick_step[i]))
+cbar.ax.tick_params(labelsize=labelsize-6)    
+
+ax2[0].set_xlim(1, 25)   ## L_c
+ax2[0].set_ylim(1.2, 25)   ## D_ab
+    
+ax2[1].set_xlim(1, 5)   ## L_c
+ax2[1].set_ylim(1.2, 5)   ## D_ab
+
+imag_name = 'ZnI2_64uL_min_DFA_01 size_bar.png'
+# plt.savefig(cwd+imag_name, dpi = 600,  transparent=True)
+2/46:
+f2, ax2 = plt.subplots(1, 2, figsize = (10, 5), gridspec_kw={'width_ratios': [1,1]}, constrained_layout=True)
+# ax2.flatten()
+# titles = ['CsPbBr3_mp-56762901', 'CsPbI3_mp-112076802']
+# tick_step = [0.01, 0.08]
+
+titles = ['CsPbBr3_Topas_24']
+tick_step = [0.01]
+
+for i in range(len(titles)):
+# for i in range(1):
+    df_reshape = df1.pivot(index='Base_Diam.(e.c.)[nm]', columns='Height[nm]', values='Mass_Frac.')
+    
+    X = np.array(df_reshape.index)
+    Y = np.array(df_reshape.columns)
+    X, Y = np.meshgrid(Y, X)
+    Z = np.array(df_reshape)
+    Z[Z==0.0] = -0.01
+    # cs = ax2[i].contourf(X, Y, Z, cmap=cmap)
+    # cs = ax2[i].contourf(X, Y, Z, levels=36, cmap=cmap)
+    cs = ax2[i].contourf(X, Y, Z, vmax = 0.06, levels=36, cmap=cmap)
+    
+    ax2[i].set_title(titles[i]+'\n'+'Mass Distribution', {'fontsize': 14, 'fontweight': 'normal'})
+    #ax2[i].set_xticks([])
+    ax2[i].tick_params(axis='both', direction='in', labelsize=labelsize-4)
+    # ax2[i].set_yticks([])
+    # ax2[i].tick_params(axis='y', direction='in', labelsize=labelsize-4)
+    # ax2[i].set_zticks(np.arange(0.01, np.nanmax(Z), 0.02))
+    # ax2[i].tick_params(axis='z', direction='in', labelsize=labelsize-4)
+
+
+    # cbar = f2.colorbar(cs, shrink=1, aspect=20, ax=ax2[i])
+    # cbar.set_ticks(np.arange(0, np.nanmax(Z), tick_step[i]))
+    # cbar.ax.tick_params(labelsize=labelsize-6)
+
+
+cbar = f2.colorbar(cs, shrink=1, aspect=20)
+cbar.set_ticks(np.arange(0, np.nanmax(Z), tick_step[i]))
+cbar.ax.tick_params(labelsize=labelsize-6)    
+
+ax2[0].set_xlim(1, 25)   ## L_c
+ax2[0].set_ylim(1.2, 25)   ## D_ab
+    
+ax2[1].set_xlim(1, 5)   ## L_c
+ax2[1].set_ylim(1.2, 5)   ## D_ab
+
+imag_name = 'ZnI2_64uL_min_DFA_01 size_bar.png'
+# plt.savefig(cwd+imag_name, dpi = 600,  transparent=True)
+2/47: np.nanmax(Z)
+2/48: df_reshape
+2/49: # df_reshape
+2/50: # df1
+2/51: df.heads
+2/52: df.head()
+2/53: df1.head()
+2/54:
+f2, ax2 = plt.subplots(1, 2, figsize = (10, 5), gridspec_kw={'width_ratios': [1,1]}, constrained_layout=True)
+# ax2.flatten()
+# titles = ['CsPbBr3_mp-56762901', 'CsPbI3_mp-112076802']
+# tick_step = [0.01, 0.08]
+
+titles = ['CsPbBr3_Topas_24']
+tick_step = [0.01]
+
+for i in range(len(titles)):
+# for i in range(1):
+    df_reshape = df1.pivot(index='Base_Diam.(e.c.)[nm]', columns='Height[nm]', values='Mass_Frac.')
+    
+    X = np.array(df_reshape.index)
+    Y = np.array(df_reshape.columns)
+    X, Y = np.meshgrid(Y, X)
+    Z = np.array(df_reshape)
+    Z[Z==0.0] = -0.01
+    # cs = ax2[i].contourf(X, Y, Z, cmap=cmap)
+    # cs = ax2[i].contourf(X, Y, Z, levels=36, cmap=cmap)
+    cs = ax2[i].contourf(X, Y, Z, vmax = 0.06, levels=36, cmap=cmap)
+    
+    ax2[i].set_title(titles[i]+'\n'+'Mass Distribution', {'fontsize': 14, 'fontweight': 'normal'})
+    #ax2[i].set_xticks([])
+    ax2[i].tick_params(axis='both', direction='in', labelsize=labelsize-4)
+    # ax2[i].set_yticks([])
+    # ax2[i].tick_params(axis='y', direction='in', labelsize=labelsize-4)
+    # ax2[i].set_zticks(np.arange(0.01, np.nanmax(Z), 0.02))
+    # ax2[i].tick_params(axis='z', direction='in', labelsize=labelsize-4)
+
+
+    # cbar = f2.colorbar(cs, shrink=1, aspect=20, ax=ax2[i])
+    # cbar.set_ticks(np.arange(0, np.nanmax(Z), tick_step[i]))
+    # cbar.ax.tick_params(labelsize=labelsize-6)
+
+
+cbar = f2.colorbar(cs, shrink=1, aspect=20)
+cbar.set_ticks(np.arange(0, np.nanmax(Z), tick_step[i]))
+cbar.ax.tick_params(labelsize=labelsize-6)    
+
+# ax2[0].set_xlim(1, 25)   ## L_c
+# ax2[0].set_ylim(1.2, 25)   ## D_ab
+    
+# ax2[1].set_xlim(1, 5)   ## L_c
+# ax2[1].set_ylim(1.2, 5)   ## D_ab
+
+imag_name = 'ZnI2_64uL_min_DFA_01 size_bar.png'
+# plt.savefig(cwd+imag_name, dpi = 600,  transparent=True)
+2/55:
+f1, ax1 = plt.subplots(1, 1, figsize = (10, 6))
+data_range = 1200 #648 # < 12 degree
+ax1.plot(df.theta[:data_range], df.obs[:data_range], label='Observation', marker='o',color='dimgrey', fillstyle='none', linestyle='None', markersize=markersize)
+ax1.plot(df.theta[:data_range], df.cal[:data_range], 'r-', label='DSE Simulation', linewidth=linewidth)
+ax1.plot(df.theta[:data_range], df.bkg[:data_range], 'g-', label='Background', linewidth=linewidth)
+
+y_offset = 1500
+difference = df.obs - df.cal + y_offset
+ax1.plot(df.theta[:data_range], difference[:data_range], 'b-', label='Difference', linewidth=linewidth)
+ax1.hlines(y=0+y_offset, xmin=df.theta[0], xmax=df.theta[data_range], color='k', linestyle='-')
+
+legend_properties = {'size':legendsize, 'weight':'bold'}
+ax1.legend(prop=legend_properties) #, bbox_to_anchor=(0.31, 0.30))
+
+# ax1.set_xticks([])
+ax1.tick_params(axis='x', direction='in', labelsize=labelsize)
+#plt.setp(ax1.get_xticklabels(), fontweight="bold")
+ax1.spines["bottom"].set_linewidth(spinewidth)
+ax1.set_yticks([])
+ax1.spines["left"].set_linewidth(spinewidth)
+ax1.spines["top"].set_linewidth(spinewidth)
+ax1.spines["right"].set_linewidth(spinewidth)
+#ax1.spines['left'].set_visible(False)
+
+# imag_name = 'Best_cal_06-6.png'
+# plt.savefig(imag_name, dpi = 600,  transparent=True)
+
+'''
+## Plot **.mtx as an inset 2D plot in ax1
+from mpl_toolkits.axes_grid.inset_locator import inset_axes, InsetPosition
+## Method 1:
+ax2 = plt.axes(projection='3d')
+#ax2 = plt.axes([0,0,1,1])
+ip = InsetPosition(ax1, [0.45, 0.45, 0.45, 0.45])
+ax2.set_axes_locator(ip)
+## Method 2:
+ax2 = inset_axes(ax1, width="120%", height="120%",
+                   bbox_to_anchor=(0.45, 0.45, 0.45, 0.45),
+                   bbox_transform=ax1.transAxes, loc=10)
+'''
+2/56:
+# palette = pld.RdYlGn_4_r
+palette = pld.Spectral_10_r
+cmap = palette.mpl_colormap
+transparency = 0.7
+labelsize = 12
+spinewidth = 2
+fontsize = 12
+legendsize = 12
+fontweight = 'regular'
+labelpad = 6
+pad = 10
+linewidth = 2.2
+markersize = 6
+2/57:
+# palette = pld.RdYlGn_4_r
+palette = pld.Spectral_10_r
+cmap = palette.mpl_colormap
+transparency = 0.7
+labelsize = 12
+spinewidth = 1.5
+fontsize = 12
+legendsize = 12
+fontweight = 'regular'
+labelpad = 6
+pad = 10
+linewidth = 2.2
+markersize = 6
+2/58:
+f1, ax1 = plt.subplots(1, 1, figsize = (10, 6))
+data_range = 1200 #648 # < 12 degree
+ax1.plot(df.theta[:data_range], df.obs[:data_range], label='Observation', marker='o',color='dimgrey', fillstyle='none', linestyle='None', markersize=markersize)
+ax1.plot(df.theta[:data_range], df.cal[:data_range], 'r-', label='DSE Simulation', linewidth=linewidth)
+ax1.plot(df.theta[:data_range], df.bkg[:data_range], 'g-', label='Background', linewidth=linewidth)
+
+y_offset = 1500
+difference = df.obs - df.cal + y_offset
+ax1.plot(df.theta[:data_range], difference[:data_range], 'b-', label='Difference', linewidth=linewidth)
+ax1.hlines(y=0+y_offset, xmin=df.theta[0], xmax=df.theta[data_range], color='k', linestyle='-')
+
+legend_properties = {'size':legendsize, 'weight':fontweight}
+ax1.legend(prop=legend_properties) #, bbox_to_anchor=(0.31, 0.30))
+
+# ax1.set_xticks([])
+ax1.tick_params(axis='x', direction='in', labelsize=labelsize)
+#plt.setp(ax1.get_xticklabels(), fontweight="bold")
+ax1.spines["bottom"].set_linewidth(spinewidth)
+ax1.set_yticks([])
+ax1.spines["left"].set_linewidth(spinewidth)
+ax1.spines["top"].set_linewidth(spinewidth)
+ax1.spines["right"].set_linewidth(spinewidth)
+#ax1.spines['left'].set_visible(False)
+
+# imag_name = 'Best_cal_06-6.png'
+# plt.savefig(imag_name, dpi = 600,  transparent=True)
+
+'''
+## Plot **.mtx as an inset 2D plot in ax1
+from mpl_toolkits.axes_grid.inset_locator import inset_axes, InsetPosition
+## Method 1:
+ax2 = plt.axes(projection='3d')
+#ax2 = plt.axes([0,0,1,1])
+ip = InsetPosition(ax1, [0.45, 0.45, 0.45, 0.45])
+ax2.set_axes_locator(ip)
+## Method 2:
+ax2 = inset_axes(ax1, width="120%", height="120%",
+                   bbox_to_anchor=(0.45, 0.45, 0.45, 0.45),
+                   bbox_transform=ax1.transAxes, loc=10)
+'''
+2/59:
+# cwd = os.getcwd()
+cwd = '/home/xf28id2/Documents/ChengHung/20230508_DSE_upload/I_00uL/DFA_24_01'
+cal_files = glob.glob(cwd + '/**.cal')
+cal_files.sort()
+print(*cal_files, sep = '\n')  ## Print one element per line
+
+
+## Find the datafiles of 2D size distribution
+mtx_files = glob.glob(cwd + '/**.mtx')
+mtx_files.sort()
+print(*mtx_files, sep = '\n')  ## Print one element per line
+2/60:
+df0 = pd.read_csv(cal_files[0], header=None, skiprows=2, sep=' ')
+df = df0.dropna(axis=1).rename(columns={0:'theta', 2:'obs', 8:'cal', 14:'cal1', 19:'cal2', 24:'bkg'})
+
+
+## Read **_plot2D.mtx into pandas dataframe
+df1 = pd.read_csv(mtx_files[0], skiprows=1, sep=' ', skipinitialspace=True)
+updated_labels = df1.columns.values.tolist()
+del updated_labels[0]
+updated_labels.append('None')
+df1.columns = updated_labels
+2/61:
+# cwd = os.getcwd()
+cwd = '/home/xf28id2/Documents/ChengHung/20230508_DSE_upload/I_00uL/DFA_24_02'
+cal_files = glob.glob(cwd + '/**.cal')
+cal_files.sort()
+print(*cal_files, sep = '\n')  ## Print one element per line
+
+
+## Find the datafiles of 2D size distribution
+mtx_files = glob.glob(cwd + '/**.mtx')
+mtx_files.sort()
+print(*mtx_files, sep = '\n')  ## Print one element per line
+2/62:
+df0 = pd.read_csv(cal_files[0], header=None, skiprows=2, sep=' ')
+df = df0.dropna(axis=1).rename(columns={0:'theta', 2:'obs', 8:'cal', 14:'cal1', 19:'cal2', 24:'bkg'})
+
+
+## Read **_plot2D.mtx into pandas dataframe
+df1 = pd.read_csv(mtx_files[0], skiprows=1, sep=' ', skipinitialspace=True)
+updated_labels = df1.columns.values.tolist()
+del updated_labels[0]
+updated_labels.append('None')
+df1.columns = updated_labels
+2/63: df.head()
+2/64: df0.head()
+2/65: os.path.basename(cal_files[0])
+2/66: df0.dropna(axis=1)
+2/67:
+cal_fn = cal_files[0]
+df0 = pd.read_csv(cal_fn, header=None, skiprows=2, sep=' ')
+
+# if '_SPD#01' in cal_fn:
+#     df = df0.dropna(axis=1).rename(columns={0:'theta', 2:'obs', 8:'cal', 14:'cal1', 19:'cal2', 24:'bkg'})
+# elif '_Best' in cal_fn:
+#     df = df0.dropna(axis=1).rename(columns={0:'theta', 2:'obs', 8:'cal', 14:'cal1', 19:'cal2', 24:'bkg'})
+
+
+## Read **_plot2D.mtx into pandas dataframe
+df1 = pd.read_csv(mtx_files[0], skiprows=1, sep=' ', skipinitialspace=True)
+updated_labels = df1.columns.values.tolist()
+del updated_labels[0]
+updated_labels.append('None')
+df1.columns = updated_labels
+2/68: df0.dropna(axis=1)
+2/69: df0
+2/70:
+cal_fn = cal_files[0]
+
+if '_SPD#01' in cal_fn:
+    df0 = pd.read_csv(cal_fn, header=None, skiprows=0, sep=' ')
+    df = df0.dropna(axis=1).rename(columns={0:'theta', 2:'obs', 8:'cal', 14:'cal1', 19:'cal2', 24:'bkg'})
+elif '_Best' in cal_fn:
+    df0 = pd.read_csv(cal_fn, header=None, skiprows=2, sep=' ')
+    df = df0.dropna(axis=1).rename(columns={0:'theta', 2:'obs', 8:'cal', 14:'cal1', 19:'cal2', 24:'bkg'})
+
+
+## Read **_plot2D.mtx into pandas dataframe
+df1 = pd.read_csv(mtx_files[0], skiprows=1, sep=' ', skipinitialspace=True)
+updated_labels = df1.columns.values.tolist()
+del updated_labels[0]
+updated_labels.append('None')
+df1.columns = updated_labels
+2/71: df0
+2/72:
+cal_fn = cal_files[0]
+
+if '_SPD#01' in cal_fn:
+    df0 = pd.read_csv(cal_fn, header=None, skiprows=0, delim_whitespace=True)
+    df = df0.dropna(axis=1).rename(columns={0:'theta', 2:'obs', 8:'cal', 14:'cal1', 19:'cal2', 24:'bkg'})
+elif '_Best' in cal_fn:
+    df0 = pd.read_csv(cal_fn, header=None, skiprows=2, delim_whitespace=True)
+    df = df0.dropna(axis=1).rename(columns={0:'theta', 2:'obs', 8:'cal', 14:'cal1', 19:'cal2', 24:'bkg'})
+
+
+## Read **_plot2D.mtx into pandas dataframe
+df1 = pd.read_csv(mtx_files[0], skiprows=1, sep=' ', skipinitialspace=True)
+updated_labels = df1.columns.values.tolist()
+del updated_labels[0]
+updated_labels.append('None')
+df1.columns = updated_labels
+2/73: df0
+2/74:
+cal_fn = cal_files[0]
+
+if '_SPD#01' in cal_fn:
+    df0 = pd.read_csv(cal_fn, header=None, skiprows=0, delim_whitespace=True)
+    df = df0.dropna(axis=1).rename(columns={0:'theta', 1:'obs', 2:'cal', 3:'cal1', 4:'cal2', 5:'bkg'})
+elif '_Best' in cal_fn:
+    df0 = pd.read_csv(cal_fn, header=None, skiprows=2, delim_whitespace=True)
+    df = df0.dropna(axis=1).rename(columns={0:'theta', 2:'obs', 8:'cal', 14:'cal1', 19:'cal2', 24:'bkg'})
+
+
+## Read **_plot2D.mtx into pandas dataframe
+df1 = pd.read_csv(mtx_files[0], skiprows=1, sep=' ', skipinitialspace=True)
+updated_labels = df1.columns.values.tolist()
+del updated_labels[0]
+updated_labels.append('None')
+df1.columns = updated_labels
+2/75: df1.head(
+2/76: df1.head(
+2/77: df1.head()
+2/78: df.head()
+2/79: df1.head()
+2/80:
+f1, ax1 = plt.subplots(1, 1, figsize = (10, 6))
+data_range = 1200 #648 # < 12 degree
+ax1.plot(df.theta[:data_range], df.obs[:data_range], label='Observation', marker='o',color='dimgrey', fillstyle='none', linestyle='None', markersize=markersize)
+ax1.plot(df.theta[:data_range], df.cal[:data_range], 'r-', label='DSE Simulation', linewidth=linewidth)
+ax1.plot(df.theta[:data_range], df.bkg[:data_range], 'g-', label='Background', linewidth=linewidth)
+
+y_offset = 1500
+difference = df.obs - df.cal + y_offset
+ax1.plot(df.theta[:data_range], difference[:data_range], 'b-', label='Difference', linewidth=linewidth)
+ax1.hlines(y=0+y_offset, xmin=df.theta[0], xmax=df.theta[data_range], color='k', linestyle='-')
+
+legend_properties = {'size':legendsize, 'weight':fontweight}
+ax1.legend(prop=legend_properties) #, bbox_to_anchor=(0.31, 0.30))
+
+# ax1.set_xticks([])
+ax1.tick_params(axis='x', direction='in', labelsize=labelsize)
+#plt.setp(ax1.get_xticklabels(), fontweight="bold")
+ax1.spines["bottom"].set_linewidth(spinewidth)
+ax1.set_yticks([])
+ax1.spines["left"].set_linewidth(spinewidth)
+ax1.spines["top"].set_linewidth(spinewidth)
+ax1.spines["right"].set_linewidth(spinewidth)
+#ax1.spines['left'].set_visible(False)
+
+# imag_name = 'Best_cal_06-6.png'
+# plt.savefig(imag_name, dpi = 600,  transparent=True)
+
+'''
+## Plot **.mtx as an inset 2D plot in ax1
+from mpl_toolkits.axes_grid.inset_locator import inset_axes, InsetPosition
+## Method 1:
+ax2 = plt.axes(projection='3d')
+#ax2 = plt.axes([0,0,1,1])
+ip = InsetPosition(ax1, [0.45, 0.45, 0.45, 0.45])
+ax2.set_axes_locator(ip)
+## Method 2:
+ax2 = inset_axes(ax1, width="120%", height="120%",
+                   bbox_to_anchor=(0.45, 0.45, 0.45, 0.45),
+                   bbox_transform=ax1.transAxes, loc=10)
+'''
+2/81:
+f1, ax1 = plt.subplots(1, 1, figsize = (10, 6))
+data_range = 1200 #648 # < 12 degree
+ax1.plot(df.theta[:data_range], df.obs[:data_range], label='Observation', marker='o',color='dimgrey', fillstyle='none', linestyle='None', markersize=markersize)
+ax1.plot(df.theta[:data_range], df.cal[:data_range], 'r-', label='DSE Simulation', linewidth=linewidth)
+ax1.plot(df.theta[:data_range], df.bkg[:data_range], 'g-', label='Background', linewidth=linewidth)
+
+y_offset = 0
+difference = df.obs - df.cal + y_offset
+ax1.plot(df.theta[:data_range], difference[:data_range], 'b-', label='Difference', linewidth=linewidth)
+ax1.hlines(y=0+y_offset, xmin=df.theta[0], xmax=df.theta[data_range], color='k', linestyle='-')
+
+legend_properties = {'size':legendsize, 'weight':fontweight}
+ax1.legend(prop=legend_properties) #, bbox_to_anchor=(0.31, 0.30))
+
+# ax1.set_xticks([])
+ax1.tick_params(axis='x', direction='in', labelsize=labelsize)
+#plt.setp(ax1.get_xticklabels(), fontweight="bold")
+ax1.spines["bottom"].set_linewidth(spinewidth)
+ax1.set_yticks([])
+ax1.spines["left"].set_linewidth(spinewidth)
+ax1.spines["top"].set_linewidth(spinewidth)
+ax1.spines["right"].set_linewidth(spinewidth)
+#ax1.spines['left'].set_visible(False)
+
+# imag_name = 'Best_cal_06-6.png'
+# plt.savefig(imag_name, dpi = 600,  transparent=True)
+
+'''
+## Plot **.mtx as an inset 2D plot in ax1
+from mpl_toolkits.axes_grid.inset_locator import inset_axes, InsetPosition
+## Method 1:
+ax2 = plt.axes(projection='3d')
+#ax2 = plt.axes([0,0,1,1])
+ip = InsetPosition(ax1, [0.45, 0.45, 0.45, 0.45])
+ax2.set_axes_locator(ip)
+## Method 2:
+ax2 = inset_axes(ax1, width="120%", height="120%",
+                   bbox_to_anchor=(0.45, 0.45, 0.45, 0.45),
+                   bbox_transform=ax1.transAxes, loc=10)
+'''
+2/82:
+f1, ax1 = plt.subplots(1, 1, figsize = (10, 6))
+data_range = 1200 #648 # < 12 degree
+ax1.plot(df.theta[:data_range], df.obs[:data_range], label='Observation', marker='o',color='dimgrey', fillstyle='none', linestyle='None', markersize=markersize)
+ax1.plot(df.theta[:data_range], df.cal[:data_range], 'r-', label='DSE Simulation', linewidth=linewidth)
+ax1.plot(df.theta[:data_range], df.bkg[:data_range], 'g-', label='Background', linewidth=linewidth)
+
+y_offset = 0
+difference = df.obs - df.cal + y_offset
+ax1.plot(df.theta[:data_range], difference[:data_range], 'b-', label='Difference', linewidth=linewidth)
+ax1.hlines(y=0+y_offset, xmin=df.theta[0], xmax=df.theta[data_range], color='k', linestyle='-')
+
+legend_properties = {'size':legendsize, 'weight':fontweight}
+ax1.legend(prop=legend_properties) #, bbox_to_anchor=(0.31, 0.30))
+
+# ax1.set_xticks([])
+ax1.tick_params(axis='x', direction='in', labelsize=labelsize)
+#plt.setp(ax1.get_xticklabels(), fontweight="bold")
+ax1.spines["bottom"].set_linewidth(spinewidth)
+# ax1.set_yticks([])
+ax1.spines["left"].set_linewidth(spinewidth)
+ax1.spines["top"].set_linewidth(spinewidth)
+ax1.spines["right"].set_linewidth(spinewidth)
+#ax1.spines['left'].set_visible(False)
+
+# imag_name = 'Best_cal_06-6.png'
+# plt.savefig(imag_name, dpi = 600,  transparent=True)
+
+'''
+## Plot **.mtx as an inset 2D plot in ax1
+from mpl_toolkits.axes_grid.inset_locator import inset_axes, InsetPosition
+## Method 1:
+ax2 = plt.axes(projection='3d')
+#ax2 = plt.axes([0,0,1,1])
+ip = InsetPosition(ax1, [0.45, 0.45, 0.45, 0.45])
+ax2.set_axes_locator(ip)
+## Method 2:
+ax2 = inset_axes(ax1, width="120%", height="120%",
+                   bbox_to_anchor=(0.45, 0.45, 0.45, 0.45),
+                   bbox_transform=ax1.transAxes, loc=10)
+'''
+2/83:
+# palette = pld.RdYlGn_4_r
+palette = pld.Spectral_10_r
+cmap = palette.mpl_colormap
+transparency = 0.7
+labelsize = 12
+spinewidth = 1.5
+fontsize = 12
+legendsize = 12
+fontweight = 'regular'
+labelpad = 6
+pad = 10
+linewidth = 2.2
+markersize = 6
+
+plt.close('all')
+2/84: cmap
+2/85:
+# cwd = os.getcwd()
+cwd = '/home/xf28id2/Documents/ChengHung/20230508_DSE_upload/I_00uL/DFA_24_01'
+cal_files = glob.glob(cwd + '/**.cal')
+cal_files.sort()
+print(*cal_files, sep = '\n')  ## Print one element per line
+
+
+## Find the datafiles of 2D size distribution
+mtx_files = glob.glob(cwd + '/**.mtx')
+mtx_files.sort()
+print(*mtx_files, sep = '\n')  ## Print one element per line
+2/86: os.path.basename(cal_files[0])
+2/87: os.path.basename(cal_files[1])
+2/88:
+cal_fn = cal_files[1]
+
+if '_SPD#01' in cal_fn:
+    df0 = pd.read_csv(cal_fn, header=None, skiprows=0, delim_whitespace=True)
+    df = df0.dropna(axis=1).rename(columns={0:'theta', 1:'obs', 2:'cal', 3:'cal1', 4:'cal2', 5:'bkg'})
+elif '_Best' in cal_fn:
+    df0 = pd.read_csv(cal_fn, header=None, skiprows=2, delim_whitespace=True)
+    df = df0.dropna(axis=1).rename(columns={0:'theta', 2:'obs', 8:'cal', 14:'cal1', 19:'cal2', 24:'bkg'})
+
+
+## Read **_plot2D.mtx into pandas dataframe
+df1 = pd.read_csv(mtx_files[0], skiprows=1, sep=' ', skipinitialspace=True)
+updated_labels = df1.columns.values.tolist()
+del updated_labels[0]
+updated_labels.append('None')
+df1.columns = updated_labels
+2/89: df.head()
+2/90:
+cal_fn = cal_files[1]
+
+df0 = pd.read_csv(cal_fn, header=None, skiprows=0, delim_whitespace=True)
+df = df0.dropna(axis=1).rename(columns={0:'theta', 1:'obs', 2:'cal', 3:'cal1', 4:'cal2', 5:'bkg'})
+
+## Read **_plot2D.mtx into pandas dataframe
+df1 = pd.read_csv(mtx_files[0], skiprows=1, sep=' ', skipinitialspace=True)
+updated_labels = df1.columns.values.tolist()
+del updated_labels[0]
+updated_labels.append('None')
+df1.columns = updated_labels
+2/91: df.head()
+2/92:
+cal_fn = cal_files[1]
+
+if '_SPD#01' in cal_fn:
+    skiprows=0
+
+elif '_Best' in cal_fn:
+    skiprows=2
+
+df0 = pd.read_csv(cal_fn, header=None, skiprows=skiprows, delim_whitespace=True)
+df = df0.dropna(axis=1).rename(columns={0:'theta', 1:'obs', 2:'cal', 3:'cal1', 4:'cal2', 5:'bkg'})
+
+## Read **_plot2D.mtx into pandas dataframe
+df1 = pd.read_csv(mtx_files[0], skiprows=1, sep=' ', skipinitialspace=True)
+updated_labels = df1.columns.values.tolist()
+del updated_labels[0]
+updated_labels.append('None')
+df1.columns = updated_labels
+2/93: df.head()
+2/94: df1.head()
+2/95:
+f1, ax1 = plt.subplots(1, 1, figsize = (10, 6))
+data_range = 1200 #648 # < 12 degree
+ax1.plot(df.theta[:data_range], df.obs[:data_range], label='Observation', marker='o',color='dimgrey', fillstyle='none', linestyle='None', markersize=markersize)
+ax1.plot(df.theta[:data_range], df.cal[:data_range], 'r-', label='DSE Simulation', linewidth=linewidth)
+ax1.plot(df.theta[:data_range], df.bkg[:data_range], 'g-', label='Background', linewidth=linewidth)
+
+y_offset = 0
+difference = df.obs - df.cal + y_offset
+ax1.plot(df.theta[:data_range], difference[:data_range], 'b-', label='Difference', linewidth=linewidth)
+ax1.hlines(y=0+y_offset, xmin=df.theta[0], xmax=df.theta[data_range], color='k', linestyle='-')
+
+legend_properties = {'size':legendsize, 'weight':fontweight}
+ax1.legend(prop=legend_properties) #, bbox_to_anchor=(0.31, 0.30))
+
+# ax1.set_xticks([])
+ax1.tick_params(axis='x', direction='in', labelsize=labelsize)
+#plt.setp(ax1.get_xticklabels(), fontweight="bold")
+ax1.spines["bottom"].set_linewidth(spinewidth)
+# ax1.set_yticks([])
+ax1.spines["left"].set_linewidth(spinewidth)
+ax1.spines["top"].set_linewidth(spinewidth)
+ax1.spines["right"].set_linewidth(spinewidth)
+#ax1.spines['left'].set_visible(False)
+
+# imag_name = 'Best_cal_06-6.png'
+# plt.savefig(imag_name, dpi = 600,  transparent=True)
+
+'''
+## Plot **.mtx as an inset 2D plot in ax1
+from mpl_toolkits.axes_grid.inset_locator import inset_axes, InsetPosition
+## Method 1:
+ax2 = plt.axes(projection='3d')
+#ax2 = plt.axes([0,0,1,1])
+ip = InsetPosition(ax1, [0.45, 0.45, 0.45, 0.45])
+ax2.set_axes_locator(ip)
+## Method 2:
+ax2 = inset_axes(ax1, width="120%", height="120%",
+                   bbox_to_anchor=(0.45, 0.45, 0.45, 0.45),
+                   bbox_transform=ax1.transAxes, loc=10)
+'''
+2/96: plt.close('all')
+2/97:
+# cwd = os.getcwd()
+cwd = '/home/xf28id2/Documents/ChengHung/20230508_DSE_upload/I_00uL/DFA_24_02'
+cal_files = glob.glob(cwd + '/**.cal')
+cal_files.sort()
+print(*cal_files, sep = '\n')  ## Print one element per line
+
+
+## Find the datafiles of 2D size distribution
+mtx_files = glob.glob(cwd + '/**.mtx')
+mtx_files.sort()
+print(*mtx_files, sep = '\n')  ## Print one element per line
+2/98: os.path.basename(cal_files[1])
+2/99:
+cal_fn = cal_files[1]
+
+if '_SPD#01' in cal_fn:
+    skiprows=0
+
+elif '_Best' in cal_fn:
+    skiprows=2
+
+df0 = pd.read_csv(cal_fn, header=None, skiprows=skiprows, delim_whitespace=True)
+df = df0.dropna(axis=1).rename(columns={0:'theta', 1:'obs', 2:'cal', 3:'cal1', 4:'cal2', 5:'bkg'})
+
+## Read **_plot2D.mtx into pandas dataframe
+df1 = pd.read_csv(mtx_files[0], skiprows=1, sep=' ', skipinitialspace=True)
+updated_labels = df1.columns.values.tolist()
+del updated_labels[0]
+updated_labels.append('None')
+df1.columns = updated_labels
+2/100: os.path.basename(cal_files[0])
+2/101:
+cal_fn = cal_files[1]
+
+if '_SPD#01' in cal_fn:
+    skiprows=0
+
+elif '_Best' in cal_fn:
+    skiprows=2
+
+df0 = pd.read_csv(cal_fn, header=None, skiprows=skiprows, delim_whitespace=True)
+df = df0.dropna(axis=1).rename(columns={0:'theta', 1:'obs', 2:'cal', 3:'cal1', 4:'cal2', 5:'bkg'})
+
+## Read **_plot2D.mtx into pandas dataframe
+df1 = pd.read_csv(mtx_files[0], skiprows=1, sep=' ', skipinitialspace=True)
+updated_labels = df1.columns.values.tolist()
+del updated_labels[0]
+updated_labels.append('None')
+df1.columns = updated_labels
+2/102:
+k = 0
+os.path.basename(cal_files[k])
+2/103:
+cal_fn = cal_files[k]
+
+if '_SPD#01' in cal_fn:
+    skiprows=0
+
+elif '_Best' in cal_fn:
+    skiprows=2
+
+df0 = pd.read_csv(cal_fn, header=None, skiprows=skiprows, delim_whitespace=True)
+df = df0.dropna(axis=1).rename(columns={0:'theta', 1:'obs', 2:'cal', 3:'cal1', 4:'cal2', 5:'bkg'})
+
+## Read **_plot2D.mtx into pandas dataframe
+df1 = pd.read_csv(mtx_files[0], skiprows=1, sep=' ', skipinitialspace=True)
+updated_labels = df1.columns.values.tolist()
+del updated_labels[0]
+updated_labels.append('None')
+df1.columns = updated_labels
+2/104: df.head()
+2/105: df1.head()
+2/106:
+f1, ax1 = plt.subplots(1, 1, figsize = (10, 6))
+data_range = 1200 #648 # < 12 degree
+ax1.plot(df.theta[:data_range], df.obs[:data_range], label='Observation', marker='o',color='dimgrey', fillstyle='none', linestyle='None', markersize=markersize)
+ax1.plot(df.theta[:data_range], df.cal[:data_range], 'r-', label='DSE Simulation', linewidth=linewidth)
+ax1.plot(df.theta[:data_range], df.bkg[:data_range], 'g-', label='Background', linewidth=linewidth)
+
+y_offset = 0
+difference = df.obs - df.cal + y_offset
+ax1.plot(df.theta[:data_range], difference[:data_range], 'b-', label='Difference', linewidth=linewidth)
+ax1.hlines(y=0+y_offset, xmin=df.theta[0], xmax=df.theta[data_range], color='k', linestyle='-')
+
+legend_properties = {'size':legendsize, 'weight':fontweight}
+ax1.legend(prop=legend_properties) #, bbox_to_anchor=(0.31, 0.30))
+
+# ax1.set_xticks([])
+ax1.tick_params(axis='x', direction='in', labelsize=labelsize)
+#plt.setp(ax1.get_xticklabels(), fontweight="bold")
+ax1.spines["bottom"].set_linewidth(spinewidth)
+# ax1.set_yticks([])
+ax1.spines["left"].set_linewidth(spinewidth)
+ax1.spines["top"].set_linewidth(spinewidth)
+ax1.spines["right"].set_linewidth(spinewidth)
+#ax1.spines['left'].set_visible(False)
+
+# imag_name = 'Best_cal_06-6.png'
+# plt.savefig(imag_name, dpi = 600,  transparent=True)
+
+'''
+## Plot **.mtx as an inset 2D plot in ax1
+from mpl_toolkits.axes_grid.inset_locator import inset_axes, InsetPosition
+## Method 1:
+ax2 = plt.axes(projection='3d')
+#ax2 = plt.axes([0,0,1,1])
+ip = InsetPosition(ax1, [0.45, 0.45, 0.45, 0.45])
+ax2.set_axes_locator(ip)
+## Method 2:
+ax2 = inset_axes(ax1, width="120%", height="120%",
+                   bbox_to_anchor=(0.45, 0.45, 0.45, 0.45),
+                   bbox_transform=ax1.transAxes, loc=10)
+'''
+2/107:
+# palette = pld.RdYlGn_4_r
+palette = pld.Spectral_10_r
+cmap = palette.mpl_colormap
+transparency = 0.7
+labelsize = 12
+spinewidth = 1.5
+fontsize = 12
+legendsize = 12
+fontweight = 'regular'
+labelpad = 6
+pad = 10
+linewidth = 2.2
+markersize = 6
+ 3/1:
+import glob
+import os
+
+# import matplotlib as mpl
+import matplotlib.pyplot as plt
+import palettable.colorbrewer.diverging as pld
+
+import numpy as np
+import pandas as pd
+
+# from sklearn import preprocessing
+# from scipy import integrate  
+# import scipy.signal as scipy
+# from scipy.optimize import curve_fit
+
+%matplotlib widget
+ 3/2:
+# palette = pld.RdYlGn_4_r
+palette = pld.Spectral_10_r
+cmap = palette.mpl_colormap
+transparency = 0.7
+labelsize = 12
+spinewidth = 1.5
+fontsize = 12
+legendsize = 12
+fontweight = 'regular'
+labelpad = 6
+pad = 10
+linewidth = 2.2
+markersize = 6
+ 3/3: cmap
+ 3/4: plt.close('all')
+ 3/5:
+# cwd = os.getcwd()
+cwd = '/home/xf28id2/Documents/ChengHung/20230508_DSE_upload/I_00uL/DFA_24_02'
+cal_files = glob.glob(cwd + '/**.cal')
+cal_files.sort()
+print(*cal_files, sep = '\n')  ## Print one element per line
+
+
+## Find the datafiles of 2D size distribution
+mtx_files = glob.glob(cwd + '/**.mtx')
+mtx_files.sort()
+print(*mtx_files, sep = '\n')  ## Print one element per line
+ 3/6:
+k = 0
+os.path.basename(cal_files[k])
+ 3/7:
+cal_fn = cal_files[k]
+
+if '_SPD#01' in cal_fn:
+    skiprows=0
+
+elif '_Best' in cal_fn:
+    skiprows=2
+
+df0 = pd.read_csv(cal_fn, header=None, skiprows=skiprows, delim_whitespace=True)
+df = df0.dropna(axis=1).rename(columns={0:'theta', 1:'obs', 2:'cal', 3:'cal1', 4:'cal2', 5:'bkg'})
+
+## Read **_plot2D.mtx into pandas dataframe
+df1 = pd.read_csv(mtx_files[0], skiprows=1, sep=' ', skipinitialspace=True)
+updated_labels = df1.columns.values.tolist()
+del updated_labels[0]
+updated_labels.append('None')
+df1.columns = updated_labels
+ 3/8: df.head()
+ 3/9: df1.head()
+3/10:
+f1, ax1 = plt.subplots(1, 1, figsize = (10, 6))
+data_range = 1200 #648 # < 12 degree
+ax1.plot(df.theta[:data_range], df.obs[:data_range], label='Observation', marker='o',color='dimgrey', fillstyle='none', linestyle='None', markersize=markersize)
+ax1.plot(df.theta[:data_range], df.cal[:data_range], 'r-', label='DSE Simulation', linewidth=linewidth)
+ax1.plot(df.theta[:data_range], df.bkg[:data_range], 'g-', label='Background', linewidth=linewidth)
+
+y_offset = 0
+difference = df.obs - df.cal + y_offset
+ax1.plot(df.theta[:data_range], difference[:data_range], 'b-', label='Difference', linewidth=linewidth)
+ax1.hlines(y=0+y_offset, xmin=df.theta[0], xmax=df.theta[data_range], color='k', linestyle='-')
+
+legend_properties = {'size':legendsize, 'weight':fontweight}
+ax1.legend(prop=legend_properties) #, bbox_to_anchor=(0.31, 0.30))
+
+# ax1.set_xticks([])
+ax1.tick_params(axis='x', direction='in', labelsize=labelsize)
+#plt.setp(ax1.get_xticklabels(), fontweight="bold")
+ax1.spines["bottom"].set_linewidth(spinewidth)
+# ax1.set_yticks([])
+ax1.spines["left"].set_linewidth(spinewidth)
+ax1.spines["top"].set_linewidth(spinewidth)
+ax1.spines["right"].set_linewidth(spinewidth)
+#ax1.spines['left'].set_visible(False)
+
+# imag_name = 'Best_cal_06-6.png'
+# plt.savefig(imag_name, dpi = 600,  transparent=True)
+
+'''
+## Plot **.mtx as an inset 2D plot in ax1
+from mpl_toolkits.axes_grid.inset_locator import inset_axes, InsetPosition
+## Method 1:
+ax2 = plt.axes(projection='3d')
+#ax2 = plt.axes([0,0,1,1])
+ip = InsetPosition(ax1, [0.45, 0.45, 0.45, 0.45])
+ax2.set_axes_locator(ip)
+## Method 2:
+ax2 = inset_axes(ax1, width="120%", height="120%",
+                   bbox_to_anchor=(0.45, 0.45, 0.45, 0.45),
+                   bbox_transform=ax1.transAxes, loc=10)
+'''
+3/11: df1.columns.values
+3/12:
+f2, ax2 = plt.subplots(1, 2, figsize = (10, 5), gridspec_kw={'width_ratios': [1,1]}, constrained_layout=True)
+# ax2.flatten()
+# titles = ['CsPbBr3_mp-56762901', 'CsPbI3_mp-112076802']
+# tick_step = [0.01, 0.08]
+
+titles = ['CsPbBr3_Topas_24']
+tick_step = [0.01]
+
+for i in range(len(titles)):
+# for i in range(1):
+    df_reshape = df1.pivot(index='Base_Diam.(e.c.)[nm]', columns='Height[nm]', values='Mass_Frac.')
+    
+    X = np.array(df_reshape.index)
+    Y = np.array(df_reshape.columns)
+    X, Y = np.meshgrid(Y, X)
+    Z = np.array(df_reshape)
+    Z[Z==0.0] = -0.01
+    # cs = ax2[i].contourf(X, Y, Z, cmap=cmap)
+    # cs = ax2[i].contourf(X, Y, Z, levels=36, cmap=cmap)
+    cs = ax2[i].contourf(X, Y, Z, vmax = 0.06, levels=36, cmap=cmap)
+    
+    ax2[i].set_title(titles[i]+'\n'+'Mass Distribution', {'fontsize': 14, 'fontweight': 'normal'})
+    #ax2[i].set_xticks([])
+    ax2[i].tick_params(axis='both', direction='in', labelsize=labelsize-4)
+    # ax2[i].set_yticks([])
+    # ax2[i].tick_params(axis='y', direction='in', labelsize=labelsize-4)
+    # ax2[i].set_zticks(np.arange(0.01, np.nanmax(Z), 0.02))
+    # ax2[i].tick_params(axis='z', direction='in', labelsize=labelsize-4)
+
+
+    # cbar = f2.colorbar(cs, shrink=1, aspect=20, ax=ax2[i])
+    # cbar.set_ticks(np.arange(0, np.nanmax(Z), tick_step[i]))
+    # cbar.ax.tick_params(labelsize=labelsize-6)
+
+
+cbar = f2.colorbar(cs, shrink=1, aspect=20)
+cbar.set_ticks(np.arange(0, np.nanmax(Z), tick_step[i]))
+cbar.ax.tick_params(labelsize=labelsize-6)    
+
+# ax2[0].set_xlim(1, 25)   ## L_c
+# ax2[0].set_ylim(1.2, 25)   ## D_ab
+    
+# ax2[1].set_xlim(1, 5)   ## L_c
+# ax2[1].set_ylim(1.2, 5)   ## D_ab
+
+imag_name = 'ZnI2_64uL_min_DFA_01 size_bar.png'
+# plt.savefig(cwd+imag_name, dpi = 600,  transparent=True)
+3/13: np.nanmax(Z)
+3/14: # df_reshape
+3/15:
+# fn_cal = cwd + '/CsPbBr3_20211114-120845_DSE_0608_06-6.xy'
+# fn_bkg = cwd + '/Tol_Ol_Solvent_20211113-184203_DSE_0608_06-6.xy'
+
+# df_cal = pd.DataFrame()
+# df_cal['tth'] = df['theta']
+# df_cal['Int_cal'] = df['cal']
+
+# df_bkg = pd.DataFrame()
+# df_bkg['tth'] = df['theta']
+# df_bkg['Int_bkg'] = df['bkg']
+
+# df_cal.to_csv(fn_cal, sep=' ', header=False, index=False, float_format='{:.8e}'.format)
+# df_bkg.to_csv(fn_bkg, sep=' ', header=False, index=False, float_format='{:.8e}'.format)
+3/16: # df.head()
+3/17: # df1.head()
+3/18:
+# cwd = os.getcwd()
+cwd = '/home/xf28id2/Documents/ChengHung/20230508_DSE_upload/I_00uL/DFA_24_02'
+cal_files = glob.glob(cwd + '/**.cal')
+cal_files.sort()
+print(*cal_files, sep = '\n')  ## Print one element per line
+
+
+## Find the datafiles of 2D size distribution
+mtx_files = glob.glob(cwd + '/**.mtx')
+mtx_files.sort()
+print(*mtx_files, sep = '\n')  ## Print one element per line
+3/19:
+k = 0
+os.path.basename(cal_files[k])
+3/20:
+cal_fn = cal_files[k]
+
+if '_SPD#01' in cal_fn:
+    skiprows=0
+
+elif '_Best' in cal_fn:
+    skiprows=2
+
+df0 = pd.read_csv(cal_fn, header=None, skiprows=skiprows, delim_whitespace=True)
+df = df0.dropna(axis=1).rename(columns={0:'theta', 1:'obs', 2:'cal', 3:'cal1', 4:'cal2', 5:'bkg'})
+
+## Read **_plot2D.mtx into pandas dataframe
+df1 = pd.read_csv(mtx_files[0], skiprows=1, sep=' ', skipinitialspace=True)
+updated_labels = df1.columns.values.tolist()
+del updated_labels[0]
+updated_labels.append('None')
+df1.columns = updated_labels
+3/21: # df.head()
+3/22: # df1.head()
+3/23:
+f1, ax1 = plt.subplots(1, 1, figsize = (10, 6))
+data_range = 1200 #648 # < 12 degree
+ax1.plot(df.theta[:data_range], df.obs[:data_range], label='Observation', marker='o',color='dimgrey', fillstyle='none', linestyle='None', markersize=markersize)
+ax1.plot(df.theta[:data_range], df.cal[:data_range], 'r-', label='DSE Simulation', linewidth=linewidth)
+ax1.plot(df.theta[:data_range], df.bkg[:data_range], 'g-', label='Background', linewidth=linewidth)
+
+y_offset = 0
+difference = df.obs - df.cal + y_offset
+ax1.plot(df.theta[:data_range], difference[:data_range], 'b-', label='Difference', linewidth=linewidth)
+ax1.hlines(y=0+y_offset, xmin=df.theta[0], xmax=df.theta[data_range], color='k', linestyle='-')
+
+legend_properties = {'size':legendsize, 'weight':fontweight}
+ax1.legend(prop=legend_properties) #, bbox_to_anchor=(0.31, 0.30))
+
+# ax1.set_xticks([])
+ax1.tick_params(axis='x', direction='in', labelsize=labelsize)
+#plt.setp(ax1.get_xticklabels(), fontweight="bold")
+ax1.spines["bottom"].set_linewidth(spinewidth)
+# ax1.set_yticks([])
+ax1.spines["left"].set_linewidth(spinewidth)
+ax1.spines["top"].set_linewidth(spinewidth)
+ax1.spines["right"].set_linewidth(spinewidth)
+#ax1.spines['left'].set_visible(False)
+
+# imag_name = 'Best_cal_06-6.png'
+# plt.savefig(imag_name, dpi = 600,  transparent=True)
+
+'''
+## Plot **.mtx as an inset 2D plot in ax1
+from mpl_toolkits.axes_grid.inset_locator import inset_axes, InsetPosition
+## Method 1:
+ax2 = plt.axes(projection='3d')
+#ax2 = plt.axes([0,0,1,1])
+ip = InsetPosition(ax1, [0.45, 0.45, 0.45, 0.45])
+ax2.set_axes_locator(ip)
+## Method 2:
+ax2 = inset_axes(ax1, width="120%", height="120%",
+                   bbox_to_anchor=(0.45, 0.45, 0.45, 0.45),
+                   bbox_transform=ax1.transAxes, loc=10)
+'''
+3/24:
+# cwd = os.getcwd()
+cwd = '/home/xf28id2/Documents/ChengHung/20230508_DSE_upload/I_00uL/DFA_24_02'
+cal_files = glob.glob(cwd + '/**.cal')
+cal_files.sort()
+print(*cal_files, sep = '\n')  ## Print one element per line
+
+
+## Find the datafiles of 2D size distribution
+mtx_files = glob.glob(cwd + '/**.mtx')
+mtx_files.sort()
+print(*mtx_files, sep = '\n')  ## Print one element per line
+3/25:
+k = 0
+os.path.basename(cal_files[k])
+3/26:
+cal_fn = cal_files[k]
+
+if '_SPD#01' in cal_fn:
+    skiprows=0
+
+elif '_Best' in cal_fn:
+    skiprows=2
+
+df0 = pd.read_csv(cal_fn, header=None, skiprows=skiprows, delim_whitespace=True)
+df = df0.dropna(axis=1).rename(columns={0:'theta', 1:'obs', 2:'cal', 3:'cal1', 4:'cal2', 5:'bkg'})
+
+## Read **_plot2D.mtx into pandas dataframe
+df1 = pd.read_csv(mtx_files[0], skiprows=1, sep=' ', skipinitialspace=True)
+updated_labels = df1.columns.values.tolist()
+del updated_labels[0]
+updated_labels.append('None')
+df1.columns = updated_labels
+3/27: # df.head()
+3/28: # df1.head()
+3/29:
+f1, ax1 = plt.subplots(1, 1, figsize = (10, 6))
+data_range = 1200 #648 # < 12 degree
+ax1.plot(df.theta[:data_range], df.obs[:data_range], label='Observation', marker='o',color='dimgrey', fillstyle='none', linestyle='None', markersize=markersize)
+ax1.plot(df.theta[:data_range], df.cal[:data_range], 'r-', label='DSE Simulation', linewidth=linewidth)
+ax1.plot(df.theta[:data_range], df.bkg[:data_range], 'g-', label='Background', linewidth=linewidth)
+
+y_offset = 0
+difference = df.obs - df.cal + y_offset
+ax1.plot(df.theta[:data_range], difference[:data_range], 'b-', label='Difference', linewidth=linewidth)
+ax1.hlines(y=0+y_offset, xmin=df.theta[0], xmax=df.theta[data_range], color='k', linestyle='-')
+
+legend_properties = {'size':legendsize, 'weight':fontweight}
+ax1.legend(prop=legend_properties) #, bbox_to_anchor=(0.31, 0.30))
+
+# ax1.set_xticks([])
+ax1.tick_params(axis='x', direction='in', labelsize=labelsize)
+#plt.setp(ax1.get_xticklabels(), fontweight="bold")
+ax1.spines["bottom"].set_linewidth(spinewidth)
+# ax1.set_yticks([])
+ax1.spines["left"].set_linewidth(spinewidth)
+ax1.spines["top"].set_linewidth(spinewidth)
+ax1.spines["right"].set_linewidth(spinewidth)
+#ax1.spines['left'].set_visible(False)
+
+# imag_name = 'Best_cal_06-6.png'
+# plt.savefig(imag_name, dpi = 600,  transparent=True)
+
+'''
+## Plot **.mtx as an inset 2D plot in ax1
+from mpl_toolkits.axes_grid.inset_locator import inset_axes, InsetPosition
+## Method 1:
+ax2 = plt.axes(projection='3d')
+#ax2 = plt.axes([0,0,1,1])
+ip = InsetPosition(ax1, [0.45, 0.45, 0.45, 0.45])
+ax2.set_axes_locator(ip)
+## Method 2:
+ax2 = inset_axes(ax1, width="120%", height="120%",
+                   bbox_to_anchor=(0.45, 0.45, 0.45, 0.45),
+                   bbox_transform=ax1.transAxes, loc=10)
+'''
+ 4/1:
+import glob
+import os
+
+# import matplotlib as mpl
+import matplotlib.pyplot as plt
+import palettable.colorbrewer.diverging as pld
+
+import numpy as np
+import pandas as pd
+
+# from sklearn import preprocessing
+# from scipy import integrate  
+# import scipy.signal as scipy
+# from scipy.optimize import curve_fit
+
+%matplotlib widget
+ 4/2:
+# palette = pld.RdYlGn_4_r
+palette = pld.Spectral_10_r
+cmap = palette.mpl_colormap
+transparency = 0.7
+labelsize = 12
+spinewidth = 1.5
+fontsize = 12
+legendsize = 12
+fontweight = 'regular'
+labelpad = 6
+pad = 10
+linewidth = 2.2
+markersize = 6
+ 4/3: cmap
+ 4/4: plt.close('all')
+ 4/5:
+# cwd = os.getcwd()
+cwd = '/home/xf28id2/Documents/ChengHung/20230508_DSE_upload/I_00uL/DFA_24_02'
+cal_files = glob.glob(cwd + '/**.cal')
+cal_files.sort()
+print(*cal_files, sep = '\n')  ## Print one element per line
+
+
+## Find the datafiles of 2D size distribution
+mtx_files = glob.glob(cwd + '/**.mtx')
+mtx_files.sort()
+print(*mtx_files, sep = '\n')  ## Print one element per line
+ 4/6:
+k = 0
+os.path.basename(cal_files[k])
+ 4/7:
+cal_fn = cal_files[k]
+
+if '_SPD#01' in cal_fn:
+    skiprows=0
+
+elif '_Best' in cal_fn:
+    skiprows=2
+
+df0 = pd.read_csv(cal_fn, header=None, skiprows=skiprows, delim_whitespace=True)
+df = df0.dropna(axis=1).rename(columns={0:'theta', 1:'obs', 2:'cal', 3:'cal1', 4:'cal2', 5:'bkg'})
+
+## Read **_plot2D.mtx into pandas dataframe
+df1 = pd.read_csv(mtx_files[0], skiprows=1, sep=' ', skipinitialspace=True)
+updated_labels = df1.columns.values.tolist()
+del updated_labels[0]
+updated_labels.append('None')
+df1.columns = updated_labels
+ 4/8: # df.head()
+ 4/9: # df1.head()
+4/10:
+f1, ax1 = plt.subplots(1, 1, figsize = (10, 6))
+data_range = 1200 #648 # < 12 degree
+ax1.plot(df.theta[:data_range], df.obs[:data_range], label='Observation', marker='o',color='dimgrey', fillstyle='none', linestyle='None', markersize=markersize)
+ax1.plot(df.theta[:data_range], df.cal[:data_range], 'r-', label='DSE Simulation', linewidth=linewidth)
+ax1.plot(df.theta[:data_range], df.bkg[:data_range], 'g-', label='Background', linewidth=linewidth)
+
+y_offset = 0
+difference = df.obs - df.cal + y_offset
+ax1.plot(df.theta[:data_range], difference[:data_range], 'b-', label='Difference', linewidth=linewidth)
+ax1.hlines(y=0+y_offset, xmin=df.theta[0], xmax=df.theta[data_range], color='k', linestyle='-')
+
+legend_properties = {'size':legendsize, 'weight':fontweight}
+ax1.legend(prop=legend_properties) #, bbox_to_anchor=(0.31, 0.30))
+
+# ax1.set_xticks([])
+ax1.tick_params(axis='x', direction='in', labelsize=labelsize)
+#plt.setp(ax1.get_xticklabels(), fontweight="bold")
+ax1.spines["bottom"].set_linewidth(spinewidth)
+# ax1.set_yticks([])
+ax1.spines["left"].set_linewidth(spinewidth)
+ax1.spines["top"].set_linewidth(spinewidth)
+ax1.spines["right"].set_linewidth(spinewidth)
+#ax1.spines['left'].set_visible(False)
+
+# imag_name = 'Best_cal_06-6.png'
+# plt.savefig(imag_name, dpi = 600,  transparent=True)
+
+'''
+## Plot **.mtx as an inset 2D plot in ax1
+from mpl_toolkits.axes_grid.inset_locator import inset_axes, InsetPosition
+## Method 1:
+ax2 = plt.axes(projection='3d')
+#ax2 = plt.axes([0,0,1,1])
+ip = InsetPosition(ax1, [0.45, 0.45, 0.45, 0.45])
+ax2.set_axes_locator(ip)
+## Method 2:
+ax2 = inset_axes(ax1, width="120%", height="120%",
+                   bbox_to_anchor=(0.45, 0.45, 0.45, 0.45),
+                   bbox_transform=ax1.transAxes, loc=10)
+'''
+4/11: df1.columns.values
+4/12:
+f2, ax2 = plt.subplots(1, 2, figsize = (10, 5), gridspec_kw={'width_ratios': [1,1]}, constrained_layout=True)
+# ax2.flatten()
+# titles = ['CsPbBr3_mp-56762901', 'CsPbI3_mp-112076802']
+# tick_step = [0.01, 0.08]
+
+titles = ['CsPbBr3_Topas_24']
+tick_step = [0.01]
+
+for i in range(len(titles)):
+# for i in range(1):
+    df_reshape = df1.pivot(index='Base_Diam.(e.c.)[nm]', columns='Height[nm]', values='Mass_Frac.')
+    
+    X = np.array(df_reshape.index)
+    Y = np.array(df_reshape.columns)
+    X, Y = np.meshgrid(Y, X)
+    Z = np.array(df_reshape)
+    Z[Z==0.0] = -0.01
+    # cs = ax2[i].contourf(X, Y, Z, cmap=cmap)
+    # cs = ax2[i].contourf(X, Y, Z, levels=36, cmap=cmap)
+    cs = ax2[i].contourf(X, Y, Z, vmax = 0.06, levels=36, cmap=cmap)
+    
+    ax2[i].set_title(titles[i]+'\n'+'Mass Distribution', {'fontsize': 14, 'fontweight': 'normal'})
+    #ax2[i].set_xticks([])
+    ax2[i].tick_params(axis='both', direction='in', labelsize=labelsize-4)
+    # ax2[i].set_yticks([])
+    # ax2[i].tick_params(axis='y', direction='in', labelsize=labelsize-4)
+    # ax2[i].set_zticks(np.arange(0.01, np.nanmax(Z), 0.02))
+    # ax2[i].tick_params(axis='z', direction='in', labelsize=labelsize-4)
+
+
+    # cbar = f2.colorbar(cs, shrink=1, aspect=20, ax=ax2[i])
+    # cbar.set_ticks(np.arange(0, np.nanmax(Z), tick_step[i]))
+    # cbar.ax.tick_params(labelsize=labelsize-6)
+
+
+cbar = f2.colorbar(cs, shrink=1, aspect=20)
+cbar.set_ticks(np.arange(0, np.nanmax(Z), tick_step[i]))
+cbar.ax.tick_params(labelsize=labelsize-6)    
+
+# ax2[0].set_xlim(1, 25)   ## L_c
+# ax2[0].set_ylim(1.2, 25)   ## D_ab
+    
+# ax2[1].set_xlim(1, 5)   ## L_c
+# ax2[1].set_ylim(1.2, 5)   ## D_ab
+
+imag_name = 'ZnI2_64uL_min_DFA_01 size_bar.png'
+# plt.savefig(cwd+imag_name, dpi = 600,  transparent=True)
+4/13: np.nanmax(Z)
+4/14: # df_reshape
+4/15:
+# fn_cal = cwd + '/CsPbBr3_20211114-120845_DSE_0608_06-6.xy'
+# fn_bkg = cwd + '/Tol_Ol_Solvent_20211113-184203_DSE_0608_06-6.xy'
+
+# df_cal = pd.DataFrame()
+# df_cal['tth'] = df['theta']
+# df_cal['Int_cal'] = df['cal']
+
+# df_bkg = pd.DataFrame()
+# df_bkg['tth'] = df['theta']
+# df_bkg['Int_bkg'] = df['bkg']
+
+# df_cal.to_csv(fn_cal, sep=' ', header=False, index=False, float_format='{:.8e}'.format)
+# df_bkg.to_csv(fn_bkg, sep=' ', header=False, index=False, float_format='{:.8e}'.format)
+4/16:
+f2, ax2 = plt.subplots(1, 2, figsize = (10, 5), gridspec_kw={'width_ratios': [1,1]}, constrained_layout=True)
+# ax2.flatten()
+# titles = ['CsPbBr3_mp-56762901', 'CsPbI3_mp-112076802']
+# tick_step = [0.01, 0.08]
+
+titles = ['CsPbBr3_Topas_24']
+tick_step = [0.01]
+
+for i in range(len(titles)):
+# for i in range(1):
+    df_reshape = df1.pivot(index='Base_Diam.(e.c.)[nm]', columns='Height[nm]', values='Mass_Frac.')
+    
+    X = np.array(df_reshape.index)
+    Y = np.array(df_reshape.columns)
+    X, Y = np.meshgrid(Y, X)
+    Z = np.array(df_reshape)
+    Z[Z==0.0] = -0.01
+    # cs = ax2[i].contourf(X, Y, Z, cmap=cmap)
+    # cs = ax2[i].contourf(X, Y, Z, levels=36, cmap=cmap)
+    cs = ax2[i].contourf(X, Y, Z, vmax = 0.113, levels=36, cmap=cmap)
+    
+    ax2[i].set_title(titles[i]+'\n'+'Mass Distribution', {'fontsize': 14, 'fontweight': 'normal'})
+    #ax2[i].set_xticks([])
+    ax2[i].tick_params(axis='both', direction='in', labelsize=labelsize-4)
+    # ax2[i].set_yticks([])
+    # ax2[i].tick_params(axis='y', direction='in', labelsize=labelsize-4)
+    # ax2[i].set_zticks(np.arange(0.01, np.nanmax(Z), 0.02))
+    # ax2[i].tick_params(axis='z', direction='in', labelsize=labelsize-4)
+
+
+    # cbar = f2.colorbar(cs, shrink=1, aspect=20, ax=ax2[i])
+    # cbar.set_ticks(np.arange(0, np.nanmax(Z), tick_step[i]))
+    # cbar.ax.tick_params(labelsize=labelsize-6)
+
+
+cbar = f2.colorbar(cs, shrink=1, aspect=20)
+cbar.set_ticks(np.arange(0, np.nanmax(Z), tick_step[i]))
+cbar.ax.tick_params(labelsize=labelsize-6)    
+
+# ax2[0].set_xlim(1, 25)   ## L_c
+# ax2[0].set_ylim(1.2, 25)   ## D_ab
+    
+# ax2[1].set_xlim(1, 5)   ## L_c
+# ax2[1].set_ylim(1.2, 5)   ## D_ab
+
+imag_name = 'ZnI2_64uL_min_DFA_01 size_bar.png'
+# plt.savefig(cwd+imag_name, dpi = 600,  transparent=True)
+ 5/1: 22796.6251/3600
+ 5/2: 16580.12390/3600
+ 6/1:
+import nslsii
+
+nslsii.configure_base(
+    get_ipython().user_ns, "xpd-ldrd20-31", bec_derivative=True, ipython_logging=False
+)
+
+from ophyd.sim import noisy_det
+RE(count([noisy_det],2))
+
+db[-1].start
+ 9/1:
+from bloptools.bayesian import Agent, DOF, Objective
+
+dofs = [
+    DOF(name="infusion_rate_1", limits=(30, 150)),
+    DOF(name="infusion_rate_2", limits=(30, 150)),
+    # DOF(name="infusion_rate_3", limits=(1500, 2000)),
+]
+
+objectives = [
+    Objective(name="Peak emission", key="peak_emission", target=500),
+    Objective(name="Peak width", key="peak_fwhm", target="min"),
+    Objective(name="Quantum yield", key="plqy", target="max"),
+]
+
+
+# objectives = [
+#     Objective(name="Peak emission", key="peak_emission", target=525, units="nm"),
+#     Objective(name="Peak width", key="peak_fwhm", minimize=True, units="nm"),
+#     Objective(name="Quantum yield", key="plqy"),
+# ]
+
+USE_AGENT = False
+agent = Agent(dofs=dofs, objectives=objectives, db=None, verbose=True)
+ 9/2: bloptools
+10/1:
+from bloptools.bayesian import Agent, DOF, Objective
+
+dofs = [
+    DOF(name="infusion_rate_1", limits=(30, 150)),
+    DOF(name="infusion_rate_2", limits=(30, 150)),
+    # DOF(name="infusion_rate_3", limits=(1500, 2000)),
+]
+
+objectives = [
+    Objective(name="Peak emission", key="peak_emission", target=500),
+    Objective(name="Peak width", key="peak_fwhm", target="min"),
+    Objective(name="Quantum yield", key="plqy", target="max"),
+]
+
+
+# objectives = [
+#     Objective(name="Peak emission", key="peak_emission", target=525, units="nm"),
+#     Objective(name="Peak width", key="peak_fwhm", minimize=True, units="nm"),
+#     Objective(name="Quantum yield", key="plqy"),
+# ]
+
+USE_AGENT = False
+agent = Agent(dofs=dofs, objectives=objectives, db=None, verbose=True)
+10/2: agent
+10/3:
+import sys
+sys.path.insert(0, "/home/xf28id2/src/bloptools")
+
+from bloptools.bayesian import Agent, DOF, Objective
+
+dofs = [
+    DOF(name="infusion_rate_1", limits=(30, 150)),
+    DOF(name="infusion_rate_2", limits=(30, 150)),
+    # DOF(name="infusion_rate_3", limits=(1500, 2000)),
+]
+
+objectives = [
+    Objective(description="Peak emission", name="peak_emission", target=500),
+    Objective(description="Peak width", name="peak_fwhm", target="min"),
+    Objective(description="Quantum yield", name="plqy", target="max"),
+]
+
+
+# objectives = [
+#     Objective(name="Peak emission", key="peak_emission", target=525, units="nm"),
+#     Objective(name="Peak width", key="peak_fwhm", minimize=True, units="nm"),
+#     Objective(name="Quantum yield", key="plqy"),
+# ]
+
+USE_AGENT = False
+agent = Agent(dofs=dofs, objectives=objectives, db=None, verbose=True)
+10/4: agent
+10/5: agent.tell?
+10/6: import json
+10/7:
+with open("/home/xf28id2/data/140631_1c4a0a69.json", "r") as f:
+    x = json.load(f)
+10/8: x
+10/9: agent.tell(x)
+10/10:
+with open("/home/xf28id2/data/140631_1c4a0a69.json", "r") as f:
+    data = json.load(f)
+10/11: x = {k:data[k] for k in agent.dofs.names}
+10/12: x
+10/13: y = {k:data[k] for k in agent.objectives.names}
+10/14:
+dofs = [
+    DOF(name="infusion_rate_1", limits=(30, 150)),
+    DOF(name="infusion_rate_2", limits=(30, 150)),
+    # DOF(name="infusion_rate_3", limits=(1500, 2000)),
+]
+
+objectives = [
+    Objective(description="Peak emission", name="Peak", target=500),
+    Objective(description="Peak width", name="FWHM", target="min"),
+    Objective(description="Quantum yield", name="PLQY", target="max"),
+]
+
+
+# objectives = [
+#     Objective(name="Peak emission", key="peak_emission", target=525, units="nm"),
+#     Objective(name="Peak width", key="peak_fwhm", minimize=True, units="nm"),
+#     Objective(name="Quantum yield", key="plqy"),
+# ]
+
+USE_AGENT = False
+agent = Agent(dofs=dofs, objectives=objectives, db=None, verbose=True)
+10/15: x = {k:data[k] for k in agent.dofs.names}
+10/16: y = {k:data[k] for k in agent.objectives.names}
+10/17: agent.tell(x=x, y=y)
+10/18: x = {k:[data[k]] for k in agent.dofs.names}
+10/19: y = {k:[data[k]] for k in agent.objectives.names}
+10/20: agent.tell(x=x, y=y)
+10/21: agent.table
+10/22: import glob
+10/23: filepaths = glob.glob("/home/xf28id2/data/*.json")
+10/24: filepaths
+10/25:
+for fp in filepaths:
+    with open(fp, "r") as f:
+        data = json.load(f)
+    x = {k:[data[k]] for k in agent.dofs.names}
+    y = {k:data[k] for k in agent.objectives.names}
+10/26: fp
+10/27: data
+10/28: filepaths = glob.glob("/home/xf28id2/data/*.json")
+10/29: agent.reset()
+10/30: agent = Agent(dofs=dofs, objectives=objectives, db=None, verbose=True)
+10/31:
+for fp in filepaths:
+    with open(fp, "r") as f:
+        data = json.load(f)
+    x = {k:[data[k]] for k in agent.dofs.names}
+    y = {k:data[k] for k in agent.objectives.names}
+10/32: agent.table
+10/33:
+for fp in filepaths:
+    with open(fp, "r") as f:
+        data = json.load(f)
+    x = {k:[data[k]] for k in agent.dofs.names}
+    y = {k:[data[k]] for k in agent.objectives.names}
+    agent.tell(x=x, y=y)
+10/34: agent.table
+10/35: agent.plot_objectives()
+10/36: plt.show()
+10/37: import matplotlib.pyplot as plt
+10/38: plt.show()
+10/39: filepaths = glob.glob("/home/xf28id2/data/*.json")
+10/40: len(filepaths)
+10/41: agent.reset()
+10/42: filepaths = glob.glob("/home/xf28id2/data/*.json")
+10/43:
+for fp in filepaths:
+    with open(fp, "r") as f:
+        data = json.load(f)
+    x = {k:[data[k]] for k in agent.dofs.names}
+    y = {k:[data[k]] for k in agent.objectives.names}
+    agent.tell(x=x, y=y)
+10/44: agent.plot_objectives()
+10/45: plt.show()
+10/46: from matplotlib import rcParams
+10/47: rcParams["font.size"]
+10/48: rcParams["font.size"] = 4
+10/49: agent.plot_objectives()
+10/50: plt.show()
+10/51: agent.objectives
+10/52: agent.ask("qei")
+10/53: agent.dofs
+10/54: agent.dofs[0].limits
+10/55: agent.dofs[0].limits = (40, 140)
+10/56: agent.dofs[1].limits = (40, 140)
+10/57: agent.ask("qei")
+10/58: agent.objectives
+10/59: agent.objectives[0].target
+10/60: agent.objectives[0].target = 520
+10/61: agent.objectives
+10/62: agent.ask("qei")
+10/63: agent.objectives
+10/64: agent.objectives[0].weight = 2
+10/65: agent.objectives[2].weight = 1e2
+10/66: agent.objectives
+10/67: agent.ask("qei")
+10/68: filepaths = glob.glob("/home/xf28id2/data/*.json")
+10/69: len(filepaths)
+10/70: agent.reset()
+10/71: agent
+10/72: agent.table
+10/73:
+import sys
+sys.path.insert(0, "/home/xf28id2/src/bloptools")
+
+from bloptools.bayesian import Agent, DOF, Objective
+
+dofs = [
+    DOF(description="CsPb(oleate)3", name="infusion_rate_1", limits=(30, 150)),
+    DOF(description="TOABr", name="infusion_rate_2", limits=(30, 150)),
+    # DOF(name="infusion_rate_3", limits=(1500, 2000)),
+]
+
+objectives = [
+    Objective(description="Peak emission", name="Peak", target=520, weight=2),
+    Objective(description="Peak width", name="FWHM", target="min", weight=1),
+    Objective(description="Quantum yield", name="PLQY", target="max", weight=1e2),
+]
+
+
+# objectives = [
+#     Objective(name="Peak emission", key="peak_emission", target=525, units="nm"),
+#     Objective(name="Peak width", key="peak_fwhm", minimize=True, units="nm"),
+#     Objective(name="Quantum yield", key="plqy"),
+# ]
+
+USE_AGENT = False
+agent = Agent(dofs=dofs, objectives=objectives, db=None, verbose=True)
+10/74: agent
+10/75: agent.dofs
+10/76: agent.tell?
+10/77: filepaths = glob.glob("/home/xf28id2/data/*.json")
+10/78: len(filepaths)
+10/79:
+for fp in filepaths:
+    with open(fp, "r") as f:
+        data = json.load(f)
+    x = {k:[data[k]] for k in agent.dofs.names}
+    y = {k:[data[k]] for k in agent.objectives.names}
+    agent.tell(x=x, y=y)
+10/80: agent.ask("qei")
+10/81: agent.plot_objectives()
+10/82: plt.show()
+10/83: agent.objectives
+10/84: agent.objectives.labels
+10/85: agent.objectives[0].label
+10/86: agent.ask("qei")
+10/87: agent.objectives[0]
+10/88: agent.objectives[0].model
+10/89: agent.plot_acquisition(); plt.show()
+10/90: agent.reset()
+10/91:
+for fp in np.array(filepaths)[[0, -1]]:
+    with open(fp, "r") as f:
+        data = json.load(f)
+    x = {k:[data[k]] for k in agent.dofs.names}
+    y = {k:[data[k]] for k in agent.objectives.names}
+    agent.tell(x=x, y=y)
+10/92: import numpy as np
+10/93:
+for fp in np.array(filepaths)[[0, -1]]:
+    with open(fp, "r") as f:
+        data = json.load(f)
+    x = {k:[data[k]] for k in agent.dofs.names}
+    y = {k:[data[k]] for k in agent.objectives.names}
+    agent.tell(x=x, y=y)
+10/94: agent.plot_objectives(); plt.show()
+10/95: agent._construct_models()
+10/96: agent.plot_objectives(); plt.show()
+10/97: agent.save_data()
+10/98: !mkdir -p ~/blop/data/init.h5
+10/99: !ls ~/blop/data/init.h5
+10/100: rm ~/blop/data/init.h5
+10/101: rm -r ~/blop/data/init.h5
+10/102: !mkdir -p ~/blop/data
+10/103: agent.save_data("~/blop/data/init.h5")
+10/104: agent.reset()
+10/105: agent.table
+10/106: agent.load_data("~/blop/data/init.h5")
+10/107: agent.table
+10/108: agent._construct_models()
+10/109: agent.plot_objectives(); plt.show()
+10/110: agent.reset()
+10/111:
+for fp in np.array(filepaths):
+    with open(fp, "r") as f:
+        data = json.load(f)
+    x = {k:[data[k]] for k in agent.dofs.names}
+    y = {k:[data[k]] for k in agent.objectives.names}
+    agent.tell(x=x, y=y)
+10/112: agent.save_data("~/blop/data/init.h5")
+10/113: agent.plot_objectives(); plt.show()
+10/114: %history -g -f /home/xf28id2/Documents/ChengHung/test_agent.txt
+10/115: agent.plot_objectives(); plt.show()
+10/116: agent.plot_objectives(); plt.show()
+10/117: agent.reset()
+10/118: agent.dofs
+10/119: agent.load_data("~/blop/data/init.h5")
+10/120: agent.table
+10/121: agent.ask("qei")
+10/122: agent.n_last_trained
+10/123: agent.reset()
+11/1: agent = Agent(dofs=dofs, objectives=objectives, db=None, verbose=True)
+11/2:
+dofs = [
+    DOF(name="infusion_rate_1", limits=(30, 150)),
+    DOF(name="infusion_rate_2", limits=(30, 150)),
+    # DOF(name="infusion_rate_3", limits=(1500, 2000)),
+]
+
+objectives = [
+    Objective(description="Peak emission", name="Peak", target=500),
+    Objective(description="Peak width", name="FWHM", target="min"),
+    Objective(description="Quantum yield", name="PLQY", target="max"),
+]
+
+
+# objectives = [
+#     Objective(name="Peak emission", key="peak_emission", target=525, units="nm"),
+#     Objective(name="Peak width", key="peak_fwhm", minimize=True, units="nm"),
+#     Objective(name="Quantum yield", key="plqy"),
+# ]
+
+USE_AGENT = False
+agent = Agent(dofs=dofs, objectives=objectives, db=None, verbose=True)
+11/3: from bloptools.bayesian import Agent, DOF, Objective
+11/4:
+dofs = [
+    DOF(name="infusion_rate_1", limits=(30, 150)),
+    DOF(name="infusion_rate_2", limits=(30, 150)),
+    # DOF(name="infusion_rate_3", limits=(1500, 2000)),
+]
+
+objectives = [
+    Objective(description="Peak emission", name="Peak", target=500),
+    Objective(description="Peak width", name="FWHM", target="min"),
+    Objective(description="Quantum yield", name="PLQY", target="max"),
+]
+
+
+# objectives = [
+#     Objective(name="Peak emission", key="peak_emission", target=525, units="nm"),
+#     Objective(name="Peak width", key="peak_fwhm", minimize=True, units="nm"),
+#     Objective(name="Quantum yield", key="plqy"),
+# ]
+
+USE_AGENT = False
+agent = Agent(dofs=dofs, objectives=objectives, db=None, verbose=True)
+11/5: agent.dofs
+11/6: agent.load_data("~/blop/data/init.h5")
+11/7: agent.ask("qei")
+11/8: agent.ask("qei")
+11/9: agent.reset()
+11/10: data = pd.read_hdf("~/blop/data/init.h5", key="table")
+11/11: import pandas as pd
+11/12: df = pd.read_hdf("~/blop/data/init.h5", key="table")
+11/13: df
+11/14: df.iloc[0].to_dict()
+11/15: data = df.iloc[0].to_dict()
+11/16: agent.tell(data=data)
+11/17: agent.table
+11/18: new_points, _ = agent.ask("qei", n=1)
+11/19: agent.load_data("~/blop/data/init.h5")
+11/20: new_points, _ = agent.ask("qei", n=1)
+11/21: new_points
+11/22: new_points, _ = agent.ask("qei", n=6)
+11/23: plt.scatter(*new_points.T)
+11/24: import matplotlib.pyplot as plt
+11/25: plt.scatter(*new_points.T); plt.show()
+11/26: agent.plot_objectives(); plt.show()
+11/27: from matplotlib import rcParams
+11/28: rcParams["font.size"] = 4
+11/29: agent.plot_objectives(); plt.show()
+11/30: agent.dofs
+11/31: agent.plot_objectives(); plt.show()
+11/32: agent.plot_acquisition(); plt.show()
+11/33: agent.plot_objectives(); plt.show()
+11/34: agent.objectives
+11/35:
+dofs = [
+    DOF(description="CsPb(oleate)3", name="infusion_rate_1", limits=(10, 170)),
+    DOF(description="TOABr", name="infusion_rate_2", limits=(10, 170)),
+    # DOF(name="infusion_rate_3", limits=(1500, 2000)),
+]
+
+objectives = [
+    Objective(description="Peak emission", name="Peak", target=520, weight=2),
+    Objective(description="Peak width", name="FWHM", target="min", weight=1),
+    Objective(description="Quantum yield", name="PLQY", target="max", weight=1e2),
+]
+
+
+# objectives = [
+#     Objective(name="Peak emission", key="peak_emission", target=525, units="nm"),
+#     Objective(name="Peak width", key="peak_fwhm", minimize=True, units="nm"),
+#     Objective(name="Quantum yield", key="plqy"),
+# ]
+
+USE_AGENT = False
+
+agent = Agent(dofs=dofs, objectives=objectives, db=None, verbose=True)
+agent.load_data("~/blop/data/init.h5")
+11/36: agent.objectives
+11/37: agent.ask("qei")
+11/38: agent.dofs
+11/39: agent.plot_acquisition(); plt.show()
+11/40: agent.plot_objectives(); plt.show()
+11/41: agent.table
+11/42: agent.forget?
+11/43: agent.forget(3)
+11/44: agent.plot_objectives(); plt.show()
+11/45: agent.plot_acquisition(); plt.show()
+11/46: agent.ask("qei", n=6)
+12/1: %run -i scripts/ask_agent_for_experiments.py
+12/2: %debug
+14/1: %run -i scripts/ask_agent_for_experiments.py
+14/2: agent.table
+14/3: agent
+14/4: agent.table
+   1: import glob
+   2: import pandas as pd
+   3: filepaths = glob.glob("/home/xf28id2/data/*.json")
+   4:
+df = pd.DataFrame()
+for fp in np.array(filepaths):
+    with open(fp, "r") as f:
+        data = json.load(f)
+    entry = pd.DataFrame(data)
+    df = pd.concat([df, entry])
+   5: import numpy as np
+   6:
+df = pd.DataFrame()
+for fp in np.array(filepaths):
+    with open(fp, "r") as f:
+        data = json.load(f)
+    entry = pd.DataFrame(data)
+    df = pd.concat([df, entry])
+   7: import json
+   8:
+df = pd.DataFrame()
+for fp in np.array(filepaths):
+    with open(fp, "r") as f:
+        data = json.load(f)
+    entry = pd.DataFrame(data)
+    df = pd.concat([df, entry])
+   9: df
+  10: entry
+  11: data
+  12: keys = ["infuse_rate_1", "infuse_rate_2", "Peak", "FWHM", "PLQY"]
+  13:
+df = pd.DataFrame()
+for fp in np.array(filepaths):
+    with open(fp, "r") as f:
+        data = json.load(f)
+    entry = pd.DataFrame({k:v for k, v in data.items() if k in keys})
+    df = pd.concat([df, entry])
+  14: data
+  15: entry
+  16: {k:v for k, v in data.items() if k in keys}
+  17:
+df = pd.DataFrame()
+for idx, fp in enumerate(filepaths):
+    with open(fp, "r") as f:
+        data = json.load(f)
+    entry = pd.DataFrame({k:[v] for k, v in data.items() if k in keys})
+    df = pd.concat([df, entry])
+  18: df
+  19:
+df = pd.DataFrame()
+for idx, fp in enumerate(filepaths):
+    with open(fp, "r") as f:
+        data = json.load(f)
+    entry = pd.DataFrame({k:[v] for k, v in data.items() if k in keys})
+    df = pd.concat([df, entry])
+df.index = np.arange(len(df))
+  20: df
+  21: df.to_csv("/home/xf28id2/data/all_data.csv")
+  22: keys
+  23: data
+  24: keys = ["infusion_rate_1", "infusion_rate_2", "Peak", "FWHM", "PLQY"]
+  25:
+df = pd.DataFrame()
+for idx, fp in enumerate(filepaths):
+    with open(fp, "r") as f:
+        data = json.load(f)
+    entry = pd.DataFrame({k:[v] for k, v in data.items() if k in keys})
+    df = pd.concat([df, entry])
+df.index = np.arange(len(df))
+  26: df
+  27: df.dtypes
+  28: df.to_hdf("/home/xf28id2/data/all_data.csv", key="table")
+  29: df.to_hdf("/home/xf28id2/data/all_data.h5", key="table")
+  30: df
+  31: from bloptools.bayesian import Agent, DOF, Objective
+  32: sys.path.insert(0, "/home/xf28id2/src/bloptools")
+  33: import sys
+  34: sys.path.insert(0, "/home/xf28id2/src/bloptools")
+  35: from bloptools.bayesian import Agent, DOF, Objective
+  36: del bloptools
+  37: sys.path
+  38: import bloptools
+  39: bloptools.__file__
+  40: del bloptools
+  41: import bloptools
+  42: bloptools.__file__
+16/1:
+import sys
+sys.path.insert(0, "/home/xf28id2/src/bloptools")
+
+from bloptools.bayesian import Agent, DOF, Objective
+
+dofs = [
+    DOF(description="CsPb(oleate)3", name="infusion_rate_1", limits=(10, 170)),
+    DOF(description="TOABr", name="infusion_rate_2", limits=(10, 170)),
+    DOF(description="ZnI2", name="infusion_rate_3", limits=(10, 170)),
+]
+
+objectives = [
+    Objective(description="Peak emission", name="Peak", target=640, weight=2),
+    Objective(description="Peak width", name="FWHM", target="min", weight=1),
+    Objective(description="Quantum yield", name="PLQY", target="max", weight=1e2),
+]
+
+
+USE_AGENT = True
+agent_iterate = True
+
+agent = Agent(dofs=dofs, objectives=objectives, db=None, verbose=True)
+16/2: agent.load_data("/home/xf28id2/data/all_data.h5")
+16/3:
+import sys
+sys.path.insert(0, "/home/xf28id2/src/bloptools")
+
+from bloptools.bayesian import Agent, DOF, Objective
+
+dofs = [
+    DOF(description="CsPb(oleate)3", name="infusion_rate_1", limits=(10, 170)),
+    DOF(description="TOABr", name="infusion_rate_2", limits=(10, 170)),
+    #DOF(description="ZnI2", name="infusion_rate_3", limits=(10, 170)),
+]
+
+objectives = [
+    Objective(description="Peak emission", name="Peak", target=640, weight=2),
+    Objective(description="Peak width", name="FWHM", target="min", weight=1),
+    Objective(description="Quantum yield", name="PLQY", target="max", weight=1e2),
+]
+
+
+USE_AGENT = True
+agent_iterate = True
+
+agent = Agent(dofs=dofs, objectives=objectives, db=None, verbose=True)
+16/4: agent.load_data("/home/xf28id2/data/all_data.h5")
+16/5: agent.table
+16/6: agent.plot_objectives(); plt.show()
+16/7: import matplotlib.pyplot as plt
+16/8: agent.plot_objectives(); plt.show()
+16/9: from matplotlib import rcParams
+16/10: rcParams["font.size"] = 4
+16/11: agent.plot_objectives(); plt.show()
+16/12: agent.objectives
+16/13: agent.objectives[0].limits = (480, 540)
+16/14: agent.objectives
+16/15: agent.objectives[0].target = 520
+16/16: agent
+16/17: agent.
+16/18: agent.objectives
+16/19: agent.objectives[1].limits = (0, 45)
+16/20: agent.plot_objectives(); plt.show()
+16/21: agent.objectives
+16/22: agent.objectives[0].min_snr = 5
+16/23: agent.objectives[1].min_snr = 5
+16/24: agent.objectives[2].min_snr = 5
+16/25: agent.plot_objectives(); plt.show()
+16/26: agent.objectives
+16/27: agent._construct_models()
+16/28: agent.plot_objectives(); plt.show()
+  43: data
+  44: from bloptools.bayesian.devices import TiME
+16/29: agent.ask("qei", n=6)
+16/30: agent.ask("qei", n=2)
+16/31: agent.dofs
+16/32: agent.plot_objectives(); plt.show()
+  45:
+df = pd.DataFrame()
+for idx, fp in enumerate(filepaths):
+    with open(fp, "r") as f:
+        data = json.load(f)
+    entry = pd.DataFrame({k:[v] for k, v in data.items() if k in keys})
+    df = pd.concat([df, entry])
+df.index = np.arange(len(df))
+  46: keys = ["infusion_rate_1", "infusion_rate_2", "Peak", "FWHM", "PLQY", "uid]
+  47: keys = ["infusion_rate_1", "infusion_rate_2", "Peak", "FWHM", "PLQY", "uid", "time"]
+  48:
+df = pd.DataFrame()
+for idx, fp in enumerate(filepaths):
+    with open(fp, "r") as f:
+        data = json.load(f)
+    entry = pd.DataFrame({k:[v] for k, v in data.items() if k in keys})
+    df = pd.concat([df, entry])
+df.index = np.arange(len(df))
+  49: df
+  50: df.to_csv("/home/xf28id2/data/all_data.csv")
+16/33: !pwd
+16/34: %run -i ~/.ipython/profile_collection/scripts/ask_agent_for_experiments.py
+16/35: %run -i ~/.ipython/profile_collection/scripts/prepare_agnet.py
+16/36: %run -i ~/.ipython/profile_collection/scripts/prepare_agent.py
+16/37: %run -i ~/.ipython/profile_collection/scripts/prepare_agent.py
+16/38: agent.table
+16/39: agent.table.describe()
+16/40: plt.hist(agent.table.r_2.values)
+16/41: plt.show()
+16/42: %run -i ~/.ipython/profile_collection/scripts/prepare_agent.py
+16/43: agent.table.describe()
+16/44: plt.scatter(agent.table.infusion_rate_1, agent.table.infusion_rate_2, c=agent.table.r_2)
+16/45: plt.show()
+16/46: %run -i ~/.ipython/profile_collection/scripts/prepare_agent.py
+16/47: agent.plot_objectives(); plt.show()
+16/48: %run -i ~/.ipython/profile_collection/scripts/prepare_agent.py
+16/49: agent.plot_objectives(); plt.show()
+16/50: agent?
+16/51: dir(agent)
+16/52: agent.plot_constraint(); plt.show()
+16/53: agent.get_objective_targets(0)
+16/54: agent.get_objective_targets(1)
+16/55: agent.get_objective_targets(2)
+16/56: agent._construct_models()
+16/57: agent.plot_objectives(); plt.show()
+16/58: agent
+16/59: agent.objectives
+16/60: %run -i ~/.ipython/profile_collection/scripts/prepare_agent.py
+16/61: agent.plot_objectives(); plt.show()
+16/62: agent.plot_objectives(); plt.show()
+16/63: agent._construct_models()
+16/64: agent.plot_objectives(); plt.show()
+16/65: %run -i ~/.ipython/profile_collection/scripts/prepare_agent.py
+16/66: agent.plot_objectives(); plt.show()
+16/67: %run -i ~/.ipython/profile_collection/scripts/prepare_agent.py
+16/68: %run -i ~/.ipython/profile_collection/scripts/prepare_agent.py
+  51: %history -g -f /home/xf28id2/Documents/ChengHung/test_agent_data_to_df.txt
