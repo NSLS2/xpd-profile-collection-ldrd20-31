@@ -361,3 +361,44 @@ def color_idx_map_halides(peak_wavelength, halide_w_range=[400, 520, 660]):
     
     return color
 
+
+
+class plot_callback(open_figures):
+    
+    def __init__(self, 
+                 figure_labels = ['Test data']):
+        
+        self.fig = figure_labels
+        # self.uid = metadata_dic['uid']
+        # self.stream_name = metadata_dic['stream_name']
+        # self.qepro_dic = qepro_dic
+        # self.metadata_dic = metadata_dic
+        # self.wavelength = []
+        # self.output = []
+        self.fontsize = 9
+        self.legend_properties = {'weight':'regular', 'size':8}
+        # self.num = None
+        # self.date, self.time = _readable_time(metadata_dic['time'])
+        super().__init__(figure_labels)
+
+
+    def plot_data(self, x=None, y=None, label=None, title=None, clear_fig=False):
+
+        try: 
+            f = plt.figure(self.fig[0])
+        except (IndexError): 
+            f = plt.figure(self.fig[-1])
+        
+        plt.clf()
+        ax = f.gca()
+        ax.plot(x, y, label=label)
+
+        # if title == None:
+        #     title = f'{self.date}-{self.time}_{self.uid[0:8]}_{self.stream_name}'
+        
+        ax.set_title(title, fontdict={'size': self.fontsize})
+        ax.tick_params(axis='both', labelsize=self.fontsize)
+        ax.legend(prop=self.legend_properties)
+        f.canvas.manager.show()
+        f.canvas.flush_events()
+

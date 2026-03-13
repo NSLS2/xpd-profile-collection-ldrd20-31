@@ -18,7 +18,9 @@ pmp = importlib.import_module("pearson_multi_phase")
 ## Commment the below 3 lines for missing packages: diffpy.pdfgetx, blop on 2025/06/03 at 1LL09
 from diffpy.pdfgetx import PDFConfig
 gp = importlib.import_module("_get_pdf")
-build_agent = importlib.import_module("prepare_agent_pdf").build_agent
+
+## Comment below line due to error "Segmentation fault (core dumped)" on 2025/10/09 by CHL
+# build_agent = importlib.import_module("prepare_agent_pdf").build_agent
 import torch
 
 from tiled.client import from_uri
@@ -38,7 +40,7 @@ def _qserver_inputs():
     All the namesapce in this list should be found in the excel spreadsheet.
     """
     qserver_list=[
-            'zmq_control_addr', 'zmq_info_addr', 
+            'zmq_control_addr', 'zmq_info_addr', 'http_server_uri', 
             'dummy_qserver', 'is_iteration', 'pos', 'use_OAm', 
             'name_by_prefix', 'prefix', 'pump_list', 'precursor_list', 
             'syringe_mater_list', 'syringe_list', 'target_vol_list', 

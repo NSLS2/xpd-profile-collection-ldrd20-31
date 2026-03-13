@@ -2,11 +2,16 @@ import os
 import datetime
 import pprint
 import uuid
-# from bluesky_kafka import RemoteDispatcher
-from bluesky_kafka.consume import BasicConsumer
 import matplotlib.pyplot as plt
 import numpy as np
-from tiled.client import from_uri, from_profile
+
+# from bluesky_kafka import RemoteDispatcher
+# from bluesky_kafka.consume import BasicConsumer
+# from tiled.client import from_uri, from_profile
+
+from nslsii.re_subs import BlueskyDocStreamPrinter
+from bluesky.callbacks.zmq import Publisher, RemoteDispatcher
+
 
 # Set limit of numbers of open files
 import resource
@@ -19,9 +24,9 @@ sq = importlib.import_module("_synthesis_queue_RM")
 de = importlib.import_module("_data_export")
 # da = importlib.import_module("_data_analysis")
 plot_uvvis = importlib.import_module("_plot_helper").plot_uvvis
+plot_callback = importlib.import_module("_plot_helper").plot_callback
 
-# from bluesky_queueserver_api.zmq import REManagerAPI
-from bluesky_queueserver_api.http import REManagerAPI
+from bluesky_queueserver_api.zmq import REManagerAPI
 # from bluesky_queueserver_api import BPlan, BInst
 
 try:
@@ -51,22 +56,21 @@ kafka_process = LK.xlsx_to_inputs(LK._kafka_inputs(), xlsx_fn=xlsx_fn, sheet_nam
 kin = kafka_process.inputs
 
 ## Define RE Manager API as RM 
-# RM = REManagerAPI(zmq_control_addr=qin.zmq_control_addr[0], zmq_info_addr=qin.zmq_info_addr[0])
-RM = REManagerAPI(http_server_uri=qin.http_server_uri[0], zmq_info_addr=qin.zmq_info_addr[0])
+RM = REManagerAPI(zmq_control_addr=qin.zmq_control_addr[0], zmq_info_addr=qin.zmq_info_addr[0])
 
 ## Make the first prediction from kafka_process.agent
-if kin.use_1st_prediction[0]:
-    first_points = kafka_process.macro_agent(qserver_process, RM, check_target=False, is_1st=True)
-    rate_list = kafka_process.auto_rate_list(qin.pump_list, first_points, kin.fix_Br_ratio)
-    if kin.post_dilute[0]:
-        sum_active = sum(rate_list)
-        rate_list.append(sum_active/9)   ## append PF rate
-        rate_list.append(sum_active*kin.post_dilute[1])  ## append toluene rate
-    qin.infuse_rates = rate_list
-    print(f'\n{rate_list = }\n')
+# if kin.use_1st_prediction[0]:
+#     first_points = kafka_process.macro_agent(qserver_process, RM, check_target=False, is_1st=True)
+#     rate_list = kafka_process.auto_rate_list(qin.pump_list, first_points, kin.fix_Br_ratio)
+#     if kin.post_dilute[0]:
+#         sum_active = sum(rate_list)
+#         rate_list.append(sum_active/9)   ## append PF rate
+#         rate_list.append(sum_active*kin.post_dilute[1])  ## append toluene rate
+#     qin.infuse_rates = rate_list
+#     print(f'\n{rate_list = }\n')
 
 ## Import Qserver parameters to RE Manager
-sq.synthesis_queue_xlsx(qserver_process)
+# sq.synthesis_queue_xlsx(qserver_process)
 
 ## Auto name samples by prefix
 if qin.name_by_prefix[0]:
@@ -124,7 +128,7 @@ def print_kafka_messages(beamline_acronym_01,
 
     ## Assignt raw data tiled clients
     kin.beamline_acronym.append(beamline_acronym_01)
-    kafka_process.tiled_client = from_profile(beamline_acronym_01)
+    # kafka_process.tiled_client = from_profile(beamline_acronym_01)
     ## 'xpd-analysis' is not a catalog name so can't be accessed in databroker
 
     ## Append good/bad data folder to csv_path
@@ -137,10 +141,37 @@ def print_kafka_messages(beamline_acronym_01,
         pass
     
 
-    def print_message(consumer, doctype, doc):
-        name, message = doc
-        # print(f"contents: {pprint.pformat(message)}\n")
+    # def print_message(consumer, doctype, doc):
+    def print_message(name, doc):
+
+        # print( 
+        #     '\n\n\n\n\n\n\n'
+        #     f"{datetime.datetime.now().isoformat()} document: {name}\n" 
+        #     f"contents: {pprint.pformat(doc)}\n"
+        #     f"{doc.keys()}\n") 
+            
+        if (name == 'event') and ('filled' not in doc.keys()): 
+            print( 
+                '\n\n\n\n'
+                f"{datetime.datetime.now().isoformat()} document: {name}\n" 
+                f"contents: {pprint.pformat(doc)}\n"
+                f"{doc.keys()}\n"
+                ) 
+
+            c = plot_callback()
+            
+            x = doc['data']['chi_2theta']
+            y = doc['data']['chi_I']
+
+            c.plot_data(x=x, y=y, label=doc['uid'])
+
+            # f = plt.figure()
+            # ax = f.gca()
+            # ax.plot(x, y)
+            # f.canvas.draw_idle()
+
         
+        '''
         ## macro_00: print metadata when doc name is start and reset self.uid to an empty list
         ######### While document (name == 'start') and ('topic' in message) #########
         ##         Only print metadata when the docuemnt is from pdfstream         ##
@@ -166,7 +197,7 @@ def print_kafka_messages(beamline_acronym_01,
             print(f"\n\n{datetime.datetime.now().isoformat()} documents {name}\n"
                   f"contents: {pprint.pformat(message)}")
             
-            kafka_process.macro_01_stop_queue_uid(RM, message)
+            # kafka_process.macro_01_stop_queue_uid(RM, message)
 
             
             
@@ -177,11 +208,11 @@ def print_kafka_messages(beamline_acronym_01,
         ##        Get I(Q) data from the integral of 2D image by pdfstream          ##
         ##############################################################################
         elif (name == 'event') and ('topic' in message):
-            # print(f"\n\n\n{datetime.datetime.now().isoformat()} documents {name}\n"
-            #       f"contents: {pprint.pformat(message)}")
+            print(f"\n\n\n{datetime.datetime.now().isoformat()} documents {name}\n"
+                  f"contents: {pprint.pformat(message)}")
 
-            iq_I_uid  = message['data']['chi_I']
-            kafka_process.macro_02_get_iq(iq_I_uid)
+            # iq_I_uid  = message['data']['chi_I']
+            # kafka_process.macro_02_get_iq(iq_I_uid)
 
         
 
@@ -195,7 +226,7 @@ def print_kafka_messages(beamline_acronym_01,
             print(f"\n\n\n{datetime.datetime.now().isoformat()} documents {name}\n"
                   f"contents: {pprint.pformat(message)}"
             )
-            kafka_process.macro_03_get_uid()
+            # kafka_process.macro_03_get_uid()
 
 
         ##############  (name == 'stop') and uid_is_str and check_event_name   ##############
@@ -212,7 +243,6 @@ def print_kafka_messages(beamline_acronym_01,
         if (name == 'stop') and uid_is_str and check_event_name:
             print(f'\n**** start to export uid: {kafka_process.uid} ****\n')
             print(f'\n**** with stream name in {kafka_process.stream_list} ****\n')
-
 
             ## macro_04 ~ macro_07 or 08
             ####################  'scattering' in kafka_process.stream_list   ###################
@@ -406,27 +436,36 @@ def print_kafka_messages(beamline_acronym_01,
         kafka_process.uid = []
         kafka_process.stream_list = []
 
+        ## End of print_message(consumer, doctype, doc)
+
     
     kafka_config = _read_bluesky_kafka_config_file(config_file_path="/etc/bluesky/kafka.yml")
+
+    '''
 
     # this consumer should not be in a group with other consumers
     #   so generate a unique consumer group id for it
     unique_group_id = f"echo-{beamline_acronym_01}-{str(uuid.uuid4())[:8]}"
 
-    kafka_consumer = BasicConsumer(
-        topics=[f"{beamline_acronym_01}.bluesky.runengine.documents", 
-                f"{beamline_acronym_02}.bluesky.runengine.documents"],
-        bootstrap_servers=kafka_config["bootstrap_servers"],
-        group_id=unique_group_id,
-        consumer_config=kafka_config["runengine_producer_config"],
-        process_message = print_message,
-    )
+    ## 2025/10/09 Switch from Kafka to ZMO for LDRD autonomous by CHLin 
+    rd = RemoteDispatcher("ipc:///var/lib/pdfstream/pdfstream-output.sock")
+    rd.subscribe(print_message)
+    rd.start()
 
-    try:
-        kafka_consumer.start_polling(work_during_wait=lambda : plt.pause(.1))
-    except KeyboardInterrupt:
-        print('\nExiting Kafka consumer')
-        return()
+    # kafka_consumer = BasicConsumer(
+    #     topics=[f"{beamline_acronym_01}.bluesky.runengine.documents", 
+    #             f"{beamline_acronym_02}.bluesky.runengine.documents"],
+    #     bootstrap_servers=kafka_config["bootstrap_servers"],
+    #     group_id=unique_group_id,
+    #     consumer_config=kafka_config["runengine_producer_config"],
+    #     process_message = print_message,
+    # )
+
+    # try:
+    #     kafka_consumer.start_polling(work_during_wait=lambda : plt.pause(.1))
+    # except KeyboardInterrupt:
+    #     print('\nExiting Kafka consumer')
+    #     return()
 
 
 if __name__ == "__main__":
