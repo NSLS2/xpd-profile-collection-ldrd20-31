@@ -3,6 +3,8 @@ import numpy as np
 from _data_export import _readable_time
 import _data_analysis as da
 
+plt.ion()
+plt.rcParams["figure.raise_window"] = False
 
 class open_figures():
     def __init__(self, figure_labels):
@@ -80,7 +82,10 @@ class plot_uvvis(open_figures):
         ax.tick_params(axis='both', labelsize=self.fontsize)
         ax.legend(prop=self.legend_properties)
         f.canvas.manager.show()
+        f.canvas.draw_idle()
         f.canvas.flush_events()
+        
+        
 
 
     def plot_peak_fit(self, x, y, fit_function, popt, peak=None, fill_between=False):
@@ -127,7 +132,9 @@ class plot_uvvis(open_figures):
         ax.tick_params(axis='both', labelsize=self.fontsize)
         ax.legend(prop=self.legend_properties)
         f.canvas.manager.show()
+        f.canvas.draw_idle()
         f.canvas.flush_events()
+        
         
 
 
@@ -165,7 +172,9 @@ class plot_uvvis(open_figures):
         ax.legend(prop=self.legend_properties)
         ax.tick_params(axis='both', labelsize=self.fontsize)
         f.canvas.manager.show()
+        f.canvas.draw_idle()
         f.canvas.flush_events()
+
 
 
 
@@ -211,6 +220,7 @@ class plot_uvvis(open_figures):
         ax.tick_params(axis='both', labelsize=self.fontsize)
         ax.legend(prop=self.legend_properties)
         f.canvas.manager.show()
+        f.canvas.draw_idle()
         f.canvas.flush_events()
 
 
@@ -236,8 +246,9 @@ class plot_uvvis(open_figures):
         # # ax.set_title(f'{self.date}-{self.time}_{self.uid[0:8]}_{self.stream_name}_{fit_function.__name__}')
         ax.legend(prop=self.legend_properties)
         f.canvas.manager.show()
+        f.canvas.draw_idle()
         f.canvas.flush_events()
-        
+
         
         
     def plot_iq_to_gr(self, iq_df, gr_df, gr_fit=None, label=None):
@@ -272,6 +283,7 @@ class plot_uvvis(open_figures):
         #     title = f'{self.date}-{self.time}_{self.uid[0:8]}_{self.stream_name}'
         # ax.set_title(title)
         f.canvas.manager.show()
+        f.canvas.draw_idle()
         f.canvas.flush_events()
         
         
@@ -400,5 +412,6 @@ class plot_callback(open_figures):
         ax.tick_params(axis='both', labelsize=self.fontsize)
         ax.legend(prop=self.legend_properties)
         f.canvas.manager.show()
+        f.canvas.draw_idle()
         f.canvas.flush_events()
 

@@ -47,9 +47,9 @@ def build_agent(target_correlation=None, agent_data_path='/'):
         # Objective(description="Quantum yield", name="PLQY", target="max", transform="log", weight=1, max_noise=0.25),
         # Objective(description="Peak emission", name="Peak", target=(peak_down, peak_up), weight=100., max_noise=0.25), 
         # Objective(description="Peak width", name="FWHM", target="min", transform="log", weight=1,max_noise=0.25),
-        Objective(description="CsBr Conc", name="CsBr_wt", target='max', transform="log", weight=5, max_noise=0.25), 
+        Objective(description="CsBr Conc", name="CsBr_wt", target='min', transform="log", weight=1, max_noise=0.25), 
         Objective(description="Cs4PbBr6 Conc", name="Cs4PbBr6_wt", target='min', transform="log", weight=1, max_noise=0.25),
-        Objective(description="CsPbBr3 Conc", name="CsPbBr3_wt", target='min', transform="log", weight=1, max_noise=0.25), 
+        Objective(description="CsPbBr3 Conc", name="CsPbBr3_wt", target='max', transform="log", weight=5, max_noise=0.25), 
         # Objective(description="PLQY_RwInv", name="PLQY_RwInv", target='min', transform="log", weight=1, max_noise=0.25),
         # Objective(description="Rw inverse", name="Rw_inverse", target='max', transform="log", weight=1, max_noise=0.25), 
         # Objective(description="Rw", name="Rw", target='min', transform="log", weight=1, max_noise=0.25), 
@@ -91,6 +91,8 @@ def build_agent(target_correlation=None, agent_data_path='/'):
             y = {k:[df[k][i]] for k in agent.objectives.names}
             metadata = {}
             # metadata = {k:[data.get(k, None)] for k in metadata_keys}
+            print(f'\n{x = }')
+            print(f'{y = }\n')
             agent.tell(x=x, y=y, metadata=metadata, train=False, update_models=False)
         
     agent._construct_all_models()

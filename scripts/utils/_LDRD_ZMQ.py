@@ -9,26 +9,32 @@ import pprint
 import json
 from scipy import integrate
 
-sq = importlib.import_module("_synthesis_queue_RM")
-de = importlib.import_module("_data_export")
-da = importlib.import_module("_data_analysis")
-pc = importlib.import_module("_pdf_calculator")
-pmp = importlib.import_module("pearson_multi_phase")
+
+import _synthesis_queue_RM as sq
+import _data_export as de
+import _data_analysis as da
+import pearson_multi_phase as pmp
+
+# sq = importlib.import_module("_synthesis_queue_RM")
+# de = importlib.import_module("_data_export")
+# da = importlib.import_module("_data_analysis")
+# pc = importlib.import_module("_pdf_calculator")
+# pmp = importlib.import_module("pearson_multi_phase")
 
 ## Commment the below 3 lines for missing packages: diffpy.pdfgetx, blop on 2025/06/03 at 1LL09
-from diffpy.pdfgetx import PDFConfig
-gp = importlib.import_module("_get_pdf")
+# from diffpy.pdfgetx import PDFConfig
+# gp = importlib.import_module("_get_pdf")
 
 ## Comment below line due to error "Segmentation fault (core dumped)" on 2025/10/09 by CHL
 # build_agent = importlib.import_module("prepare_agent_pdf").build_agent
-import torch
+# import torch
 
-from tiled.client import from_uri
+from tiled.client import from_uri, from_profile
 from bluesky_queueserver_api.zmq import REManagerAPI
 from bluesky_queueserver_api import BPlan, BInst
 
 
-""" This module provides class for Qsever and Kafka.
+""" This module provides class for Qsever and ZMQ.
     Usually imported as LK.
 """
 
@@ -40,7 +46,7 @@ def _qserver_inputs():
     All the namesapce in this list should be found in the excel spreadsheet.
     """
     qserver_list=[
-            'zmq_control_addr', 'zmq_info_addr', 'http_server_uri', 
+            'zmq_control_addr', 'zmq_info_addr', 'http_server_uri', 'http_api_key', 
             'dummy_qserver', 'is_iteration', 'pos', 'use_OAm', 
             'name_by_prefix', 'prefix', 'pump_list', 'precursor_list', 
             'syringe_mater_list', 'syringe_list', 'target_vol_list', 
@@ -54,15 +60,15 @@ def _qserver_inputs():
     return qserver_list
 
 
-def _kafka_inputs():
-    """Define namespace for Kafka inputs
+def _zmq_inputs():
+    """Define namespace for ZMQ inputs
 
     Returns:
-        list: list for Kafka inputs
+        list: list for ZMQ inputs
     All the namesapce in this list should be found in the excel spreadsheet.
     """
     inputs_list=[
-            'dummy_kafka', 'csv_path', 'key_height', 'height', 'distance', 'PLQY', 
+            'dummy_zmq', 'csv_path', 'key_height', 'height', 'distance', 'PLQY', 
             'rate_label_dic_key', 'rate_label_dic_value', 'new_points_label', 
             'use_good_bad', 'post_dilute', 'fix_Br_ratio', 
             'write_agent_data', 'agent_data_path', 'build_agent', 
@@ -79,11 +85,11 @@ def _kafka_inputs():
 
 
 
-def _kafka_process():
-    """ Define namespace for variables processed in Kafka
+def _zmq_process():
+    """ Define namespace for variables processed in ZMQ
 
     Returns:
-        list: list for variables processed in Kafka
+        list: list for variables processed in ZMQ
     All the namesapce in this list should not be found in the excel spreadsheet.
     """
     process_list=[ 
@@ -124,7 +130,7 @@ class dic_to_inputs():
 
 
 class xlsx_to_inputs():
-    def __init__(self, parameters_list, xlsx_fn, sheet_name='inputs', is_kafka=False):
+    def __init__(self, parameters_list, xlsx_fn, sheet_name='inputs', is_zmq=False):
         """ Read the excel spreadsheet according to the sheet name into a dict
         Turn the dict read from excel into class attributes
 
@@ -132,8 +138,8 @@ class xlsx_to_inputs():
             parameters_list (list): list for namespace deined above
             xlsx_fn (str): full path if excel file
             sheet_name (str, optional): sheet name of the excel file. Defaults to 'inputs'.
-            is_kafka (bool, optional): if True, the namespace for the variables processed 
-                                        in Kafka will be turn into class attributes. Defaults to False.
+            is_zmq (bool, optional): if True, the namespace for the variables processed 
+                                        in ZMQ will be turn into class attributes. Defaults to False.
         """
         self.parameters_list = parameters_list
         self.from_xlsx = xlsx_fn
@@ -145,10 +151,11 @@ class xlsx_to_inputs():
         self.inputs = dic_to_inputs(self.print_dic, self.parameters_list)
 
         
-        if is_kafka:
-            ## set attributes of keys in _kafka_process() for processing data
-            for key in _kafka_process():
+        if is_zmq:
+            ## set attributes of keys in _zmq_process() for processing data
+            for key in _zmq_process():
                 setattr(self, key, [])
+                self.tiled_client = from_profile(self.inputs.beamline_acronym[0])
             
             try:
                 if self.inputs.build_agent[0]: 
@@ -190,11 +197,11 @@ class xlsx_to_inputs():
                 pass
 
 
-    def save_kafka_dict(self, home_path, reset_uid_catalog=True):
-        """ Save the selected variables processed in Kafka into a jason
+    def save_zmq_dict(self, home_path, reset_uid_catalog=True):
+        """ Save the selected variables processed in ZMQ into a jason
 
         Args:
-            home_path (str): directory to save json for Kafka dict
+            home_path (str): directory to save json for ZMQ dict
             reset_uid_catalog (bool, optional): if True, the selected varaibles will be reset to empty lists. Defaults to True.
         """
 
@@ -214,23 +221,23 @@ class xlsx_to_inputs():
                 'metadata_dic', 'pdf_property', 'optical_property', 
                 'agent_data', 'continue_iteration', 'finished', ]
         
-        kafka_process_dict = {}
+        zmq_process_dict = {}
         for key in key_to_save:
-            kafka_process_dict.update({key: getattr(self, key)})
+            zmq_process_dict.update({key: getattr(self, key)})
 
         with open(json_path, "w") as f:
-            json.dump(kafka_process_dict, f, indent=2)
+            json.dump(zmq_process_dict, f, indent=2)
             json.dump(self.print_dic, f, indent=2)
 
-        print(f"\nwrote kafka info to {home_path}\n")
+        print(f"\nwrote zqm info to {home_path}\n")
 
         if reset_uid_catalog:
-            self.reset_kafka_process(['uid_catalog'])
+            self.reset_zmq_process(['uid_catalog'])
     
     
     
     ## Reset attributes of key in keys to empty lists for next event
-    def reset_kafka_process(self, keys):
+    def reset_zmq_process(self, keys):
         for key in keys:
             setattr(self, key, [])
 
@@ -262,96 +269,96 @@ class xlsx_to_inputs():
 
 
 
-    def macro_agent(self, qserver_process, RM, check_target=False, is_1st=False):
-        """macro to build agent, make optimization, and update agent_data
+    # def macro_agent(self, qserver_process, RM, check_target=False, is_1st=False):
+    #     """macro to build agent, make optimization, and update agent_data
 
-        This macro will
-        1. Build agent from agent_data_path = self.inputs.agent_data_path[0]
-        2. Make optimization
-        2. Update self.agent_data with target, predicted mean & standard deviation
-            self.agent_data['agent_target']:       agent_target
-            self.agent_data['posterior_mean']:     post_mean
-            self.agent_data['posterior_stddev']:   post_stddev
-        3. Check if meet target. If meet, wash loop; if not, keep iteration.
-        4. Update self.continue_iteration
+    #     This macro will
+    #     1. Build agent from agent_data_path = self.inputs.agent_data_path[0]
+    #     2. Make optimization
+    #     2. Update self.agent_data with target, predicted mean & standard deviation
+    #         self.agent_data['agent_target']:       agent_target
+    #         self.agent_data['posterior_mean']:     post_mean
+    #         self.agent_data['posterior_stddev']:   post_stddev
+    #     3. Check if meet target. If meet, wash loop; if not, keep iteration.
+    #     4. Update self.continue_iteration
 
-        Args:
-            qserver_process (_LDRD_Kafka.xlsx_to_inputs, optional): qserver parameters read from xlsx.
-            RM (REManagerAPI): Run Engine Manager API.
-            check_target (bool, optional): Check if peak emission reaches peak target. Defaults to False.
-            is_ist (bool, optional): Check if it is the first precidciton. If yes, skip build agent.
+    #     Args:
+    #         qserver_process (_LDRD_Kafka.xlsx_to_inputs, optional): qserver parameters read from xlsx.
+    #         RM (REManagerAPI): Run Engine Manager API.
+    #         check_target (bool, optional): Check if peak emission reaches peak target. Defaults to False.
+    #         is_ist (bool, optional): Check if it is the first precidciton. If yes, skip build agent.
 
-        Returns:
-            dict: new_points predicted by self.agent
-        """
+    #     Returns:
+    #         dict: new_points predicted by self.agent
+    #     """
 
-        qin = qserver_process.inputs
-        peak_target = self.inputs.peak_target[0]
-        peak_tolerance = self.inputs.peak_target[1]
+    #     qin = qserver_process.inputs
+    #     peak_target = self.inputs.peak_target[0]
+    #     peak_tolerance = self.inputs.peak_target[1]
 
 
-        if check_target:
-            peak_diff = abs(self.PL_fitting['peak_emission'] - peak_target)
-            meet_target = (peak_diff <= peak_tolerance)
-            if meet_target:
-                print(f'\nTarget peak: {self.inputs.peak_target[0]} nm vs. Current peak: {self.PL_fitting["peak_emission"]} nm\n')
-                print(f'\nReach the target, stop iteration, stop all pumps, and wash the loop.\n')
+    #     if check_target:
+    #         peak_diff = abs(self.PL_fitting['peak_emission'] - peak_target)
+    #         meet_target = (peak_diff <= peak_tolerance)
+    #         if meet_target:
+    #             print(f'\nTarget peak: {self.inputs.peak_target[0]} nm vs. Current peak: {self.PL_fitting["peak_emission"]} nm\n')
+    #             print(f'\nReach the target, stop iteration, stop all pumps, and wash the loop.\n')
 
-                ### Stop all infusing pumps and wash loop
-                sq.wash_tube_queue2(qin.pump_list, qin.if_wash, qin.wash_loop, 'ul/min', 
-                                zmq_control_addr=qin.zmq_control_addr[0],
-                                zmq_info_addr=qin.zmq_info_addr[0])
-                
-                inst1 = BInst("queue_stop")
-                RM.item_add(inst1, pos='front')
-                self.continue_iteration.append(False)
+    #             ### Stop all infusing pumps and wash loop
+    #             sq.wash_tube_queue2(qin.pump_list, qin.if_wash, qin.wash_loop, 'ul/min', 
+    #                                 http_server_uri=qin.http_server_uri[0], 
+    #                                 http_api_key=qin.http_api_key[0])
+
+    #             inst1 = BInst("queue_stop")
+    #             RM.item_add(inst1, pos='front')
+    #             self.continue_iteration.append(False)
         
-        else:
-            self.continue_iteration.append(True)       
+    #     else:
+    #         self.continue_iteration.append(True)       
 
-        # if self.inputs.build_agent[0]: 
-        if is_1st:
-            pass
-        else:
-            self.agent = build_agent(
-                            peak_target = peak_target, 
-                            agent_data_path = self.inputs.agent_data_path[0], 
-                            use_OAm = qin.use_OAm[0])
+    #     # if self.inputs.build_agent[0]: 
+    #     if is_1st:
+    #         pass
+    #     else:
+    #         self.agent = build_agent(
+    #                         peak_target = peak_target, 
+    #                         agent_data_path = self.inputs.agent_data_path[0], 
+    #                         use_OAm = qin.use_OAm[0])
 
-        if len(self.agent.table) < 2:
-            acq_func = "qr"
-        else:
-            acq_func = "qem"
+    #     if len(self.agent.table) < 2:
+    #         acq_func = "qr"
+    #     else:
+    #         acq_func = "qem"
         
-        new_points = self.agent.ask(acq_func, n=1)
+    #     new_points = self.agent.ask(acq_func, n=1)
 
-        ## Get target of agent.ask()
-        agent_target = self.agent.objectives.summary['target'].tolist()
+    #     ## Get target of agent.ask()
+    #     agent_target = self.agent.objectives.summary['target'].tolist()
         
-        ## Get mean and standard deviation of agent.ask()
-        res_values = []
-        for i in self.inputs.new_points_label:
-            if i in new_points['points'].keys():
-                res_values.append(new_points['points'][i][0])
-        x_tensor = torch.tensor(res_values)
-        posterior = self.agent.posterior(x_tensor)
-        post_mean = posterior.mean.tolist()[0]
-        post_stddev = posterior.stddev.tolist()[0]
+    #     ## Get mean and standard deviation of agent.ask()
+    #     res_values = []
+    #     for i in self.inputs.new_points_label:
+    #         if i in new_points['points'].keys():
+    #             res_values.append(new_points['points'][i][0])
+    #     x_tensor = torch.tensor(res_values)
+    #     posterior = self.agent.posterior(x_tensor)
+    #     post_mean = posterior.mean.tolist()[0]
+    #     post_stddev = posterior.stddev.tolist()[0]
 
-        ## apply np.exp for log-transform objectives
-        if_log = self.agent.objectives.summary['transform']
-        for j in range(if_log.shape[0]):
-            if if_log[j] == 'log':
-                post_mean[j] = np.exp(post_mean[j])
-                post_stddev[j] = np.exp(post_stddev[j])
+    #     ## apply np.exp for log-transform objectives
+    #     if_log = self.agent.objectives.summary['transform']
+    #     for j in range(if_log.shape[0]):
+    #         if if_log[j] == 'log':
+    #             post_mean[j] = np.exp(post_mean[j])
+    #             post_stddev[j] = np.exp(post_stddev[j])
 
-        ## Update target, mean, and standard deviation in agent_data
-        self.agent_data = {}
-        self.agent_data.update({'agent_target': agent_target})
-        self.agent_data.update({'posterior_mean': post_mean})
-        self.agent_data.update({'posterior_stddev': post_stddev})
+    #     ## Update target, mean, and standard deviation in agent_data
+    #     self.agent_data = {}
+    #     self.agent_data.update({'agent_target': agent_target})
+    #     self.agent_data.update({'posterior_mean': post_mean})
+    #     self.agent_data.update({'posterior_stddev': post_stddev})
         
-        return new_points
+    #     return new_points
     
     
     
@@ -363,7 +370,7 @@ class xlsx_to_inputs():
         """
         
         if 'uid' in message.keys():
-            print(f"uid: {message['uid']}")
+            print(f"original_run_uid: {message['original_run_uid']}")
         if 'plan_name' in message.keys():
             print(f"plan name: {message['plan_name']}")
         if 'detectors' in message.keys(): 
@@ -396,7 +403,7 @@ class xlsx_to_inputs():
 
 
 
-    def macro_01_stop_queue_uid(self, RM, message):
+    def macro_01_stop_queue_uid(self, RM, doc):
         """macro to stop queue and get raw data uid, used in kafka consumer
         while taking a Uv-Vis, no X-ray data but still do analysis of pdfstream
         
@@ -408,24 +415,26 @@ class xlsx_to_inputs():
 
         Args:
             RM (REManagerAPI): Run Engine Manager API.
-            message (dict): message in RE document
+            doc (dict): document in RE document
         """
         inst1 = BInst("queue_stop")
         RM.item_add(inst1, pos='front')
         ## wait 1 second for databroker to save data
         time.sleep(1)
-        self.uid = message['run_start']
+        self.uid = doc['run_start']
         self.uid_catalog.append(self.uid)
-        stream_list = list(message['num_events'].keys())
+        stream_list = list(doc['num_events'].keys())
         ## Reset self.stream_list to an empty list
         self.stream_list = []
         for stream_name in stream_list:
             self.stream_list.append(stream_name)
+            
+        print(f'\n\n *** macro_01 done !!! ***')
+        print(f' *** {self.uid = } ***')
+        print(f' *** {self.stream_list = } *** \n\n')
 
 
-
-
-    def macro_02_get_iq(self, iq_I_uid):
+    def macro_03_get_iq(self, doc):
         """macro to get iq data, used in kafka consumer 
         whiel taking xray_uvvis_plan and analysis of pdfstream finished
        
@@ -440,37 +449,50 @@ class xlsx_to_inputs():
         3. Reset self.uid to an empty list
 
         Args:
-            iq_I_uid (str): uid of analysis data, read from doc[1]['data']['chi_I']
+            doc (dict): The zmq document containing the analysis data.
 
         """
+        iq_I_uid  = doc['uid']
         self.uid_pdfstream.append(iq_I_uid)
-        self.entry = self.sandbox_tiled_client[iq_I_uid]
-        df = self.entry.read()
+        # self.entry = self.sandbox_tiled_client[iq_I_uid]
+        # df = self.entry.read()
+        
         # Before updating I(Q) data, reset self.iq_data as an empty dict
         self.iq_data = {}
-        # self.iq_data.append(df['chi_Q'].to_numpy())
-        # self.iq_data.append(df['chi_I'].to_numpy())
 
-        iq_array = np.asarray([df['chi_Q'].to_numpy(), df['chi_I'].to_numpy()])
-        # self.iq_data.append(iq_array)
+        # iq_array = np.asarray([df['chi_Q'].to_numpy(), df['chi_I'].to_numpy()])
+        iq_array = np.asarray([doc['data']['chi_Q'], doc['data']['chi_I']])
 
         iq_df = pd.DataFrame()
-        iq_df['q'] = df['chi_Q'].to_numpy()
-        iq_df['I(q)'] = df['chi_I'].to_numpy()
+        iq_df['q'] = doc['data']['chi_Q']
+        iq_df['I(q)'] = doc['data']['chi_I']
         # self.iq_data.append(iq_df)
         
-        iq_data = { 'Q':df['chi_Q'].to_numpy(), 
-                    'I':df['chi_I'].to_numpy(), 
+        iq_data = { 'Q':doc['data']['chi_Q'], 
+                    'I':doc['data']['chi_I'], 
                     'array':iq_array, 
                     'df':iq_df}
         self.iq_data.update(iq_data)
+        
+        ## Remove headers by reading gr_data into pd.Dataframe and save again
+        gr_df = pd.DataFrame()
+        gr_df['r'] = doc['data']['gr_r']
+        gr_df['g(r)'] = doc['data']['gr_G']
+
+        self.gr_data = []
+        self.gr_data.append('')  ## in macro_05, gr_data is a string for gr data path, so assign an empty string here as a placeholder for gr_data path
+        self.gr_data.append(gr_df)
 
         ## Reset self.uid to an empty list
-        self.uid = []
+        # self.uid = []
+        
+        print(f'\n\n *** macro_03 done !!! ***')
+        print(f' *** {self.uid = } ***')
+        print(f' *** {self.stream_list = } *** \n\n')
 
 
 
-    def macro_03_get_uid(self):
+    def macro_02_get_uid(self, doc):
         """macro to get raw data uid, used in kafka consumer
        
         This macro will
@@ -478,130 +500,143 @@ class xlsx_to_inputs():
         2. Append raw data uid to self.uid_catalog
         3. Update self.stream_list
         """
-        ## wait 1 second for databroker to save data
-        time.sleep(1)
-        self.uid = self.entry.metadata['run_start']
+        ## wait 2 second for databroker to save data
+        time.sleep(2)
+        self.uid = doc['run_start']
         self.uid_catalog.append(self.uid)
         stream_list = self.tiled_client[self.uid].metadata['summary']['stream_names']
         ## Reset self.stream_list to an empty list
         self.stream_list = []
         for stream_name in stream_list:
             self.stream_list.append(stream_name)
+            
+        print(f'\n\n *** macro_02 done !!! ***')
+        print(f' *** {self.uid = } ***')
+        print(f' *** {self.stream_list = } *** \n\n')
 
 
 
 
-    def macro_04_dummy_pdf(self):
-        """macro to setup a dummy pdf data for testing, used in kafka consumer
-        while self.inputs.dummy_pdf[0] is True
+    # def macro_04_dummy_pdf(self):
+    #     """macro to setup a dummy pdf data for testing, used in kafka consumer
+    #     while self.inputs.dummy_pdf[0] is True
 
-        This macro will
-        0. Reset self.iq_data as an empty dict
-        1. Read pdf data from self.iq_fn[-1]
-        2. Update iq_data as a dict into self.iq_data
-            self.iq_data['Q']:     iq_array[0]
-            self.iq_data['I']:     iq_array[1]
-            self.iq_data['array']: iq_array
-            self.iq_data['df']:    iq_df
-        """
-        self.iq_data = {}
-        iq_array = pd.read_csv(self.inputs.iq_fn[-1], skiprows=1, names=['q', 'I(q)'], sep=' ').to_numpy().T
-        # self.iq_data.append(iq_array[0])
-        # self.iq_data.append(iq_array[1])
-        # self.iq_data.append(iq_array)
-        iq_df = pd.read_csv(self.inputs.iq_fn[-1], skiprows=1, names=['q', 'I(q)'], sep=' ')
-        # self.iq_data.append(iq_df)
+    #     This macro will
+    #     0. Reset self.iq_data as an empty dict
+    #     1. Read pdf data from self.iq_fn[-1]
+    #     2. Update iq_data as a dict into self.iq_data
+    #         self.iq_data['Q']:     iq_array[0]
+    #         self.iq_data['I']:     iq_array[1]
+    #         self.iq_data['array']: iq_array
+    #         self.iq_data['df']:    iq_df
+    #     """
+    #     self.iq_data = {}
+    #     iq_array = pd.read_csv(self.inputs.iq_fn[-1], skiprows=1, names=['q', 'I(q)'], sep=' ').to_numpy().T
+    #     # self.iq_data.append(iq_array[0])
+    #     # self.iq_data.append(iq_array[1])
+    #     # self.iq_data.append(iq_array)
+    #     iq_df = pd.read_csv(self.inputs.iq_fn[-1], skiprows=1, names=['q', 'I(q)'], sep=' ')
+    #     # self.iq_data.append(iq_df)
 
-        iq_data = { 'Q':iq_array[0], 
-                    'I':iq_array[1], 
-                    'array':iq_array, 
-                    'df':iq_df}
-        self.iq_data.update(iq_data)
+    #     iq_data = { 'Q':iq_array[0], 
+    #                 'I':iq_array[1], 
+    #                 'array':iq_array, 
+    #                 'df':iq_df}
+    #     self.iq_data.update(iq_data)
 
 
 
-    def macro_05_iq_to_gr(self, beamline_acronym):
-        """macro to condcut data reduction from I(Q) to g(r), used in kafka consumer
+    # def macro_05_iq_to_gr(self, beamline_acronym):
+    #     """macro to condcut data reduction from I(Q) to g(r), used in kafka consumer
         
-        This macro will
-        1. Generate a filename for g(r) data by using metadata of stream_name == fluorescence
-        2. Read pdf config file from self.inputs.cfg_fn[-1]
-        3. Read pdf background file from self.inputs.bkg_fn[-1]
-        4. Generate s(q), f(q), g(r) data by gp.transform_bkg() and save in self.inputs.iq_to_gr_path[0]
-        5. Read saved g(r) into pd.DataFrame and save again to remove the headers
-        6. Update g(r) data path and data frame to self.gr_data
-            self.gr_data[0]: gr_data (path)
-            self.gr_data[1]: gr_df
+    #     This macro will
+    #     1. Generate a filename for g(r) data by using metadata of stream_name == fluorescence
+    #     2. Read pdf config file from self.inputs.cfg_fn[-1]
+    #     3. Read pdf background file from self.inputs.bkg_fn[-1]
+    #     4. Generate s(q), f(q), g(r) data by gp.transform_bkg() and save in self.inputs.iq_to_gr_path[0]
+    #     5. Read saved g(r) into pd.DataFrame and save again to remove the headers
+    #     6. Update g(r) data path and data frame to self.gr_data
+    #         self.gr_data[0]: gr_data (path)
+    #         self.gr_data[1]: gr_df
 
-        Args:
-            beamline_acronym (str): catalog name for tiled to access data
-        """
-        # Grab metadat from stream_name = fluorescence for naming gr file
-        fn_uid = de._fn_generator(self.uid, beamline_acronym=beamline_acronym)
-        gr_fn = f'{fn_uid}_scattering.gr'
+    #     Args:
+    #         beamline_acronym (str): catalog name for tiled to access data
+    #     """
+    #     # Grab metadat from stream_name = fluorescence for naming gr file
+    #     fn_uid = de._fn_generator(self.uid, beamline_acronym=beamline_acronym)
+    #     gr_fn = f'{fn_uid}_scattering.gr'
 
-        ### dummy test, e.g., CsPbBr2
-        if self.inputs.dummy_pdf[0]:
-            gr_fn = f'{self.inputs.iq_fn[-1][:-4]}.gr'
+    #     ### dummy test, e.g., CsPbBr2
+    #     if self.inputs.dummy_pdf[0]:
+    #         gr_fn = f'{self.inputs.iq_fn[-1][:-4]}.gr'
 
-        # Build pdf config file from a scratch
-        pdfconfig = PDFConfig()
-        pdfconfig.readConfig(self.inputs.cfg_fn[-1])
-        pdfconfig.backgroundfiles = self.inputs.bkg_fn[-1]
-        sqfqgr_path = gp.transform_bkg(pdfconfig, self.iq_data['array'], output_dir=self.inputs.iq_to_gr_path[0], 
-                    plot_setting={'marker':'.','color':'green'}, test=True, 
-                    gr_fn=gr_fn)    
-        gr_data = sqfqgr_path['gr']
+    #     # Build pdf config file from a scratch
+    #     pdfconfig = PDFConfig()
+    #     pdfconfig.readConfig(self.inputs.cfg_fn[-1])
+    #     pdfconfig.backgroundfiles = self.inputs.bkg_fn[-1]
+    #     sqfqgr_path = gp.transform_bkg(pdfconfig, self.iq_data['array'], output_dir=self.inputs.iq_to_gr_path[0], 
+    #                 plot_setting={'marker':'.','color':'green'}, test=True, 
+    #                 gr_fn=gr_fn)    
+    #     gr_data = sqfqgr_path['gr']
 
-        ## Remove headers by reading gr_data into pd.Dataframe and save again
-        gr_df = pd.read_csv(gr_data, skiprows=26, names=['r', 'g(r)'], sep =' ')
-        gr_df.to_csv(gr_data, index=False, header=False, sep =' ')
+    #     ## Remove headers by reading gr_data into pd.Dataframe and save again
+    #     gr_df = pd.read_csv(gr_data, skiprows=26, names=['r', 'g(r)'], sep =' ')
+    #     gr_df.to_csv(gr_data, index=False, header=False, sep =' ')
 
-        self.gr_data = []
-        self.gr_data.append(gr_data)
-        self.gr_data.append(gr_df)
+    #     self.gr_data = []
+    #     self.gr_data.append(gr_data)
+    #     self.gr_data.append(gr_df)
 
 
 
-    def macro_06_search_and_match(self, gr_fn):
-        """macro to search and match the best strucutre, used in kafka consumer
-        using package Refinery from updated_pipeline_pdffit2.py  
-
-        Args:
-            gr_fn (str): g(r) data path for searching and matching, ex: self.gr_data[0] or self.inputs.gr_fn[0]
-                        if using self.gr_data[0], g(r) is generated in workflow
-                        if using self.inputs.gr_fn[-1], g(r) is directly read from a file
-
-        Returns:
-            str: the file name of the best fitted cif
-        """
-        # from updated_pipeline_pdffit2 import Refinery
-        Refinery = importlib.import_module("updated_pipeline_pdffit2").Refinery
-        results_path = self.inputs.results_path[0]
-        refinery = Refinery(mystery_path=gr_fn, results_path=results_path, 
-                    criteria={"elements":
-                        {#["Pb","Se"], 
-                        #"$in": ["Cs"], 
-                        "$all": ["Pb"],
-                        }},
-                    strict=[],
-                    # strict=["Pb", "S"],
-                    pdf_calculator_kwargs={
-                        "qmin": 1.0, 
-                        "qmax": 18.0,
-                        "rmin": 2.0,
-                        "rmax": 60.0,
-                        "qdamp": 0.031,
-                        "qbroad": 0.032
-                    },)
-        refinery.populate_structures_()
-        refinery.populate_pdfs_()
-        refinery.apply_metrics_()
-        sorted_structures_original = refinery.get_sorted_structures(metric='pearsonr', status='original')
-        cif_id = sorted_structures_original[0].material_id
-        cif_fn = glob.glob(os.path.join(results_path, f'**{cif_id}**.cif'))[0]
+    def macro_051_get_gr(self, beamline_acronym):
         
-        return cif_fn
+        print('\ngr data already exists, skip data reduction from I(Q) to g(r) and directly read g(r) data into self.gr_data.\n')
+        print(f'\n\n *** macro_051 done !!! ***')
+        print(f' *** {self.uid = } ***')
+        print(f' *** {self.stream_list = } *** \n\n')
+
+
+
+    # def macro_06_search_and_match(self, gr_fn):
+    #     """macro to search and match the best strucutre, used in kafka consumer
+    #     using package Refinery from updated_pipeline_pdffit2.py  
+
+    #     Args:
+    #         gr_fn (str): g(r) data path for searching and matching, ex: self.gr_data[0] or self.inputs.gr_fn[0]
+    #                     if using self.gr_data[0], g(r) is generated in workflow
+    #                     if using self.inputs.gr_fn[-1], g(r) is directly read from a file
+
+    #     Returns:
+    #         str: the file name of the best fitted cif
+    #     """
+    #     # from updated_pipeline_pdffit2 import Refinery
+    #     Refinery = importlib.import_module("updated_pipeline_pdffit2").Refinery
+    #     results_path = self.inputs.results_path[0]
+    #     refinery = Refinery(mystery_path=gr_fn, results_path=results_path, 
+    #                 criteria={"elements":
+    #                     {#["Pb","Se"], 
+    #                     #"$in": ["Cs"], 
+    #                     "$all": ["Pb"],
+    #                     }},
+    #                 strict=[],
+    #                 # strict=["Pb", "S"],
+    #                 pdf_calculator_kwargs={
+    #                     "qmin": 1.0, 
+    #                     "qmax": 18.0,
+    #                     "rmin": 2.0,
+    #                     "rmax": 60.0,
+    #                     "qdamp": 0.031,
+    #                     "qbroad": 0.032
+    #                 },)
+    #     refinery.populate_structures_()
+    #     refinery.populate_pdfs_()
+    #     refinery.apply_metrics_()
+    #     sorted_structures_original = refinery.get_sorted_structures(metric='pearsonr', status='original')
+    #     cif_id = sorted_structures_original[0].material_id
+    #     cif_fn = glob.glob(os.path.join(results_path, f'**{cif_id}**.cif'))[0]
+        
+    #     return cif_fn
 
 
 
@@ -622,7 +657,17 @@ class xlsx_to_inputs():
         """
         
         self.pearson_results = {}
-        experiment_data_df = pd.read_csv(gr_fn, names=['r', 'g(r)'], sep =' ')
+        
+        ## if gr data is generated in workflow, 
+        ## use self.gr_data[1] as the experiment data frame for pearson calculation, 
+        ## which is a pd.DataFrame; 
+        ## if gr data is directly read from a file, 
+        ## use experiment_data_df which is read from gr_fn as the experiment data frame for pearson calculation, 
+        ## which is also a pd.DataFrame. Both way should work.
+        
+        # experiment_data_df = pd.read_csv(gr_fn, names=['r', 'g(r)'], sep =' ')
+        experiment_data_df = self.gr_data[1]  
+        
         simulated_gr_fn = self.inputs.simulated_gr_fn
         simulated_gr_path = self.inputs.simulated_gr_path[0]
         
@@ -630,75 +675,79 @@ class xlsx_to_inputs():
         
         self.pearson_results.update(pearson_results)
         
+        print(f'\n\n *** macro_061 done !!! ***')
+        print(f' *** {self.uid = } ***')
+        print(f' *** {self.stream_list = } *** \n\n')
+        
         return pearson_results
 
 
 
 
 
-    def macro_07_fitting_pdf(self, gr_fn, beamline_acronym, 
-                            rmax=100.0, qmax=12.0, qdamp=0.031, qbroad=0.032, 
-                            fix_APD=True, toler=0.01):
-        """macro to do pdf fitting by pdffit2 package, used in kafka consumer
+    # def macro_07_fitting_pdf(self, gr_fn, beamline_acronym, 
+    #                         rmax=100.0, qmax=12.0, qdamp=0.031, qbroad=0.032, 
+    #                         fix_APD=True, toler=0.01):
+    #     """macro to do pdf fitting by pdffit2 package, used in kafka consumer
 
-        This macro will
-        1. Do pdf refinement of gr_fn
-        2. Generate a filename for fitting data by using metadata of stream_name == fluorescence
-        3. Save fitting data
-        4. Update self.pdf_property
-        5. Update fitting data at self.gr_fitting
-            self.gr_fitting['R']:       pf.getR()
-            self.gr_fitting['pdf_fit']: pf.getpdf_fit()
-            self.gr_fitting['array']:   np.array([pf.getR(), pf.getpdf_fit()]) 
-            self.gr_fitting['df']:      pd.DataFrame([pf.getR(), pf.getpdf_fit()])
+    #     This macro will
+    #     1. Do pdf refinement of gr_fn
+    #     2. Generate a filename for fitting data by using metadata of stream_name == fluorescence
+    #     3. Save fitting data
+    #     4. Update self.pdf_property
+    #     5. Update fitting data at self.gr_fitting
+    #         self.gr_fitting['R']:       pf.getR()
+    #         self.gr_fitting['pdf_fit']: pf.getpdf_fit()
+    #         self.gr_fitting['array']:   np.array([pf.getR(), pf.getpdf_fit()]) 
+    #         self.gr_fitting['df']:      pd.DataFrame([pf.getR(), pf.getpdf_fit()])
 
-        Args:
-            gr_fn (str): g(r) data path for pdf fitting, ex: self.gr_data[0] or self.inputs.gr_fn[0]
-                        if using self.gr_data[0], g(r) is generated in workflow
-                        if using self.inputs.gr_fn[-1], g(r) is directly read from a file
+    #     Args:
+    #         gr_fn (str): g(r) data path for pdf fitting, ex: self.gr_data[0] or self.inputs.gr_fn[0]
+    #                     if using self.gr_data[0], g(r) is generated in workflow
+    #                     if using self.inputs.gr_fn[-1], g(r) is directly read from a file
 
-            beamline_acronym (str): catalog name for tiled to access data
-            rmax (float, optional): pdffit2 variable. Defaults to 100.
-            qmax (float, optional): pdffit2 variable. Defaults to 12.
-            qdamp (float, optional): pdffit2 variable. Defaults to 0.031.
-            qbroad (float, optional): pdffit2 variable. Defaults to 0.032.
-            fix_APD (bool, optional): pdffit2 variable. Defaults to True.
-            toler (float, optional): pdffit2 variable. Defaults to 0.01.
-        """
+    #         beamline_acronym (str): catalog name for tiled to access data
+    #         rmax (float, optional): pdffit2 variable. Defaults to 100.
+    #         qmax (float, optional): pdffit2 variable. Defaults to 12.
+    #         qdamp (float, optional): pdffit2 variable. Defaults to 0.031.
+    #         qbroad (float, optional): pdffit2 variable. Defaults to 0.032.
+    #         fix_APD (bool, optional): pdffit2 variable. Defaults to True.
+    #         toler (float, optional): pdffit2 variable. Defaults to 0.01.
+    #     """
 
-        cif_list = self.inputs.cif_fn[2:]
-        pf = pc._pdffit2_CsPbX3(gr_fn, cif_list, rmax=rmax, qmax=qmax, qdamp=qdamp, qbroad=qbroad, 
-                                fix_APD=fix_APD, toler=toler, return_pf=True)
+    #     cif_list = self.inputs.cif_fn[2:]
+    #     pf = pc._pdffit2_CsPbX3(gr_fn, cif_list, rmax=rmax, qmax=qmax, qdamp=qdamp, qbroad=qbroad, 
+    #                             fix_APD=fix_APD, toler=toler, return_pf=True)
         
-        phase_fraction = pf.phase_fractions()['mass']
-        particel_size = []
-        for i in range(pf.num_phases()):
-            pf.setphase(i+1)
-            particel_size.append(pf.getvar(pf.spdiameter))
-        # Grab metadat from stream_name = fluorescence for naming gr file
-        fn_uid = de._fn_generator(self.uid, beamline_acronym=beamline_acronym)
-        fgr_fn = os.path.join(self.inputs.fitting_pdf_path[0], f'{fn_uid}_scattering.fgr')
-        pf.save_pdf(1, f'{fgr_fn}')
+    #     phase_fraction = pf.phase_fractions()['mass']
+    #     particel_size = []
+    #     for i in range(pf.num_phases()):
+    #         pf.setphase(i+1)
+    #         particel_size.append(pf.getvar(pf.spdiameter))
+    #     # Grab metadat from stream_name = fluorescence for naming gr file
+    #     fn_uid = de._fn_generator(self.uid, beamline_acronym=beamline_acronym)
+    #     fgr_fn = os.path.join(self.inputs.fitting_pdf_path[0], f'{fn_uid}_scattering.fgr')
+    #     pf.save_pdf(1, f'{fgr_fn}')
         
-        self.pdf_property = {}
-        self.pdf_property.update({'Br_ratio': phase_fraction[0], 'Br_size':particel_size[0]})
+    #     self.pdf_property = {}
+    #     self.pdf_property.update({'Br_ratio': phase_fraction[0], 'Br_size':particel_size[0]})
         
-        gr_fit_arrary = np.asarray([pf.getR(), pf.getpdf_fit()])
-        gr_fit_df = pd.DataFrame()
-        gr_fit_df['fit_r'] = pf.getR()
-        gr_fit_df['fit_g(r)'] = pf.getpdf_fit()
+    #     gr_fit_arrary = np.asarray([pf.getR(), pf.getpdf_fit()])
+    #     gr_fit_df = pd.DataFrame()
+    #     gr_fit_df['fit_r'] = pf.getR()
+    #     gr_fit_df['fit_g(r)'] = pf.getpdf_fit()
 
-        self.gr_fitting = {}
-        gr_fitting = {  'R':pf.getR(), 
-                        'pdf_fit':pf.getpdf_fit(), 
-                        'array': gr_fit_arrary, 
-                        'df': gr_fit_df}
-        self.gr_fitting.update(gr_fitting)
+    #     self.gr_fitting = {}
+    #     gr_fitting = {  'R':pf.getR(), 
+    #                     'pdf_fit':pf.getpdf_fit(), 
+    #                     'array': gr_fit_arrary, 
+    #                     'df': gr_fit_df}
+    #     self.gr_fitting.update(gr_fitting)
 
-        # self.gr_fitting.append(pf.getR())
-        # self.gr_fitting.append(pf.getpdf_fit())
-        # self.gr_fitting.append(gr_fit_arrary)
-        # self.gr_fitting.append(gr_fit_df)
+    #     # self.gr_fitting.append(pf.getR())
+    #     # self.gr_fitting.append(pf.getpdf_fit())
+    #     # self.gr_fitting.append(gr_fit_arrary)
+    #     # self.gr_fitting.append(gr_fit_df)
 
 
     def macro_08_no_fitting_pdf(self):
@@ -743,6 +792,10 @@ class xlsx_to_inputs():
         gr_df = pd.read_csv(gr_data, skiprows=1, names=['r', 'g(r)'], sep =' ')
         self.gr_data.append(gr_data)
         self.gr_data.append(gr_df)
+        
+        print(f'\n\n *** macro_08 done !!! ***')
+        print(f' *** {self.uid = } ***')
+        print(f' *** {self.stream_list = } *** \n\n')
 
 
 
@@ -778,6 +831,10 @@ class xlsx_to_inputs():
         print(f'\n** export {stream_name} in uid: {self.uid[0:8]} to ../{os.path.basename(saving_path)} **\n')
 
         self.PL_goodbad = {}
+        
+        print(f'\n\n *** macro_09 done !!! ***')
+        print(f' *** {self.uid = } ***')
+        print(f' *** {self.stream_list = } *** \n\n')
 
 
 
@@ -799,17 +856,17 @@ class xlsx_to_inputs():
         
 
         if self.qepro_dic['QEPro_spectrum_type'][0]==2 and stream_name=='take_a_uvvis':
-            print(f'\n*** start to identify good/bad data in stream: {stream_name} ***\n')
+            print(f'\n*** macro_10: start to identify good/bad data in stream: {stream_name} ***\n')
             x0, y0, data_id, peak, prop = da._identify_one_in_kafka(
                                             self.qepro_dic, 
                                             self.metadata_dic, 
                                             key_height=self.inputs.key_height[0], 
                                             distance=self.inputs.distance[0], 
                                             height=self.inputs.height[0], 
-                                            dummy_test=self.inputs.dummy_kafka[0])
+                                            dummy_test=self.inputs.dummy_zmq[0])
 
         elif stream_name == 'fluorescence':
-            print(f'\n*** start to identify good/bad data in stream: {stream_name} ***\n')
+            print(f'\n*** macro_10: start to identify good/bad data in stream: {stream_name} ***\n')
             ## Apply percnetile filtering for PL spectra, defaut percent_range = [30, 100]
             x0, y0, data_id, peak, prop = da._identify_multi_in_kafka(
                                             self.qepro_dic, 
@@ -817,7 +874,7 @@ class xlsx_to_inputs():
                                             key_height=self.inputs.key_height[0], 
                                             distance=self.inputs.distance[0], 
                                             height=self.inputs.height[0], 
-                                            dummy_test=self.inputs.dummy_kafka[0], 
+                                            dummy_test=self.inputs.dummy_zmq[0], 
                                             percent_range=[40, 100])
             
         self.PL_goodbad = {}
@@ -825,7 +882,9 @@ class xlsx_to_inputs():
                         'data_id':data_id, 'peak':peak, 'prop':prop}
         self.PL_goodbad.update(PL_goodbad)
             
-
+        print(f'\n\n *** macro_10 done !!! ***')
+        print(f' *** {self.uid = } ***')
+        print(f' *** {self.stream_list = } *** \n\n')
 
 
     def macro_11_absorbance(self, stream_name):
@@ -876,6 +935,10 @@ class xlsx_to_inputs():
                                 self.qepro_dic, self.metadata_dic, 
                                 stream_name=stream_name, 
                                 fitting=ff_abs)
+        
+        print(f'\n\n *** macro_11 done !!! ***')
+        print(f' *** {self.uid = } ***')
+        print(f' *** {self.stream_list = } *** \n\n')
 
 
     def macro_12_PL_fitting(self, has_peak=True):
@@ -901,7 +964,7 @@ class xlsx_to_inputs():
                                     self.PL_goodbad['data_id'], 
                                     self.PL_goodbad['peak'], 
                                     self.PL_goodbad['prop'], 
-                                    dummy_test=self.inputs.dummy_kafka[0])    
+                                    dummy_test=self.inputs.dummy_zmq[0])    
 
             fitted_y = f_fit(x, *popt)
             r2_idx1, _ = da.find_nearest(x, popt[1] - 3*popt[2])
@@ -945,6 +1008,10 @@ class xlsx_to_inputs():
             
             self.PL_fitting = {}
             self.PL_fitting.update(ff)
+            
+        print(f'\n\n *** macro_12 done !!! ***')
+        print(f' *** {self.uid = } ***')
+        print(f' *** {self.stream_list = } *** \n\n')
 
 
 
@@ -1004,6 +1071,10 @@ class xlsx_to_inputs():
                                 'Peak':0, 'FWHM':1000, 'PLQY':0}
             self.optical_property = {}
             self.optical_property.update(optical_property)
+            
+        print(f'\n\n *** macro_13 done !!! ***')
+        print(f' *** {self.uid = } ***')
+        print(f' *** {self.stream_list = } *** \n\n')
 
 
 
@@ -1042,6 +1113,10 @@ class xlsx_to_inputs():
             self.agent_data.update({'PL_fitting':{'fit_function':ff['fit_function'].__name__, 'popt':ff['curve_fit'].tolist()}})
         
         self.agent_data.update(self.pearson_results)
+        
+        print(f'\n\n *** macro_14 done !!! ***')
+        print(f' *** {self.uid = } ***')
+        print(f' *** {self.stream_list = } *** \n\n')
 
 
 
@@ -1114,6 +1189,10 @@ class xlsx_to_inputs():
         # else:
         #     # TODO: Figure out what to write to sandbox if no PL peak
         #     pass
+        
+        print(f'\n\n *** macro_15 done !!! ***')
+        print(f' *** {self.uid = } ***')
+        print(f' *** {self.stream_list = } *** \n\n')
 
 
     def macro_16_num_good(self, stream_name):
@@ -1142,9 +1221,14 @@ class xlsx_to_inputs():
         print(f"\n*** {self.sample_type} of uid: {self.uid[:8]} has: ***\n"
                 f"*** {self.optical_property = } ***\n"
                 f"*** {self.pdf_property = } ***\n")
+        
+        
+        print(f'\n\n *** macro_16 done !!! ***')
+        print(f' *** {self.uid = } ***')
+        print(f' *** {self.stream_list = } *** \n\n')
                 
 
-    def macro_17_add_queue(self, stream_name, qserver_process, RM):
+    def macro_17_add_queue(self, stream_list, qserver_process, RM):
         """macro to add queus task to qserver
 
         This macro will
@@ -1156,7 +1240,8 @@ class xlsx_to_inputs():
             qserver_process (_LDRD_Kafka.xlsx_to_inputs, optional): qserver parameters read from xlsx.
             RM (REManagerAPI): Run Engine Manager API.
         """
-
+        
+        stream_name = stream_list[-1]
         qin = qserver_process.inputs
         ## Depend on # of good/bad data, add items into queue item or stop 
         if (stream_name == 'take_a_uvvis') and (self.inputs.use_good_bad[0]):     
@@ -1198,6 +1283,10 @@ class xlsx_to_inputs():
                 self.finished.append(self.metadata_dic['sample_type'])
                 print(f'After event: good_data = {self.good_data}\n')
                 print(f'After event: finished sample = {self.finished}\n')
+                
+                ## Reset self.uid to an empty list for event doc identification 
+                self.uid = []
+                self.stream_list = []
 
                 RM.queue_start()
         
@@ -1222,6 +1311,11 @@ class xlsx_to_inputs():
             print('*** Move to next reaction in Queue ***\n')
             time.sleep(2)
             # RM.queue_start()
+            
+            
+        print(f'\n\n *** macro_17 done !!! ***')
+        print(f' *** {self.uid = } ***')
+        print(f' *** {self.stream_list = } *** \n\n')
 
         
 

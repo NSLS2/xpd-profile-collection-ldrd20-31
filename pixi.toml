@@ -1,0 +1,85 @@
+[project]
+channels = ["conda-forge"]
+name = "ZMQ-Autonomous"
+platforms = ["linux-64"]
+version = "2025-3.0"
+
+[system-requirements]
+libc = "2.17"
+
+[feature.profile.dependencies]
+bluesky-base = "==1.14.4"
+bluesky-queueserver = "*"
+bluesky-queueserver-api = "*"
+matplotlib-base= ">=3.9.3,<4"
+networkx = ">=3.4.2,<4"
+nslsii = "==0.11.4"
+numpy = "*"
+ophyd = "==1.11.0"
+pyepics = "*"
+python = ">=3.12,<3.13"
+semver = ">=3.0.4,<4"
+colorlog = ">=6.9.0,<7"
+xpdan = ">=0.8.2,<0.9"
+#xpdacq = ">=1.1.4,<2"
+#xpdacq = "==1.0.0"
+databroker = "==2.0.0b68"
+bluesky-tiled-plugins = ">=2.0.0b67"
+lmfit = ">=1.3.4,<2"
+bluesky-darkframes = ">=0.6.0,<0.7"
+hdf5-external-filter-plugins = ">=0.1.0,<0.2"
+blosc-hdf5-plugin = ">=1.0.1,<2"
+pydantic-numpy = ">=8.0.0,<9"
+p4p = ">=4.2.0,<5"
+epicscorelibs = ">=7.0.7.99.1.1,<8"
+tiled-client = ">=0.2.3,<0.3"
+pymatgen = "*"
+"diffpy.pdffit2" = "*"
+"diffpy.structure" = "*"
+#setuptools = "<81"
+#httpie = "*"
+
+
+
+[feature.profile.pypi-dependencies]
+ophyd-async = { version = ">0.10.0", extras = ["ca", "pva"] }
+#"diffpy.pdfgetx" = { path = "/nsls2/data/xpd-new/legacy/processed/pdfgetx-2.4.0/diffpy_pdfgetx-2.4.0-cp312-cp312-linux_x86_64.whl" }
+#pdfstream = { git = "https://github.com/NSLS-II-PDF/pdfstream.git", rev="v0.5.x-xpd-datasec" }
+#torch = { version = "*", index = "https://download.pytorch.org/whl/cu124" }
+#torchvision = { version = "*", index = "https://download.pytorch.org/whl/cu124" }
+#bluesky = { git = "https://github.com/bluesky/bluesky.git"}
+
+
+[feature.qs.dependencies]
+bluesky-queueserver = "*"
+bluesky-httpserver = "*"
+
+[feature.qs.tasks]
+# This section needs some development work to understand the best way to
+# thread the required configuration through both the task and files checked into
+# the profile.  These will interact with the ansible roles for pushing out the
+# systemd units
+qs-backend = "start-re-manager --profile-dir=."
+qs-server = "uvicorn --host localhost --port 60610 bluesky_httpserver.server:app"
+
+[feature.terminal.dependencies]
+ipython = ">=9.5.0"
+pyside6 = "*"
+numpy = ">2"
+
+[feature.terminal.tasks]
+start = "unset SESSION_MANAGER && MPLBACKEND=qtagg ipython --profile-dir=$HOME/.ipython/profile_$BS_PROFILE"
+pvs = "ipython --profile-dir=. -c 'get_pv_types(); exit()'"
+git-install-bluesky = "pip install -v git+https://github.com/bluesky/bluesky.git"
+#git-install-bluesky = "pip install -v git+https://github.com/mrakitin/bluesky.git@xpd-pdfstream"
+zmq_auto = "python /home/xf28id2/.ipython/profile_collection_ldrd20-31/scripts/zmq/ZMQ_RemoteDispatcher_v1.1.py xpd xpd-analysis"
+ipython = "ipython"
+#qm = "http POST http://xf28id2-xpd-qs1.nsls2.bnl.gov:443/api/permissions/set/b9b4c27dcd3a6779007e7782f4495a4702e7c74140ce836abd1432a001c7a612 && http GET http://xf28id2-xpd-qs1.nsls2.bnl.gov:443/api/console_output"
+#qm = "qserver-console-monitor --zmq-info-addr=ipc:///var/lib/bsqs/bsqs-info.sock"
+
+[environments]
+terminal = {features=["profile", "terminal"], solve-group="profile"}
+qs = {features=["profile", "qs"], solve-group="profile"}
+
+
+#zmq_info_addr: "ipc:///var/lib/bsqs/bsqs-info.sock"

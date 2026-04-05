@@ -2,7 +2,8 @@ import numpy as np
 # import pandas as pd
 # from bluesky_queueserver.manager.comms import zmq_single_request
 import _data_export as de
-from bluesky_queueserver_api.zmq import REManagerAPI
+# from bluesky_queueserver_api.zmq import REManagerAPI
+from bluesky_queueserver_api.http import REManagerAPI
 from bluesky_queueserver_api import BPlan, BInst
 from ophyd.sim import det, noisy_det
 # from _LDRD_Kafka import xlsx_to_inputs
@@ -50,9 +51,13 @@ def synthesis_queue_xlsx(parameter_obj):
 	is_iteration = qsp.is_iteration[0]
 	zmq_control_addr = qsp.zmq_control_addr[0]
 	zmq_info_addr = qsp.zmq_info_addr[0]
+	http_server_uri = qsp.http_server_uri[0]
+	http_api_key = qsp.http_api_key[0]
 
 
-	RM = REManagerAPI(zmq_control_addr=zmq_control_addr, zmq_info_addr=zmq_info_addr)
+	# RM = REManagerAPI(zmq_control_addr=zmq_control_addr, zmq_info_addr=zmq_info_addr)
+	RM = REManagerAPI(http_server_uri = http_server_uri, )
+	RM.set_authorization_key(api_key=http_api_key)
 
 	if name_by_prefix:
 		sample = de._auto_name_sample(rate_list, prefix=prefix)
@@ -209,22 +214,22 @@ def synthesis_queue_xlsx(parameter_obj):
 		# scanplan = BPlan('print_glbl_qserver')
 		# RM.item_add(scanplan, pos=pos)
   
-		if det1 == 'pe1c' or det1 == 'pe2c':
-			## 6.1 Configure area detector in Qserver
-			scanplan = BPlan('configure_area_det', 
-							det=det1, 
-							exposure=det1_time, 
-							acq_time=det1_frame_rate)
-			RM.item_add(scanplan, pos=pos)
+		# if det1 == 'pe1c' or det1 == 'pe2c':
+		# 	## 6.1 Configure area detector in Qserver
+		# 	scanplan = BPlan('configure_area_det', 
+		# 					det=det1, 
+		# 					exposure=det1_time, 
+		# 					acq_time=det1_frame_rate)
+		# 	RM.item_add(scanplan, pos=pos)
 
 
 		## 6. Start xray_uvvis bundle plan to take real data  ('pe1c' or 'det')
-		scanplan = BPlan('xray_uvvis_plan2', det1, det2, 
+		scanplan = BPlan('xray_uvvis_RE', 
+                   		det1, det2, det1_time, 
+						frame_acq_time = det1_frame_rate,
 						num_abs=num_abs, 
 						num_flu=num_flu, 
 						sample_type=sample[i], 
-						spectrum_type='Absorbtion', 
-						correction_type='Reference', 
 						pump_list=pump_list, 
 						precursor_list=precursor_list, 
 						mixer=mixer)
@@ -241,8 +246,8 @@ def synthesis_queue_xlsx(parameter_obj):
 		if if_wash[0] == 1:
 			wash_tube_queue2(pump_list, if_wash, wash_loop, rate_unit, 
 							pos=[pos,pos,pos,pos,pos], 
-							zmq_control_addr=zmq_control_addr,
-							zmq_info_addr=zmq_info_addr)
+							http_server_uri=http_server_uri,
+							http_api_key=http_api_key)
 		elif wash_tube[0] == 0:
 			inst1 = BInst("queue_stop")
 			RM.item_add(inst1, pos='front')
@@ -734,11 +739,12 @@ def wash_tube_queue(pump_list, wash_tube, rate_unit,
 ## wash loop with two solvents
 def wash_tube_queue2(pump_list, if_wash, wash_loop, rate_unit, 
 					pos=[0,1,2,3,4], 
-					zmq_control_addr='tcp://localhost:60615', 
-					zmq_info_addr='tcp://localhost:60625'):
+					http_server_uri=None, 
+					http_api_key=None):
 
-	RM = REManagerAPI(zmq_control_addr=zmq_control_addr, zmq_info_addr=zmq_info_addr)
-
+	RM = REManagerAPI(http_server_uri=http_server_uri)
+	RM.set_authorization_key(api_key=http_api_key)
+ 
 	### Stop all infusing pumps
 	flowplan = BPlan('stop_group', pump_list)
 	RM.item_add(flowplan, pos=pos[0])

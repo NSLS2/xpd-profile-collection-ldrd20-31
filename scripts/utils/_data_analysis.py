@@ -5,8 +5,11 @@ from scipy import integrate
 #import scipy.signal as scipy
 from scipy.optimize import curve_fit
 from scipy.signal import find_peaks
-import importlib
-de = importlib.import_module("_data_export")
+
+import _data_export as de
+
+# import importlib
+# de = importlib.import_module("_data_export")
 
 """ This module provides functions for data analysis.
     Usually imported as da.
