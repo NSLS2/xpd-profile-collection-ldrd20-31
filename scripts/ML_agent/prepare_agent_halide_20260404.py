@@ -7,7 +7,10 @@ import pandas as pd
 from tqdm import tqdm
 # sys.path.insert(0, "/home/xf28id2/src/blop")
 
-from blop import Agent, DOF, Objective
+from ax.api.protocols import IMetric
+from blop import Agent, RangeDOF, Objective, ScalarizedObjective, OutcomeConstraint
+
+from scripts.ML_agent.evaluation_halide import HalideEvaluation
 
 
 def build_agent(
@@ -20,47 +23,41 @@ def build_agent(
 
     if use_OAm:
         dofs = [
-            DOF(
-                description="CsPb(oleate)3",
+            RangeDOF(
                 name="infusion_rate_CsPb",
-                units="uL/min",
-                search_domain=(20, 80),
+                bounds=(20, 80),
+                parameter_type="float",
             ),
             # DOF(description="TOABr", name="infusion_rate_Br", units="uL/min", search_domain=(50, 200)),
             # DOF(description="ZnI2", name="infusion_rate_I2", units="uL/min", search_domain=(10, 190)),
-            DOF(
-                description="ZnCl2",
+            RangeDOF(
                 name="infusion_rate_Cl",
-                units="uL/min",
-                search_domain=(10, 190),
+                bounds=(10, 190),
+                parameter_type="float",
             ),
-            DOF(
-                description="OAm_Tol",
+            RangeDOF(
                 name="infusion_rate_OAm",
-                units="uL/min",
-                search_domain=(0, 70),
+                bounds=(0, 70),
+                parameter_type="float",
             ),
         ]
 
     else:
         dofs = [
-            DOF(
-                description="CsPb(oleate)3",
+            RangeDOF(
                 name="infusion_rate_CsPb",
-                units="uL/min",
-                search_domain=(10, 200),
+                bounds=(10, 200),
+                parameter_type="float",
             ),
-            DOF(
-                description="TOABr",
+            RangeDOF(
                 name="infusion_rate_Br",
-                units="uL/min",
-                search_domain=(5, 200),
+                bounds=(5, 200),
+                parameter_type="float",
             ),
-            DOF(
-                description="ZnI2",
+            RangeDOF(
                 name="infusion_rate_I2",
-                units="uL/min",
-                search_domain=(0, 200),
+                bounds=(0, 200),
+                parameter_type="float",
             ),
             # DOF(description="ZnCl2", name="infusion_rate_Cl", units="uL/min", search_domain=(0, 200)),
         ]
@@ -71,30 +68,38 @@ def build_agent(
     # ratio_up = 1-(510-peak_up)*0.99/110
     # ratio_down = 1-(510-peak_down)*0.99/110
 
+    # Separate tracking metric that we have constraints on
+    #   - Don't minimize or maximize peak
+    #   - Simply get it in-bounds
+    peak_metric = IMetric(name="Peak")
+    peak_constraints = [
+        OutcomeConstraint(f"p >= {peak_down}", p=peak_metric),
+        OutcomeConstraint(f"p <= {peak_up}", p=peak_metric),
+    ]
+
+    # TODO: If desired, we can use scalarization
+    # scalarized_objective = ScalarizedObjective(
+    #     "-50 * x + 100 * y",
+    #     minimize=False,
+    #     x="log_FWHM",
+    #     y="log_PLQY",
+    # )
+
     objectives = [
-        Objective(
-            description="Peak emission",
-            name="Peak",
-            target=(peak_down, peak_up),
-            weight=100.0,
-            max_noise=0.25,
-        ),
         # Objective(description="Peak emission", name="Peak", target=peak_target, transform="log",weight=10., max_noise=0.25),
         Objective(
-            description="Peak width",
-            name="FWHM",
-            target="min",
-            transform="log",
-            weight=50.0,
-            max_noise=0.25,
+            name="log_FWHM",
+            minimize=True,
+            # transform="log",
+            # weight=50.0,
+            # max_noise=0.25, # TODO: How critical is max_noise? Requires custom BoTorch model in new Blop
         ),
         Objective(
-            description="Quantum yield",
-            name="PLQY",
-            target="max",
-            transform="log",
-            weight=100.0,
-            max_noise=0.25,
+            name="log_PLQY",
+            minimize=False,
+            # transform="log",
+            # weight=100.0,
+            # max_noise=0.25, # TODO: How critical is max_noise? Requires custom BoTorch model in new Blop
         ),
         # Objective(description="Particle size", name="Br_size", target=(size_target-1.5, size_target+1.5), transform="log", weight=0.1, max_noise=0.25),
         # Objective(description="Phase ratio", name="Br_ratio", target=(ratio_down, ratio_up), transform="log", weight=0.1, max_noise=0.25),
@@ -103,8 +108,15 @@ def build_agent(
     # objectives = [
     #     Objective(name="Peak emission", key="peak_emission", target=525, units="nm"),
     #     Objective(name="Peafilepath
-    print("Start to buid agent")
-    agent = Agent(dofs=dofs, objectives=objectives, db=None, verbose=True)
+
+    print("Start to build agent")
+    agent = Agent(
+        sensors=[],
+        dofs=dofs,
+        objectives=objectives,
+        evaluation_function=evaluation_function,
+        outcome_constraints=peak_constraints,
+    )
 
     # if peak_target > 518:
     #     agent.dofs.infusion_rate_Cl.deactivate()

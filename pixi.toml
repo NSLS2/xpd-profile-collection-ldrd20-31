@@ -36,6 +36,8 @@ tiled-client = ">=0.2.3,<0.3"
 pymatgen = "*"
 "diffpy.pdffit2" = "*"
 "diffpy.structure" = "*"
+blop = ">=1.0.0b1,<2"
+pytest = ">=9.0.3,<10"
 #setuptools = "<81"
 #httpie = "*"
 
@@ -80,6 +82,12 @@ ipython = "ipython"
 [environments]
 terminal = {features=["profile", "terminal"], solve-group="profile"}
 qs = {features=["profile", "qs"], solve-group="profile"}
+
+[dependencies]
+scipy = ">=1.17.1,<2"
+pytest = ">=9.0.3,<10"
+matplotlib = ">=3.10.8,<4"
+pandas = ">=3.0.2,<4"
 
 
 #zmq_info_addr: "ipc:///var/lib/bsqs/bsqs-info.sock"
