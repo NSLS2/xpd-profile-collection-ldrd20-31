@@ -1,4 +1,3 @@
-
 import os
 import json
 import glob
@@ -11,124 +10,172 @@ from tqdm import tqdm
 from blop import Agent, DOF, Objective
 
 
-def build_agent(peak_target=660, peak_tolerance=5, size_target=6, agent_data_path='/', use_OAm=False):
+def build_agent(
+    peak_target=660, peak_tolerance=5, size_target=6, agent_data_path="/", use_OAm=False
+):
     # data_path = '/home/xf28id2/data_ZnCl2'
     # agent_data_path = '/home/xf28id2/Documents/ChengHung/agent_data/Cl_02'
     # agent_data_path = agent_data_path
     # agent_data_path = '/nsls2/data/xpd-new/legacy/processed/LDRD_chl/20240312_dataset_800/agent_data_update_quinine_20240312.csv'
 
-
     if use_OAm:
         dofs = [
-            DOF(description="CsPb(oleate)3", name="infusion_rate_CsPb", units="uL/min", search_domain=(20, 80)),
+            DOF(
+                description="CsPb(oleate)3",
+                name="infusion_rate_CsPb",
+                units="uL/min",
+                search_domain=(20, 80),
+            ),
             # DOF(description="TOABr", name="infusion_rate_Br", units="uL/min", search_domain=(50, 200)),
-            # DOF(description="ZnI2", name="infusion_rate_I2", units="uL/min", search_domain=(10, 190)), 
-            DOF(description="ZnCl2", name="infusion_rate_Cl", units="uL/min", search_domain=(10, 190)),
-            DOF(description="OAm_Tol", name="infusion_rate_OAm", units="uL/min", search_domain=(0, 70)),
+            # DOF(description="ZnI2", name="infusion_rate_I2", units="uL/min", search_domain=(10, 190)),
+            DOF(
+                description="ZnCl2",
+                name="infusion_rate_Cl",
+                units="uL/min",
+                search_domain=(10, 190),
+            ),
+            DOF(
+                description="OAm_Tol",
+                name="infusion_rate_OAm",
+                units="uL/min",
+                search_domain=(0, 70),
+            ),
         ]
 
     else:
         dofs = [
-            DOF(description="CsPb(oleate)3", name="infusion_rate_CsPb", units="uL/min", search_domain=(10, 200)),
-            DOF(description="TOABr", name="infusion_rate_Br", units="uL/min", search_domain=(5, 200)),
-            DOF(description="ZnI2", name="infusion_rate_I2", units="uL/min", search_domain=(0, 200)), 
+            DOF(
+                description="CsPb(oleate)3",
+                name="infusion_rate_CsPb",
+                units="uL/min",
+                search_domain=(10, 200),
+            ),
+            DOF(
+                description="TOABr",
+                name="infusion_rate_Br",
+                units="uL/min",
+                search_domain=(5, 200),
+            ),
+            DOF(
+                description="ZnI2",
+                name="infusion_rate_I2",
+                units="uL/min",
+                search_domain=(0, 200),
+            ),
             # DOF(description="ZnCl2", name="infusion_rate_Cl", units="uL/min", search_domain=(0, 200)),
         ]
-    
 
-    
-    peak_up = peak_target+peak_tolerance
-    peak_down = peak_target-peak_tolerance
-    
+    peak_up = peak_target + peak_tolerance
+    peak_down = peak_target - peak_tolerance
+
     # ratio_up = 1-(510-peak_up)*0.99/110
     # ratio_down = 1-(510-peak_down)*0.99/110
-    
+
     objectives = [
-        Objective(description="Peak emission", name="Peak", target=(peak_down, peak_up), weight=100., max_noise=0.25),
+        Objective(
+            description="Peak emission",
+            name="Peak",
+            target=(peak_down, peak_up),
+            weight=100.0,
+            max_noise=0.25,
+        ),
         # Objective(description="Peak emission", name="Peak", target=peak_target, transform="log",weight=10., max_noise=0.25),
-        Objective(description="Peak width", name="FWHM", target="min", transform="log", weight=50., max_noise=0.25),
-        Objective(description="Quantum yield", name="PLQY", target="max", transform="log", weight=100., max_noise=0.25),
+        Objective(
+            description="Peak width",
+            name="FWHM",
+            target="min",
+            transform="log",
+            weight=50.0,
+            max_noise=0.25,
+        ),
+        Objective(
+            description="Quantum yield",
+            name="PLQY",
+            target="max",
+            transform="log",
+            weight=100.0,
+            max_noise=0.25,
+        ),
         # Objective(description="Particle size", name="Br_size", target=(size_target-1.5, size_target+1.5), transform="log", weight=0.1, max_noise=0.25),
-        # Objective(description="Phase ratio", name="Br_ratio", target=(ratio_down, ratio_up), transform="log", weight=0.1, max_noise=0.25),   
+        # Objective(description="Phase ratio", name="Br_ratio", target=(ratio_down, ratio_up), transform="log", weight=0.1, max_noise=0.25),
     ]
-
-
-
 
     # objectives = [
     #     Objective(name="Peak emission", key="peak_emission", target=525, units="nm"),
     #     Objective(name="Peafilepath
-    print('Start to buid agent')
+    print("Start to buid agent")
     agent = Agent(dofs=dofs, objectives=objectives, db=None, verbose=True)
-    
-    
-        
+
     # if peak_target > 518:
     #     agent.dofs.infusion_rate_Cl.deactivate()
     #     agent.dofs.infusion_rate_Cl.device.put(0)
 
-    # elif peak_target < 510:        
+    # elif peak_target < 510:
     #     agent.dofs.infusion_rate_I2.deactivate()
     #     agent.dofs.infusion_rate_I2.device.put(0)
-    
+
     # else:
     #     agent.dofs.infusion_rate_I2.deactivate()
     #     agent.dofs.infusion_rate_I2.device.put(0)
     #     agent.dofs.infusion_rate_Cl.deactivate()
     #     agent.dofs.infusion_rate_Cl.device.put(0)
 
-
     metadata_keys = ["time", "uid", "r_2"]
-
-
 
     # filepaths = glob.glob(f"{agent_data_path}/*.json")
     # filepaths.sort()
-    
+
     # fn = agent_data_path + '/' + 'agent_data_update_quinine_CsPbCl3.csv'
     fn = agent_data_path
-    
-    names = ['infusion_rate_CsPb', 
-             'infusion_rate_Br', 
-             'infusion_rate_I2', 
-             'infusion_rate_Cl', 
-             'Peak', 'FWHM', 'PLQY', 'time', 'uid', 'r_2']
 
-    
-    df = pd.read_csv(fn, sep=' ', names=names, skiprows=1, index_col=False)
+    names = [
+        "infusion_rate_CsPb",
+        "infusion_rate_Br",
+        "infusion_rate_I2",
+        "infusion_rate_Cl",
+        "Peak",
+        "FWHM",
+        "PLQY",
+        "time",
+        "uid",
+        "r_2",
+    ]
 
-    
-    
-    for i in range(len(df['uid'])):
-    # for fp in tqdm(filepaths):
-    #     with open(fp, "r") as f:
-    #         data = json.load(f)
+    df = pd.read_csv(fn, sep=" ", names=names, skiprows=1, index_col=False)
+
+    for i in range(len(df["uid"])):
+        # for fp in tqdm(filepaths):
+        #     with open(fp, "r") as f:
+        #         data = json.load(f)
         # print(data)
         data = {}
         for key in df.keys():
             data[key] = df[key][i]
-            
+
         r_2_min = 0.70
-        try: 
-            if data['r_2'] < r_2_min:
-                print(f'Skip because "r_2" of {data["uid"]} is {data["r_2"]:.2f} < {r_2_min}.')
-            else: 
-                x = {k:[data[k]] for k in agent.dofs.names}
-                y = {k:[data[k]] for k in agent.objectives.names}
+        try:
+            if data["r_2"] < r_2_min:
+                print(
+                    f'Skip because "r_2" of {data["uid"]} is {data["r_2"]:.2f} < {r_2_min}.'
+                )
+            else:
+                x = {k: [data[k]] for k in agent.dofs.names}
+                y = {k: [data[k]] for k in agent.objectives.names}
                 # metadata = {}
-                metadata = {k:[data.get(k, None)] for k in metadata_keys}
+                metadata = {k: [data.get(k, None)] for k in metadata_keys}
                 # print(f'\n{x = }')
                 # print(f'{y = }\n')
-                agent.tell(x=x, y=y, metadata=metadata, train=False, update_models=False)
-        
-        except (KeyError):
-            print(f'{os.path.basename(fp)} has no "r_2".')
+                agent.tell(
+                    x=x, y=y, metadata=metadata, train=False, update_models=False
+                )
 
+        except KeyError:
+            print(f'{os.path.basename(fp)} has no "r_2".')
 
     agent._construct_all_models()
     agent._train_all_models()
 
-    print(f'The target of the emission peak is {peak_target} nm.')
+    print(f"The target of the emission peak is {peak_target} nm.")
 
     return agent
 
@@ -136,7 +183,7 @@ def build_agent(peak_target=660, peak_tolerance=5, size_target=6, agent_data_pat
     # print(agent.ask("qr", n=36))
 
 
-'''
+"""
 agent.posterior
 import torch
 
@@ -178,4 +225,5 @@ agent.plot_acquisition(); plt.show()
 18/28: agent.objectives
 18/29: agent.best
 
- '''
+ """
+
