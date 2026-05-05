@@ -36,14 +36,14 @@ from bluesky.callbacks.best_effort import BestEffortCallback
 
 RE = RunEngine({})
 
-db = Broker.named("xpd-ldrd20-31")
+# db = Broker.named("xpd-ldrd20-31")
 # db = Broker.named("xpd")
 # db = Broker.named("xpd-analysis")
-bec = BestEffortCallback()
+# bec = BestEffortCallback()
 
-RE.subscribe(db.insert)
-RE.subscribe(bec)
-res = nslsii.configure_kafka_publisher(RE, beamline_name="xpd-ldrd20-31")
+# RE.subscribe(db.insert)
+# RE.subscribe(bec)
+# res = nslsii.configure_kafka_publisher(RE, beamline_name="xpd-ldrd20-31")
 # res = nslsii.configure_kafka_publisher(RE, beamline_name="xpd")
 # res = nslsii.configure_kafka_publisher(RE, beamline_name="xpd-analysis")
 
@@ -102,5 +102,18 @@ def show_env():
 from bluesky_queueserver import is_re_worker_active
 if is_re_worker_active():
     print('<code without interactive features, e.g. reading data from a file>')
+
+    # Publish run documents to the bluesky-0MQ-proxy so subscribers
+    # (RemoteDispatcher, TiledWriter, etc.) can receive them.
+    import os
+    _zmq_proxy_in = os.environ.get("BLUESKY_ZMQ_PROXY_IN_ADDR", "")
+    if _zmq_proxy_in:
+        from bluesky.callbacks.zmq import Publisher as ZmqPublisher
+        # Parse "tcp://localhost:5577" into ("localhost", 5577) tuple
+        _host_port = _zmq_proxy_in.replace("tcp://", "").split(":")
+        _zmq_addr_tuple = (_host_port[0], int(_host_port[1]))
+        _publisher = ZmqPublisher(_zmq_addr_tuple)
+        RE.subscribe(_publisher)
+        print(f"[STARTUP] RE subscribed ZMQ Publisher -> {_zmq_addr_tuple}")
 else:
     print('<code with interactive features, e.g. manual data input>')

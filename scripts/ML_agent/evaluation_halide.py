@@ -82,6 +82,9 @@ class HalideEvaluation:
     def _read_streams(self, uid: str):
         """Read fluorescence and absorbance QEPro data from Tiled.
 
+        Retries several times to allow the TiledWriter (on a separate thread)
+        to finish persisting documents before reading.
+
         Returns
         -------
         qepro_fl : dict
@@ -91,12 +94,34 @@ class HalideEvaluation:
         metadata : dict
             Metadata dictionary (from fluorescence stream's start doc).
         """
-        qepro_fl, metadata = de.read_qepro_by_stream(
-            uid, stream_name="fluorescence", data_agent="tiled"
-        )
-        qepro_abs, _ = de.read_qepro_by_stream(
-            uid, stream_name="absorbance", data_agent="tiled"
-        )
+        import time
+
+        max_retries = 10
+        retry_delay = 2.0  # seconds
+
+        for attempt in range(max_retries):
+            qepro_fl, metadata = de.read_qepro_by_stream(
+                uid,
+                stream_name="fluorescence",
+                data_agent="tiled",
+                tiled_client=self.tiled_client,
+            )
+            qepro_abs, _ = de.read_qepro_by_stream(
+                uid,
+                stream_name="absorbance",
+                data_agent="tiled",
+                tiled_client=self.tiled_client,
+            )
+            if qepro_fl and qepro_abs:
+                return qepro_fl, qepro_abs, metadata
+
+            print(
+                f"[EVAL] Waiting for tiled data (attempt {attempt + 1}/{max_retries})...",
+                flush=True,
+            )
+            time.sleep(retry_delay)
+
+        # Return whatever we got (may be empty — caller handles gracefully)
         return qepro_fl, qepro_abs, metadata
 
     def _process_pl(self, qepro_dic: dict, metadata_dic: dict):
@@ -286,8 +311,8 @@ class HalideEvaluation:
             results.append(
                 {
                     "Peak": peak_emission,
-                    "FWHM": fwhm,
-                    "PLQY": plqy,
+                    # "FWHM": fwhm,
+                    # "PLQY": plqy,
                     "log_FWHM": np.log(fwhm),
                     "log_PLQY": np.log(plqy),
                     "_id": s["_id"],
