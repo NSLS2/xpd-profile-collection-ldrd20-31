@@ -5,21 +5,25 @@ This plan follows the Blop AcquisitionPlan protocol signature::
 
     def __call__(suggestions, actuators, sensors, md=None) -> uid
 
-It performs the full synthesis + measurement sequence for one optimization step:
-1. Set pump infusion rates (from suggestion DOF values)
-2. Start pumps
-3. Wait for flow equilibrium (residence time, computed from rates directly)
-4. Optionally start toluene dilution pump and wait
-5. Collect absorbance spectra
-6. Collect fluorescence spectra
-7. Return the run UID
+It performs the full synthesis + measurement sequence for one optimization step,
+mirroring the order of plans that synthesis_queue_xlsx previously submitted to
+the queueserver queue:
+
+1. Stop all pumps
+2. Set pump infusion rates
+3. Start pumps
+4. Wait for flow equilibrium (hardware read via wait_equilibrium2)
+5. Optionally start toluene dilution pump and wait
+6. Collect absorbance spectra
+7. Collect fluorescence spectra
+8. Return the run UID
 
 This file is loaded into the queueserver environment via startup. All devices
-(qepro, LED, UV_shutter, pump objects) and helper plans (start_group_infuse,
-stop_group) are available as globals from earlier startup files.
+(qepro, LED, UV_shutter, pump objects) and helper plans (stop_group,
+set_group_infuse2, start_group_infuse, wait_equilibrium2, sleep_sec_q) are
+available as globals from earlier startup files.
 """
 
-import numpy as np
 import bluesky.plan_stubs as bps
 import bluesky.preprocessors as bpp
 
@@ -43,12 +47,9 @@ SET_TARGET_LIST = [True, True, True]
 # Rate unit
 RATE_UNIT = "ul/min"
 
-# Mixer tubing: list of (length_cm,) for each mixer segment
-# Used to compute residence time from rates directly.
+# Mixer tubing: single segment of 30 cm (matches historical xlsx config).
+# Format matches what wait_equilibrium2 expects: "value unit".
 MIXER_LENGTHS_CM = [30.0]
-
-# Inner diameter of mixer tubing (mm)
-TUBING_ID_MM = 1.016
 
 # Residence time multiplier (wait this many multiples of the residence time)
 RESIDENT_T_RATIO = 1.0
@@ -63,7 +64,7 @@ PRECURSOR_LIST = ["CsPbOA", "TOABr", "ZnI2"]
 # Post-dilution with toluene
 POST_DILUTE = False
 POST_DILUTE_RATIO = 1.0  # toluene rate = sum(active_rates) * ratio
-POST_DILUTE_WAIT_SEC = 30  # wait time after starting toluene pump
+POST_DILUTE_WAIT_SEC = 30  # wait time after starting toluene pump (seconds)
 
 # Default mapping: DOF name -> pump device name in queueserver namespace
 DOF_TO_PUMP = {
@@ -86,13 +87,8 @@ DILUTE_PUMP_NAME = "dds1_p2"
 def halide_acquire(suggestions, actuators, sensors=None, md=None):
     """Acquire UV-Vis data for halide perovskite optimization.
 
-    This is the acquisition plan submitted by QueueserverAgent. It:
-    1. Extracts pump rates from the suggestion
-    2. Sets and starts pumps
-    3. Waits for equilibrium (computed from rates, no hardware read)
-    4. Optionally starts toluene dilution
-    5. Collects absorbance + fluorescence spectra in a single run
-    6. Returns the run UID
+    Mirrors the plan sequence that synthesis_queue_xlsx previously submitted
+    to the queueserver queue, now expressed as a single coherent Bluesky plan.
 
     Parameters
     ----------
@@ -138,62 +134,48 @@ def halide_acquire(suggestions, actuators, sensors=None, md=None):
     }
     _md.update(md or {})
 
+    # --- Step 0: Stop all pumps ---
+    yield from stop_group(pump_list)
+
     # --- Step 1: Set pump infusion rates ---
-    for pump, rate, syringe, target_vol, set_target, material in zip(
-        pump_list,
-        rate_list,
+    yield from set_group_infuse2(
         SYRINGE_LIST[: len(pump_list)],
-        TARGET_VOL_LIST[: len(pump_list)],
-        SET_TARGET_LIST[: len(pump_list)],
-        SYRINGE_MATER_LIST[: len(pump_list)],
-    ):
-        if rate == 0.0:
-            continue
-        yield from pump.set_infuse2(
-            syringe,
-            set_target=set_target,
-            target_vol=float(target_vol.split(" ")[0]),
-            target_unit=target_vol.split(" ")[1],
-            infuse_rate=rate,
-            infuse_unit=RATE_UNIT,
-            syringe_material=material,
-        )
+        pump_list,
+        set_target_list=SET_TARGET_LIST[: len(pump_list)],
+        target_vol_list=TARGET_VOL_LIST[: len(pump_list)],
+        rate_list=rate_list,
+        syringe_mater_list=SYRINGE_MATER_LIST[: len(pump_list)],
+        rate_unit=RATE_UNIT,
+    )
 
     # --- Step 2: Start pumps ---
     yield from start_group_infuse(pump_list, rate_list)
 
-    # --- Step 3: Wait for equilibrium ---
-    # Compute residence time directly from rate_list (no hardware read needed)
-    wait_sec = _compute_equilibrium_wait(rate_list, RESIDENT_T_RATIO)
-    print(f"\nResidence time: {wait_sec:.1f} s (ratio={RESIDENT_T_RATIO})")
-    yield from _sleep_with_progress(wait_sec)
+    # --- Step 3: Wait for equilibrium via hardware read ---
+    mixer_pump_list = [[f"{MIXER_LENGTHS_CM[0]} cm", *pump_list]]
+    yield from wait_equilibrium2(mixer_pump_list, ratio=RESIDENT_T_RATIO)
 
     # --- Step 4: Optional toluene post-dilution ---
-    dilute_pump = None
     if POST_DILUTE:
         dilute_pump = _resolve_pumps([DILUTE_PUMP_NAME])[0]
         toluene_rate = sum(rate_list) * POST_DILUTE_RATIO
-        yield from dilute_pump.set_infuse2(
-            50,
-            set_target=True,
-            target_vol=30,
-            target_unit="ml",
-            infuse_rate=toluene_rate,
-            infuse_unit=RATE_UNIT,
-            syringe_material="steel",
-        )
-        yield from dilute_pump.infuse_pump2()
         print(
-            f"\nStarted toluene dilution at {toluene_rate:.1f} uL/min, waiting {POST_DILUTE_WAIT_SEC}s"
+            f"\nStarted toluene dilution at {toluene_rate:.1f} uL/min, "
+            f"waiting {POST_DILUTE_WAIT_SEC}s"
         )
-        yield from bps.sleep(POST_DILUTE_WAIT_SEC)
+        yield from set_group_infuse2(
+            [50],
+            [dilute_pump],
+            set_target_list=[True],
+            target_vol_list=["30 ml"],
+            rate_list=[toluene_rate],
+            syringe_mater_list=["steel"],
+            rate_unit=RATE_UNIT,
+        )
+        yield from sleep_sec_q(POST_DILUTE_WAIT_SEC)
 
     # --- Step 5: Collect absorbance + fluorescence in a single run ---
     uid = yield from _acquire_uvvis(_md)
-
-    # --- Step 6: Stop dilution pump if active ---
-    if dilute_pump is not None:
-        yield from dilute_pump.stop_pump2()
 
     return uid
 
@@ -207,21 +189,30 @@ def _acquire_uvvis(md):
     """Collect absorbance and fluorescence spectra in a single Bluesky run.
 
     Produces two streams: 'absorbance' and 'fluorescence'.
-    Mirrors startup/32-bundle-plan.py xray_uvvis_plan2 (without X-ray).
+    Mirrors xray_uvvis_plan2 (startup/32-bundle-plan.py) without the X-ray
+    detector, including the hardware state guard before each mode switch.
     """
 
     @bpp.stage_decorator([qepro])
     @bpp.run_decorator(md=md)
     def _inner():
         # --- Absorbance ---
-        yield from bps.mv(
-            qepro.correction,
-            "Reference",
-            qepro.spectrum_type,
-            "Absorbtion",
-        )
-        yield from bps.mv(LED, "Low", UV_shutter, "High")
-        yield from bps.sleep(2)
+        if (
+            LED.get() == "Low"
+            and UV_shutter.get() == "High"
+            and qepro.correction.get() == "Reference"
+            and qepro.spectrum_type.get() == "Absorbtion"
+        ):
+            pass
+        else:
+            yield from bps.mv(
+                qepro.correction,
+                "Reference",
+                qepro.spectrum_type,
+                "Absorbtion",
+            )
+            yield from bps.mv(LED, "Low", UV_shutter, "High")
+            yield from bps.sleep(2)
 
         for _ in range(NUM_ABS):
             yield from bps.trigger(qepro, wait=True)
@@ -230,14 +221,22 @@ def _acquire_uvvis(md):
             yield from bps.save()
 
         # --- Fluorescence ---
-        yield from bps.mv(
-            qepro.correction,
-            "Dark",
-            qepro.spectrum_type,
-            "Corrected Sample",
-        )
-        yield from bps.mv(LED, "High", UV_shutter, "Low")
-        yield from bps.sleep(2)
+        if (
+            LED.get() == "High"
+            and UV_shutter.get() == "Low"
+            and qepro.correction.get() == "Dark"
+            and qepro.spectrum_type.get() == "Corrected Sample"
+        ):
+            pass
+        else:
+            yield from bps.mv(
+                qepro.correction,
+                "Dark",
+                qepro.spectrum_type,
+                "Corrected Sample",
+            )
+            yield from bps.mv(LED, "High", UV_shutter, "Low")
+            yield from bps.sleep(2)
 
         for _ in range(NUM_FLU):
             yield from bps.trigger(qepro, wait=True)
@@ -254,48 +253,6 @@ def _acquire_uvvis(md):
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
-
-
-def _compute_equilibrium_wait(rate_list, ratio=1.0):
-    """Compute equilibrium wait time (seconds) from pump rates.
-
-    Uses mixer geometry to calculate residence time without reading hardware.
-
-    Parameters
-    ----------
-    rate_list : list[float]
-        Infusion rates in uL/min.
-    ratio : float
-        Multiplier on residence time.
-
-    Returns
-    -------
-    float
-        Wait time in seconds.
-    """
-    total_rate_ul_min = sum(r for r in rate_list if r > 0)
-    if total_rate_ul_min <= 0:
-        return 0.0
-
-    # Total mixer volume in uL (pi * r^2 * length, converted from mm/cm to uL)
-    total_vol_ul = 0.0
-    for length_cm in MIXER_LENGTHS_CM:
-        length_mm = length_cm * 10.0
-        radius_mm = TUBING_ID_MM / 2.0
-        vol_mm3 = np.pi * radius_mm**2 * length_mm  # mm^3 == uL
-        total_vol_ul += vol_mm3
-
-    residence_time_sec = (total_vol_ul / total_rate_ul_min) * 60.0
-    return residence_time_sec * ratio
-
-
-def _sleep_with_progress(total_sec, steps=100):
-    """Sleep for total_sec, yielding periodically (mirrors sleep_sec_q)."""
-    if total_sec <= 0:
-        return
-    step_sec = total_sec / steps
-    for _ in range(steps):
-        yield from bps.sleep(step_sec)
 
 
 def _make_sample_name(rate_list):
