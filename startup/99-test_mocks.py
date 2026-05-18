@@ -18,15 +18,30 @@ print("[TEST MODE] Loading mock devices...")
 
 _WAVELENGTHS = np.linspace(200, 1000, 2048)
 
+# Number of PL shots per batch (must match NUM_FLU in 33-halide_acquire.py).
+# The first batch intentionally generates spectra that fail the c1 classifier
+# threshold (key_height=2000) so the quality-gate retry loop is exercised.
+# All subsequent batches return a strong peak that passes.
+_INITIAL_BAD_PL_SHOTS = 10  # = NUM_FLU
+_pl_trigger_count = 0
+
 
 def _make_spectrum():
-    """Generate a synthetic fluorescence spectrum with a gaussian peak around 520 nm.
+    """Generate a synthetic PL spectrum.
 
-    Amplitude is set to 5000 so the peak satisfies the PLQualityMonitor
-    classifier thresholds used by the ``use_good_bad`` acquisition mode
-    (key_height=2000, integral_low=100_000).
+    The first ``_INITIAL_BAD_PL_SHOTS`` calls return a flat, near-zero
+    spectrum (amplitude << key_height=2000) so the PLQualityMonitor
+    classifies the first batch as **bad** and exercises the retry loop.
+    All subsequent calls return a strong Gaussian peak at 520 nm (amplitude
+    5000) that passes the c1 threshold, causing the second batch to be
+    classified **good** and the acquisition to succeed.
     """
+    global _pl_trigger_count
+    _pl_trigger_count += 1
     noise = np.random.normal(0, 5, 2048)
+    if _pl_trigger_count <= _INITIAL_BAD_PL_SHOTS:
+        # Intentionally bad: flat noise, no peak above key_height=2000.
+        return noise
     peak = 5000 * np.exp(-0.5 * ((_WAVELENGTHS - 520) / 15) ** 2)
     return peak + noise
 

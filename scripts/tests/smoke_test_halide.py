@@ -299,13 +299,17 @@ def run_agent(tiled_uri: str, n_iterations: int = 5):
         tiled_profile="unused",  # TILED_URI env var takes precedence
         # Exercise all optional acquisition steps in every agent iteration:
         # - post_dilute: runs the toluene post-dilution pump step
-        # - use_good_bad: enables the PL quality-gate loop (good_target=1 so
-        #   a single good batch is sufficient for the smoke test to pass)
+        # - use_good_bad: enables the PL quality-gate loop.
+        #   The mock QEPro returns a flat (bad) spectrum for the first batch
+        #   of PL shots and a strong-peak (good) spectrum for subsequent
+        #   batches, so the first iteration exercises the bad→retry→good path.
+        #   max_bad=2 tolerates that one intentional bad batch.
         acquisition_plan_kwargs={
             "post_dilute": True,
             "post_dilute_wait_sec": 2,  # keep smoke test fast
             "use_good_bad": True,
             "good_target": 1,
+            "max_bad": 2,  # tolerate the one intentional bad batch from the mock
         },
     )
 
