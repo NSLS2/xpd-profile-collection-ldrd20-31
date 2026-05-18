@@ -108,16 +108,17 @@ USE_GOOD_BAD = False
 GOOD_TARGET = 3  # success once this many good batches collected
 MAX_BAD = 3  # give up after this many bad batches (log + proceed)
 
-# Classifier thresholds (legacy good_bad_data parity).
+# Classifier thresholds — names + defaults mirror legacy
+# scripts/utils/_data_analysis.good_bad_data exactly. Production callers
+# (macro_10_good_bad) leave c2_c3=False so only c1 is evaluated; c2/c3 are
+# kept available as an opt-in.
 DEFAULT_THRESHOLDS = {
-    "key_height": 2000,  # c1: highest peak intensity > 400 nm
-    "prominence": 30,  # scipy.find_peaks prominence (legacy 'height')
-    "distance": 30,  # scipy.find_peaks distance
-    "integral_low": 100000,  # c2 (peak < 560 nm)
-    "integral_high": 200000,  # c3 (peak >= 560 nm)
-    "led_band": (340.0, 400.0),  # excluded from peak search; integrated separately
-    "split_wavelength": 560.0,
-    "peak_search_min_nm": 400.0,
+    "key_height": 2000,                    # c1 threshold
+    "height": 30,                          # scipy.find_peaks height param
+    "distance": 30,                        # scipy.find_peaks distance param
+    "c2_c3": False,                        # evaluate c2/c3? legacy default False
+    "threshold": [560, 100000, 200000],    # [split_wl_nm, integral_low, integral_high]
+    "int_boundary": [340, 400, 800],       # [LED_lo, LED_hi == PL_lo, PL_hi] (nm)
 }
 
 # ---------------------------------------------------------------------------
@@ -138,17 +139,36 @@ _Q_SIGS = [_Q_BATCH_INDEX, _Q_VERDICT, _Q_PEAK_WL, _Q_N_GOOD, _Q_N_BAD, _Q_N_EVE
 # ---------------------------------------------------------------------------
 
 
+def _find_nearest_idx(arr, value):
+    """Return the index in `arr` whose value is closest to `value`."""
+    arr = np.asarray(arr)
+    return int(np.abs(arr - value).argmin())
+
+
 def _classify_pl(x, y, thresholds=None):
     """Classify a PL spectrum as good/bad.
 
-    The classifier rejects (returns ``(False, ...)``) when any of:
+    Faithful port of ``scripts/utils/_data_analysis.good_bad_data`` (the
+    legacy production classifier). Behavior identical to a call to the
+    legacy with ``c2_c3=False`` (the only configuration ever used by
+    ``macro_10_good_bad``), or with ``c2_c3=True`` when explicitly enabled
+    via ``thresholds['c2_c3']``.
 
-    - **c1** highest peak (wavelength > ``peak_search_min_nm``, excluding the
-      LED band) has intensity below ``key_height``.
-    - **c2** highest peak is below ``split_wavelength`` and
-      ``(PL_integral - LED_integral) < integral_low``.
-    - **c3** highest peak is at/above ``split_wavelength`` and
-      ``(PL_integral - LED_integral) < integral_high``.
+    Rejection criteria (returns ``(False, top_wl)``):
+
+    - **c1** the highest peak (after suppressing peaks at wavelengths
+      < 400 nm by zeroing their heights) has intensity below ``key_height``.
+    - **c2** (only if ``c2_c3`` is True) the highest peak is below
+      ``threshold[0]`` nm and ``(PL_integral - LED_integral) < threshold[1]``.
+    - **c3** (only if ``c2_c3`` is True) the highest peak is **strictly above**
+      ``threshold[0]`` nm and ``(PL_integral - LED_integral) < threshold[2]``.
+      (An exact equality at ``threshold[0]`` falls through both c2 and c3,
+      matching legacy.)
+
+    Integrals (when ``c2_c3`` is True) use ``scipy.integrate.simpson`` over
+    ``y[w1:w2]`` for the LED band and ``y[w2:w3]`` for PL, where
+    ``w1, w2, w3`` are the indices nearest ``int_boundary[0..2]`` — matching
+    the legacy implementation (no x-spacing passed, no double-counting).
 
     Parameters
     ----------
@@ -160,42 +180,56 @@ def _classify_pl(x, y, thresholds=None):
     Returns
     -------
     (is_good, peak_wavelength_nm) : tuple[bool, float]
-        ``peak_wavelength_nm`` is ``NaN`` when no peak is found.
+        ``peak_wavelength_nm`` is ``NaN`` when no qualifying peak is found.
     """
     from scipy.signal import find_peaks
+    from scipy import integrate
 
     t = thresholds or DEFAULT_THRESHOLDS
     x = np.asarray(x, dtype=float)
     y = np.asarray(y, dtype=float)
 
-    led_lo, led_hi = t["led_band"]
-    search_mask = (x > t["peak_search_min_nm"]) & ~((x >= led_lo) & (x <= led_hi))
-    xs, ys = x[search_mask], y[search_mask]
-    if xs.size == 0:
-        return False, float("nan")
+    key_height = t["key_height"]
+    height = t["height"]
+    distance = t["distance"]
+    c2_c3 = t.get("c2_c3", False)
+    thr = t["threshold"]
+    ib = t["int_boundary"]
 
-    peaks, _ = find_peaks(ys, prominence=t["prominence"], distance=t["distance"])
+    # Step 1: find all peaks in the full spectrum.
+    peaks, _ = find_peaks(y, height=height, distance=distance)
     if peaks.size == 0:
         return False, float("nan")
 
-    top = peaks[int(np.argmax(ys[peaks]))]
-    top_wl = float(xs[top])
-    top_int = float(ys[top])
+    # Step 2 (optional, c2_c3): integrate the LED and PL bands by index slice.
+    peak_diff = None
+    if c2_c3 and len(ib) >= 3:
+        w1 = _find_nearest_idx(x, ib[0])
+        w2 = _find_nearest_idx(x, ib[1])
+        w3 = _find_nearest_idx(x, ib[2])
+        LED_integration = float(integrate.simpson(y[w1:w2]))
+        PL_integration = float(integrate.simpson(y[w2:w3]))
+        peak_diff = PL_integration - LED_integration
+
+    # Step 3: suppress LED peaks by zeroing height for any peak with x < 400 nm,
+    # then argmax over the resulting heights (legacy mechanism).
+    peak_heights_2 = [0.0 if x[i] < 400 else float(y[i]) for i in peaks]
+    max_idx = int(np.argmax(peak_heights_2))
+    top_int = peak_heights_2[max_idx]
+    top_wl = float(x[peaks[max_idx]])
 
     # c1
-    if top_int < t["key_height"]:
+    if top_int < key_height:
         return False, top_wl
 
-    led_mask = (x >= led_lo) & (x <= led_hi)
-    pl_int = float(np.trapz(y, x))
-    led_int = float(np.trapz(y[led_mask], x[led_mask])) if led_mask.any() else 0.0
-    delta = pl_int - led_int
-
-    # c2 / c3
-    if top_wl < t["split_wavelength"] and delta < t["integral_low"]:
-        return False, top_wl
-    if top_wl >= t["split_wavelength"] and delta < t["integral_high"]:
-        return False, top_wl
+    # c2 / c3 — only when explicitly enabled. Inequalities are strict on
+    # both sides to match legacy: an exact equality at threshold[0]
+    # (e.g. top_wl == 560.0) falls through both checks.
+    if c2_c3 and peak_diff is not None:
+        if top_wl < thr[0] and peak_diff < thr[1]:
+            return False, top_wl
+        if top_wl > thr[0] and peak_diff < thr[2]:
+            return False, top_wl
 
     return True, top_wl
 
