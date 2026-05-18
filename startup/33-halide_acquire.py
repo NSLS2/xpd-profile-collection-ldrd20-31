@@ -113,12 +113,12 @@ MAX_BAD = 3  # give up after this many bad batches (log + proceed)
 # (macro_10_good_bad) leave c2_c3=False so only c1 is evaluated; c2/c3 are
 # kept available as an opt-in.
 DEFAULT_THRESHOLDS = {
-    "key_height": 2000,                    # c1 threshold
-    "height": 30,                          # scipy.find_peaks height param
-    "distance": 30,                        # scipy.find_peaks distance param
-    "c2_c3": False,                        # evaluate c2/c3? legacy default False
-    "threshold": [560, 100000, 200000],    # [split_wl_nm, integral_low, integral_high]
-    "int_boundary": [340, 400, 800],       # [LED_lo, LED_hi == PL_lo, PL_hi] (nm)
+    "key_height": 2000,  # c1 threshold
+    "height": 30,  # scipy.find_peaks height param
+    "distance": 30,  # scipy.find_peaks distance param
+    "c2_c3": False,  # evaluate c2/c3? legacy default False
+    "threshold": [560, 100000, 200000],  # [split_wl_nm, integral_low, integral_high]
+    "int_boundary": [340, 400, 800],  # [LED_lo, LED_hi == PL_lo, PL_hi] (nm)
 }
 
 # ---------------------------------------------------------------------------

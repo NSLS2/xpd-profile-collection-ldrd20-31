@@ -5,17 +5,16 @@ callable class compatible with the Blop ``Agent`` evaluation_function interface:
 
     def __call__(self, uid: str, suggestions: list[dict]) -> list[dict]
 
-Each returned dict contains ``Peak``, ``FWHM``, ``PLQY``, and ``_id`` keys.
+Each returned dict contains ``Peak``, ``log_FWHM``, ``log_PLQY``, and ``_id`` keys.
 """
 
 from __future__ import annotations
 
 import sys
 import os
+import time
 import numpy as np
 from scipy import integrate
-from scipy.optimize import curve_fit
-from scipy.signal import find_peaks
 
 # Add utils to path so we can import _data_analysis / _data_export
 # This mirrors the pattern used throughout the codebase.
@@ -25,6 +24,12 @@ if _utils_dir not in sys.path:
 
 import _data_analysis as da
 import _data_export as de
+
+# ---------------------------------------------------------------------------
+# Retry configuration for all Tiled reads
+# ---------------------------------------------------------------------------
+_TILED_MAX_RETRIES = 10
+_TILED_RETRY_DELAY = 2.0  # seconds between attempts
 
 
 class HalideEvaluation:
@@ -79,50 +84,183 @@ class HalideEvaluation:
     # Internal helpers (exposed for testability)
     # ------------------------------------------------------------------
 
-    def _read_streams(self, uid: str):
-        """Read fluorescence and absorbance QEPro data from Tiled.
+    def _read_tiled_data(self, uid: str) -> tuple[dict, dict, dict, list[dict] | None]:
+        """Read all required streams from Tiled, retrying until all are available.
 
-        Retries several times to allow the TiledWriter (on a separate thread)
-        to finish persisting documents before reading.
+        Due to a data race between Tiled writing data to disk and evaluation
+        requesting it, individual reads may fail transiently.  Each piece of
+        data is fetched independently so that partial progress is preserved
+        across retries.
 
         Returns
         -------
         qepro_fl : dict
-            QEPro dictionary for the fluorescence stream.
+            QEPro data for the fluorescence stream.
         qepro_abs : dict
-            QEPro dictionary for the absorbance stream.
+            QEPro data for the absorbance stream.
         metadata : dict
-            Metadata dictionary (from fluorescence stream's start doc).
+            Run start-document metadata.
+        batch_info : list[dict] or None
+            Per-batch quality records when ``use_good_bad=True``, else ``None``.
+            Each dict has ``"verdict"`` and ``"n_events_in_batch"`` keys.
+
+        Raises
+        ------
+        RuntimeError
+            If any required data cannot be read after all retries are exhausted.
         """
-        import time
+        qepro_fl: dict = {}
+        qepro_abs: dict = {}
+        metadata: dict = {}
+        batch_info: list[dict] | None = None
+        use_good_bad: bool | None = None  # None = not yet determined
 
-        max_retries = 10
-        retry_delay = 2.0  # seconds
+        for attempt in range(_TILED_MAX_RETRIES):
+            # --- Determine use_good_bad flag (only needs to succeed once) ---
+            if use_good_bad is None:
+                try:
+                    run = self.tiled_client[uid]
+                    use_good_bad = bool(
+                        run.metadata.get("start", {}).get("use_good_bad", False)
+                    )
+                except Exception as exc:
+                    print(
+                        f"[EVAL] Failed to read run metadata (attempt "
+                        f"{attempt + 1}/{_TILED_MAX_RETRIES}): {exc!r}",
+                        flush=True,
+                    )
 
-        for attempt in range(max_retries):
-            qepro_fl, metadata = de.read_qepro_by_stream(
-                uid,
-                stream_name="fluorescence",
-                data_agent="tiled",
-                tiled_client=self.tiled_client,
+            # --- Read fluorescence stream ---
+            if not qepro_fl:
+                try:
+                    qepro_fl, metadata = de.read_qepro_by_stream(
+                        uid,
+                        stream_name="fluorescence",
+                        data_agent="tiled",
+                        tiled_client=self.tiled_client,
+                    )
+                except Exception as exc:
+                    print(
+                        f"[EVAL] Failed to read fluorescence stream (attempt "
+                        f"{attempt + 1}/{_TILED_MAX_RETRIES}): {exc!r}",
+                        flush=True,
+                    )
+
+            # --- Read absorbance stream ---
+            if not qepro_abs:
+                try:
+                    qepro_abs, _ = de.read_qepro_by_stream(
+                        uid,
+                        stream_name="absorbance",
+                        data_agent="tiled",
+                        tiled_client=self.tiled_client,
+                    )
+                except Exception as exc:
+                    print(
+                        f"[EVAL] Failed to read absorbance stream (attempt "
+                        f"{attempt + 1}/{_TILED_MAX_RETRIES}): {exc!r}",
+                        flush=True,
+                    )
+
+            # --- Read batch quality info (only when use_good_bad is True) ---
+            if use_good_bad and batch_info is None:
+                try:
+                    run = self.tiled_client[uid]
+                    data = run["fluorescence_quality"].read()
+                    batch_info = [
+                        {"verdict": str(v), "n_events_in_batch": int(n)}
+                        for v, n in zip(
+                            data["verdict"].values,
+                            data["n_events_in_batch"].values,
+                        )
+                    ]
+                except Exception as exc:
+                    print(
+                        f"[EVAL] Failed to read fluorescence_quality stream "
+                        f"(attempt {attempt + 1}/{_TILED_MAX_RETRIES}): {exc!r}",
+                        flush=True,
+                    )
+
+            # --- Check if all required data is available ---
+            all_ready = (
+                qepro_fl
+                and qepro_abs
+                and use_good_bad is not None
+                and (not use_good_bad or batch_info is not None)
             )
-            qepro_abs, _ = de.read_qepro_by_stream(
-                uid,
-                stream_name="absorbance",
-                data_agent="tiled",
-                tiled_client=self.tiled_client,
-            )
-            if qepro_fl and qepro_abs:
-                return qepro_fl, qepro_abs, metadata
+            if all_ready:
+                return qepro_fl, qepro_abs, metadata, batch_info
 
+            time.sleep(_TILED_RETRY_DELAY)
+
+        # Build a descriptive error message listing what's still missing.
+        missing = []
+        if use_good_bad is None:
+            missing.append("run metadata")
+        if not qepro_fl:
+            missing.append("fluorescence stream")
+        if not qepro_abs:
+            missing.append("absorbance stream")
+        if use_good_bad and batch_info is None:
+            missing.append("fluorescence_quality stream")
+
+        raise RuntimeError(
+            f"[EVAL] Failed to read required Tiled data for uid={uid!r} after "
+            f"{_TILED_MAX_RETRIES} attempts. Missing: {', '.join(missing)}."
+        )
+
+    def _filter_fl_to_good_batches(
+        self, qepro_fl: dict, batch_info: list[dict]
+    ) -> dict:
+        """Return a copy of ``qepro_fl`` containing only events from good batches.
+
+        The ``fluorescence`` stream stores PL shots from every batch
+        (good and bad) concatenated in acquisition order.  ``batch_info``
+        supplies the per-batch verdict and event count, which together let us
+        reconstruct which row indices belong to each batch.
+
+        Parameters
+        ----------
+        qepro_fl : dict
+            Full fluorescence QEPro dict; all arrays have first dimension
+            equal to the total number of PL events across all batches.
+        batch_info : list[dict]
+            Ordered list of per-batch records from :meth:`_read_tiled_data`.
+
+        Returns
+        -------
+        dict
+            Filtered copy of ``qepro_fl``.  If no good batches are found the
+            original dict is returned unchanged and a warning is printed.
+        """
+        good_indices: list[int] = []
+        cursor = 0
+        for batch in batch_info:
+            n = batch["n_events_in_batch"]
+            if batch["verdict"] == "good":
+                good_indices.extend(range(cursor, cursor + n))
+            cursor += n
+
+        n_total = cursor
+        if not good_indices:
             print(
-                f"[EVAL] Waiting for tiled data (attempt {attempt + 1}/{max_retries})...",
+                "[EVAL] WARNING: no good PL batches found; using all events for evaluation.",
                 flush=True,
             )
-            time.sleep(retry_delay)
+            return qepro_fl
 
-        # Return whatever we got (may be empty — caller handles gracefully)
-        return qepro_fl, qepro_abs, metadata
+        n_good = len(good_indices)
+        print(
+            f"[EVAL] Quality filter: keeping {n_good}/{n_total} PL events "
+            f"({n_total - n_good} from bad batches discarded).",
+            flush=True,
+        )
+
+        idx = np.array(good_indices)
+        return {
+            key: (arr[idx] if (a := np.asarray(arr)).ndim >= 1 and a.shape[0] == n_total else arr)
+            for key, arr in qepro_fl.items()
+        }
 
     def _process_pl(self, qepro_dic: dict, metadata_dic: dict):
         """Run PL percentile filtering, peak finding, and Gaussian fitting.
@@ -170,14 +308,9 @@ class HalideEvaluation:
 
         # Extract peak_emission and fwhm from popt
         # popt layout for _1gauss: [A, x0, sigma]  (groups of 3 for multi-gauss)
-        if "gauss" in f_fit.__name__:
-            constant = 2.355
-        else:
-            constant = 1
+        constant = 2.355 if "gauss" in f_fit.__name__ else 1
 
-        intensity_list = []
-        peak_list = []
-        fwhm_list = []
+        intensity_list, peak_list, fwhm_list = [], [], []
         for i in range(int(len(popt) / 3)):
             intensity_list.append(popt[i * 3 + 0])
             peak_list.append(popt[i * 3 + 1])
@@ -230,10 +363,7 @@ class HalideEvaluation:
         popt02, _ = da.fit_line_2D(
             wavelength, abs_array, da.line_2D, x_range=[750, 950]
         )
-        if abs(popt01[0]) >= abs(popt02[0]):
-            popt = popt02
-        else:
-            popt = popt01
+        popt = popt02 if abs(popt01[0]) >= abs(popt02[0]) else popt01
 
         abs_offset = abs_array - da.line_2D(wavelength, *popt)
         return wavelength, abs_offset
@@ -259,14 +389,12 @@ class HalideEvaluation:
         refractive_index_solvent = 1.506  # toluene
 
         if self.plqy_params[1] == "fluorescein":
-            plqy = da.plqy_fluorescein(
+            return da.plqy_fluorescein(
                 absorbance_s, PL_integral, refractive_index_solvent, *ref_params
             )
-        else:
-            plqy = da.plqy_quinine(
-                absorbance_s, PL_integral, refractive_index_solvent, *ref_params
-            )
-        return plqy
+        return da.plqy_quinine(
+            absorbance_s, PL_integral, refractive_index_solvent, *ref_params
+        )
 
     # ------------------------------------------------------------------
     # Main entry point
@@ -285,37 +413,29 @@ class HalideEvaluation:
         Returns
         -------
         list[dict]
-            One outcome dict per suggestion, with keys ``Peak``, ``FWHM``,
-            ``PLQY``, and ``_id``.
+            One outcome dict per suggestion, with keys ``Peak``, ``log_FWHM``,
+            ``log_PLQY``, and ``_id``.
         """
-        qepro_fl, qepro_abs, metadata = self._read_streams(uid)
+        qepro_fl, qepro_abs, metadata, batch_info = self._read_tiled_data(uid)
 
-        # PL processing (macros 10 + 12 + part of 13)
+        # When use_good_bad was active, the fluorescence stream contains
+        # spectra from both bad and good batches.  Filter down to only the
+        # good-batch events before computing Peak / FWHM / PLQY.
+        if batch_info is not None:
+            qepro_fl = self._filter_fl_to_good_batches(qepro_fl, batch_info)
+
         peak_emission, fwhm, PL_integral, r_2, has_peak = self._process_pl(
             qepro_fl, metadata
         )
-
-        # Absorbance processing (macro 11)
         wavelength, abs_offset = self._process_absorbance(qepro_abs)
+        plqy = self._compute_plqy(abs_offset, wavelength, PL_integral) if has_peak else 0.0
 
-        # PLQY (macro 13)
-        if has_peak:
-            plqy = self._compute_plqy(abs_offset, wavelength, PL_integral)
-        else:
-            plqy = 0.0
-
-        # Return one result per suggestion (typically len(suggestions) == 1
-        # since each uid corresponds to one experimental run).
-        results = []
-        for s in suggestions:
-            results.append(
-                {
-                    "Peak": peak_emission,
-                    # "FWHM": fwhm,
-                    # "PLQY": plqy,
-                    "log_FWHM": np.log(fwhm),
-                    "log_PLQY": np.log(plqy),
-                    "_id": s["_id"],
-                }
-            )
-        return results
+        return [
+            {
+                "Peak": peak_emission,
+                "log_FWHM": np.log(fwhm),
+                "log_PLQY": np.log(plqy),
+                "_id": s["_id"],
+            }
+            for s in suggestions
+        ]
