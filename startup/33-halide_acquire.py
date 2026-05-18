@@ -379,13 +379,18 @@ def _emit_quality_event(result):
     """Emit one event in the ``fluorescence_quality`` stream from a result dict."""
     if result is None:
         return
+    # Replace NaN with -1.0: ophyd Signal.set(nan) never completes because
+    # nan != nan (IEEE 754), causing the RunEngine to hang indefinitely.
+    peak_wl = float(result["peak_wavelength_nm"])
+    if np.isnan(peak_wl):
+        peak_wl = -1.0
     yield from bps.mv(
         _Q_BATCH_INDEX,
         int(result["batch_index"]),
         _Q_VERDICT,
         result["verdict"],
         _Q_PEAK_WL,
-        float(result["peak_wavelength_nm"]),
+        peak_wl,
         _Q_N_GOOD,
         int(result["n_good_total"]),
         _Q_N_BAD,

@@ -19,29 +19,40 @@ print("[TEST MODE] Loading mock devices...")
 _WAVELENGTHS = np.linspace(200, 1000, 2048)
 
 # Number of PL shots per batch (must match NUM_FLU in 33-halide_acquire.py).
-# The first batch intentionally generates spectra that fail the c1 classifier
-# threshold (key_height=2000) so the quality-gate retry loop is exercised.
-# All subsequent batches return a strong peak that passes.
-_INITIAL_BAD_PL_SHOTS = 10  # = NUM_FLU
+# The first TWO batches intentionally generate spectra that fail the c1
+# classifier threshold (key_height=2000) so the quality-gate retry loop is
+# exercised.  The third batch returns a strong peak that passes.
+_INITIAL_BAD_PL_SHOTS = 20  # 2 full batches of NUM_FLU=10
 _pl_trigger_count = 0
+
+
+def reset_pl_trigger_count():
+    """Reset the trigger counter so the next batch produces bad data again.
+
+    Call this before each test run to ensure the first batch is always
+    classified as **bad** by the PLQualityMonitor.
+    """
+    global _pl_trigger_count
+    _pl_trigger_count = 0
 
 
 def _make_spectrum():
     """Generate a synthetic PL spectrum.
 
-    The first ``_INITIAL_BAD_PL_SHOTS`` calls return a flat, near-zero
-    spectrum (amplitude << key_height=2000) so the PLQualityMonitor
+    The first ``_INITIAL_BAD_PL_SHOTS`` calls return a deterministically
+    flat spectrum (all zeros + tiny noise) so the PLQualityMonitor
     classifies the first batch as **bad** and exercises the retry loop.
     All subsequent calls return a strong Gaussian peak at 520 nm (amplitude
-    5000) that passes the c1 threshold, causing the second batch to be
-    classified **good** and the acquisition to succeed.
+    5000) that passes the c1 threshold (key_height=2000), causing the
+    second batch to be classified **good** and the acquisition to succeed.
     """
     global _pl_trigger_count
     _pl_trigger_count += 1
-    noise = np.random.normal(0, 5, 2048)
     if _pl_trigger_count <= _INITIAL_BAD_PL_SHOTS:
-        # Intentionally bad: flat noise, no peak above key_height=2000.
-        return noise
+        # Deterministically bad: constant baseline of 10 counts, well below
+        # key_height=2000.  No peaks for find_peaks to detect.
+        return np.full(2048, 10.0)
+    noise = np.random.normal(0, 5, 2048)
     peak = 5000 * np.exp(-0.5 * ((_WAVELENGTHS - 520) / 15) ** 2)
     return peak + noise
 
@@ -63,10 +74,13 @@ class MockQEPro(Device):
     correction = Cpt(Signal, value="Reference", kind="normal")
     spectrum_type = Cpt(Signal, value="Absorbtion", kind="normal")
 
-    # Signals that get read during data collection
+    # Signals that get read during data collection.
+    # NOTE: Use static initial values here — do NOT call _make_spectrum() at
+    # class definition time, as that would consume "bad" shots from the
+    # trigger counter before any plan runs.
     x_axis = Cpt(Signal, value=_WAVELENGTHS, kind="normal")
-    output = Cpt(Signal, value=_make_spectrum(), kind="normal")
-    sample = Cpt(Signal, value=_make_spectrum(), kind="normal")
+    output = Cpt(Signal, value=np.full(2048, 10.0), kind="normal")
+    sample = Cpt(Signal, value=np.full(2048, 10.0), kind="normal")
     dark = Cpt(Signal, value=np.zeros(2048), kind="normal")
     reference = Cpt(Signal, value=np.ones(2048) * 1000, kind="normal")
 
