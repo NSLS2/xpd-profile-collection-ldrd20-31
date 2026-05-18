@@ -36,11 +36,11 @@ tiled-client = ">=0.2.3,<0.3"
 pymatgen = "*"
 "diffpy.pdffit2" = "*"
 "diffpy.structure" = "*"
-blop = ">=1.0.0b1,<2"
 pytest = ">=9.0.3,<10"
 #setuptools = "<81"
 #httpie = "*"
-
+botorch = "*"
+gpytorch = "*"
 
 [feature.profile.pypi-dependencies]
 ophyd-async = { version = ">0.10.0", extras = ["ca", "pva"] }
@@ -49,6 +49,7 @@ ophyd-async = { version = ">0.10.0", extras = ["ca", "pva"] }
 #torch = { version = "*", index = "https://download.pytorch.org/whl/cu124" }
 #torchvision = { version = "*", index = "https://download.pytorch.org/whl/cu124" }
 #bluesky = { git = "https://github.com/bluesky/bluesky.git"}
+blop = { git = "https://github.com/bluesky/blop.git", rev = "16c9614" }
 
 
 [feature.qs.dependencies]
@@ -90,4 +91,3 @@ pandas = ">=3.0.2,<4"
 
 
 #zmq_info_addr: "ipc:///var/lib/bsqs/bsqs-info.sock"
-

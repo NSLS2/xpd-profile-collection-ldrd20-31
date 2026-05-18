@@ -12,6 +12,42 @@ existing_devices:
     is_movable: true
     is_readable: true
     module: __main__
+  _Q_BATCH_INDEX:
+    classname: Signal
+    is_flyable: false
+    is_movable: true
+    is_readable: true
+    module: ophyd.signal
+  _Q_N_BAD:
+    classname: Signal
+    is_flyable: false
+    is_movable: true
+    is_readable: true
+    module: ophyd.signal
+  _Q_N_EVENTS:
+    classname: Signal
+    is_flyable: false
+    is_movable: true
+    is_readable: true
+    module: ophyd.signal
+  _Q_N_GOOD:
+    classname: Signal
+    is_flyable: false
+    is_movable: true
+    is_readable: true
+    module: ophyd.signal
+  _Q_PEAK_WL:
+    classname: Signal
+    is_flyable: false
+    is_movable: true
+    is_readable: true
+    module: ophyd.signal
+  _Q_VERDICT:
+    classname: Signal
+    is_flyable: false
+    is_movable: true
+    is_readable: true
+    module: ophyd.signal
   dds1_p1:
     classname: MockPump
     components:
@@ -106,6 +142,37 @@ existing_devices:
     is_readable: true
     module: __main__
   dds2_p2:
+    classname: MockPump
+    components:
+      infuse_rate:
+        classname: Signal
+        is_flyable: false
+        is_movable: true
+        is_readable: true
+        module: ophyd.signal
+      read_infuse_rate:
+        classname: Signal
+        is_flyable: false
+        is_movable: true
+        is_readable: true
+        module: ophyd.signal
+      read_infuse_rate_unit:
+        classname: Signal
+        is_flyable: false
+        is_movable: true
+        is_readable: true
+        module: ophyd.signal
+      status:
+        classname: Signal
+        is_flyable: false
+        is_movable: true
+        is_readable: true
+        module: ophyd.signal
+    is_flyable: false
+    is_movable: false
+    is_readable: true
+    module: __main__
+  dds3_p1:
     classname: MockPump
     components:
       infuse_rate:
@@ -382,31 +449,43 @@ existing_plans:
     parameters: []
     properties:
       is_generator: true
-  _acquire_uvvis:
-    description: Collect absorbance and fluorescence spectra in a single Bluesky run.
+  _emit_quality_event:
+    description: Emit one event in the ``fluorescence_quality`` stream from a result
+      dict.
     module: __main__
-    name: _acquire_uvvis
+    name: _emit_quality_event
     parameters:
     - kind:
         name: POSITIONAL_OR_KEYWORD
         value: 1
-      name: md
+      name: result
     properties:
       is_generator: true
-  _sleep_with_progress:
-    description: Sleep for total_sec, yielding periodically (mirrors sleep_sec_q).
+  _pl_with_quality_gate:
+    description: Run PL batches until good/bad termination.
     module: __main__
-    name: _sleep_with_progress
+    name: _pl_with_quality_gate
     parameters:
     - kind:
         name: POSITIONAL_OR_KEYWORD
         value: 1
-      name: total_sec
-    - default: '100'
-      kind:
+      name: qepro
+    - kind:
         name: POSITIONAL_OR_KEYWORD
         value: 1
-      name: steps
+      name: monitor
+    - kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: num_flu
+    - kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: good_target
+    - kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: max_bad
     properties:
       is_generator: true
   count:
@@ -497,7 +576,9 @@ existing_plans:
     module: __main__
     name: halide_acquire
     parameters:
-    - description: 'List of suggestions from the optimizer. Each dict contains DOF
+    - annotation:
+        type: list[dict]
+      description: 'List of suggestions from the optimizer. Each dict contains DOF
         names
 
         as keys with their suggested values. Typically len == 1.'
@@ -522,6 +603,117 @@ existing_plans:
         name: POSITIONAL_OR_KEYWORD
         value: 1
       name: md
+    - default: None
+      description: Syringe sizes in mL for each pump, in DOF order.
+      kind:
+        name: KEYWORD_ONLY
+        value: 3
+      name: syringe_list
+    - default: None
+      description: Syringe materials for each pump.
+      kind:
+        name: KEYWORD_ONLY
+        value: 3
+      name: syringe_mater_list
+    - default: None
+      description: Target volumes (e.g. ``["30 ml", ...]``) for each pump.
+      kind:
+        name: KEYWORD_ONLY
+        value: 3
+      name: target_vol_list
+    - default: None
+      description: Whether to auto-set the target volume for each pump.
+      kind:
+        name: KEYWORD_ONLY
+        value: 3
+      name: set_target_list
+    - default: None
+      description: Flow-rate unit string passed to ``set_group_infuse2``.
+      kind:
+        name: KEYWORD_ONLY
+        value: 3
+      name: rate_unit
+    - default: None
+      description: Lengths of mixer tubing segments in cm.
+      kind:
+        name: KEYWORD_ONLY
+        value: 3
+      name: mixer_lengths_cm
+    - default: None
+      description: Multiplier of the residence time to wait for equilibrium.
+      kind:
+        name: KEYWORD_ONLY
+        value: 3
+      name: resident_t_ratio
+    - default: None
+      description: Number of absorbance spectra to collect.
+      kind:
+        name: KEYWORD_ONLY
+        value: 3
+      name: num_abs
+    - default: None
+      description: Number of fluorescence spectra to collect.
+      kind:
+        name: KEYWORD_ONLY
+        value: 3
+      name: num_flu
+    - default: None
+      description: Precursor names stored in run metadata.
+      kind:
+        name: KEYWORD_ONLY
+        value: 3
+      name: precursor_list
+    - default: None
+      description: Whether to perform toluene post-dilution.
+      kind:
+        name: KEYWORD_ONLY
+        value: 3
+      name: post_dilute
+    - default: None
+      description: Toluene rate = sum(active_rates) * ratio.
+      kind:
+        name: KEYWORD_ONLY
+        value: 3
+      name: post_dilute_ratio
+    - default: None
+      description: Seconds to wait after starting the toluene pump.
+      kind:
+        name: KEYWORD_ONLY
+        value: 3
+      name: post_dilute_wait_sec
+    - default: None
+      description: "Mapping of DOF name \u2192 pump device name in the queueserver\
+        \ namespace."
+      kind:
+        name: KEYWORD_ONLY
+        value: 3
+      name: dof_to_pump
+    - default: None
+      description: Device name of the toluene dilution pump.
+      kind:
+        name: KEYWORD_ONLY
+        value: 3
+      name: dilute_pump_name
+    - default: None
+      description: 'If ``True``, PL is gated by quality monitoring; additional
+
+        batches are taken until good/bad termination.'
+      kind:
+        name: KEYWORD_ONLY
+        value: 3
+      name: use_good_bad
+    - default: None
+      description: Quality target threshold for good PL data
+      kind:
+        name: KEYWORD_ONLY
+        value: 3
+      name: good_target
+    - default: None
+      description: Maximum number of bad PL data before aborting
+      kind:
+        name: KEYWORD_ONLY
+        value: 3
+      name: max_bad
     properties:
       is_generator: true
   halogen_off:
@@ -583,6 +775,56 @@ existing_plans:
         name: POSITIONAL_OR_KEYWORD
         value: 1
       name: data_agent
+    properties:
+      is_generator: true
+  measure_absorbance:
+    description: Configure optics for absorbance and trigger ``n_shots`` reads.
+    module: __main__
+    name: measure_absorbance
+    parameters:
+    - kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: qepro
+    - kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: n_shots
+    - default: '''absorbance'''
+      kind:
+        name: KEYWORD_ONLY
+        value: 3
+      name: stream
+    - default: '2'
+      kind:
+        name: KEYWORD_ONLY
+        value: 3
+      name: settle_sec
+    properties:
+      is_generator: true
+  measure_pl:
+    description: Configure optics for PL and trigger ``n_shots`` reads.
+    module: __main__
+    name: measure_pl
+    parameters:
+    - kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: qepro
+    - kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: n_shots
+    - default: '''fluorescence'''
+      kind:
+        name: KEYWORD_ONLY
+        value: 3
+      name: stream
+    - default: '2'
+      kind:
+        name: KEYWORD_ONLY
+        value: 3
+      name: settle_sec
     properties:
       is_generator: true
   reset_pumps2:
@@ -837,6 +1079,76 @@ existing_plans:
       name: pump_list
     properties:
       is_generator: true
+  steady_state_flow:
+    description: Wrap ``plan`` with pump setup before and pump stop after.
+    module: __main__
+    name: steady_state_flow
+    parameters:
+    - kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: plan
+    - kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: pump_list
+    - kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: rate_list
+    - kind:
+        name: KEYWORD_ONLY
+        value: 3
+      name: syringe_list
+    - kind:
+        name: KEYWORD_ONLY
+        value: 3
+      name: target_vol_list
+    - kind:
+        name: KEYWORD_ONLY
+        value: 3
+      name: set_target_list
+    - kind:
+        name: KEYWORD_ONLY
+        value: 3
+      name: syringe_mater_list
+    - default: '''ul/min'''
+      kind:
+        name: KEYWORD_ONLY
+        value: 3
+      name: rate_unit
+    - default: '[30.0]'
+      kind:
+        name: KEYWORD_ONLY
+        value: 3
+      name: mixer_lengths_cm
+    - default: '1.0'
+      kind:
+        name: KEYWORD_ONLY
+        value: 3
+      name: resident_t_ratio
+    - default: 'False'
+      kind:
+        name: KEYWORD_ONLY
+        value: 3
+      name: post_dilute
+    - default: None
+      kind:
+        name: KEYWORD_ONLY
+        value: 3
+      name: dilute_pump
+    - default: '1.0'
+      kind:
+        name: KEYWORD_ONLY
+        value: 3
+      name: dilute_rate_ratio
+    - default: '30'
+      kind:
+        name: KEYWORD_ONLY
+        value: 3
+      name: dilute_wait_sec
+    properties:
+      is_generator: true
   stop_group:
     description: 'Mock: stop all pumps.'
     module: __main__
@@ -1036,6 +1348,7 @@ existing_plans:
     properties:
       is_generator: true
   wait_equilibrium2:
+    description: 'Mock: skip the residence-time wait so smoke tests finish quickly.'
     module: __main__
     name: wait_equilibrium2
     parameters:

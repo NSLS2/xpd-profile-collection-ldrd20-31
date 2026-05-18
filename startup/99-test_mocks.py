@@ -20,9 +20,14 @@ _WAVELENGTHS = np.linspace(200, 1000, 2048)
 
 
 def _make_spectrum():
-    """Generate a synthetic fluorescence spectrum with a gaussian peak around 520 nm."""
+    """Generate a synthetic fluorescence spectrum with a gaussian peak around 520 nm.
+
+    Amplitude is set to 5000 so the peak satisfies the PLQualityMonitor
+    classifier thresholds used by the ``use_good_bad`` acquisition mode
+    (key_height=2000, integral_low=100_000).
+    """
     noise = np.random.normal(0, 5, 2048)
-    peak = 800 * np.exp(-0.5 * ((_WAVELENGTHS - 520) / 15) ** 2)
+    peak = 5000 * np.exp(-0.5 * ((_WAVELENGTHS - 520) / 15) ** 2)
     return peak + noise
 
 
@@ -190,6 +195,7 @@ dds2_p1 = MockPump(name="DDS2_p1")
 dds2_p2 = MockPump(name="DDS2_p2")
 dds1_p1 = MockPump(name="DDS1_p1")
 dds1_p2 = MockPump(name="DDS1_p2")
+dds3_p1 = MockPump(name="DDS3_p1")
 
 # ---------------------------------------------------------------------------
 # Mock helper plans that the acquisition plan calls
@@ -207,6 +213,16 @@ def stop_group(pump_list):
     """Mock: stop all pumps."""
     for pump in pump_list:
         yield from pump.stop_pump2()
+
+
+def wait_equilibrium2(mixer_pump_list, ratio=1, tubing_ID_mm=1.016):
+    """Mock: skip the residence-time wait so smoke tests finish quickly.
+
+    The real implementation sleeps for one residence-time (typically several
+    minutes). In test mode we just yield a no-op so the plan proceeds
+    immediately.
+    """
+    yield from bps.null()
 
 
 print(

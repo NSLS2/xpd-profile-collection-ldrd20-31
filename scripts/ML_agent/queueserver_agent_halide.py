@@ -24,6 +24,12 @@ from bluesky_queueserver_api.http import REManagerAPI
 
 from blop import RangeDOF, Objective, OutcomeConstraint
 from blop.ax.agent import QueueserverAgent
+from blop.queueserver import (
+    CORRELATION_UID_KEY,
+    QueueserverClient,
+    QueueserverOptimizationRunner,
+)
+from bluesky_queueserver_api import BPlan
 from ax.api.protocols import IMetric
 
 # Add utils to path for evaluation function dependencies
@@ -205,6 +211,50 @@ def _get_tiled_client(tiled_profile: str):
 # ---------------------------------------------------------------------------
 
 
+class HalideOptimizationRunner(QueueserverOptimizationRunner):
+    """QueueserverOptimizationRunner that forwards extra kwargs to the acquisition plan.
+
+    Blop's base ``_build_plan`` constructs a ``BPlan`` with a fixed signature
+    (suggestions, actuators, sensors, md).  ``halide_acquire`` exposes optional
+    keyword arguments such as ``post_dilute`` and ``use_good_bad`` that cannot
+    be reached through the base class.  This subclass accepts a ``plan_kwargs``
+    dict and rebuilds the ``BPlan`` with those extra kwargs forwarded.
+
+    Parameters
+    ----------
+    optimization_problem : QueueserverOptimizationProblem
+        Passed through to the base class.
+    queueserver_client : QueueserverClient
+        Passed through to the base class.
+    plan_kwargs : dict | None
+        Extra keyword arguments forwarded to every ``BPlan`` submitted to the
+        queueserver (e.g. ``{"post_dilute": True, "use_good_bad": True}``).
+    """
+
+    def __init__(self, optimization_problem, queueserver_client, plan_kwargs=None):
+        super().__init__(optimization_problem, queueserver_client)
+        self._plan_kwargs: dict = plan_kwargs or {}
+
+    def _build_plan(self, suggestions: list[dict]) -> BPlan:
+        # Delegate to super() so it updates self._state (iteration counter,
+        # current_uid, current_suggestions).  We discard the returned BPlan and
+        # rebuild it below so we can inject the extra kwargs.
+        super()._build_plan(suggestions)
+
+        md = {
+            CORRELATION_UID_KEY: self._state.current_uid,
+            "blop_suggestions": self._state.current_suggestions,
+        }
+        return BPlan(
+            self._plan_name,
+            self._state.current_suggestions,
+            list(self._problem.actuators),
+            list(self._problem.sensors),
+            md=md,
+            **self._plan_kwargs,
+        )
+
+
 def build_queueserver_agent(
     peak_target: float = PEAK_TARGET,
     peak_tolerance: float = PEAK_TOLERANCE,
@@ -215,6 +265,7 @@ def build_queueserver_agent(
     http_api_key: str = HTTP_API_KEY,
     zmq_consumer_addr: str = ZMQ_CONSUMER_ADDR,
     tiled_profile: str = TILED_PROFILE,
+    acquisition_plan_kwargs: dict | None = None,
 ) -> QueueserverAgent:
     """Build and return a QueueserverAgent ready to run.
 
@@ -238,6 +289,11 @@ def build_queueserver_agent(
         ZMQ address to consume Bluesky documents from.
     tiled_profile : str
         Tiled profile name for data access.
+    acquisition_plan_kwargs : dict | None
+        Extra keyword arguments forwarded to every ``halide_acquire`` call
+        submitted by the agent (e.g. ``{"post_dilute": True,
+        "use_good_bad": True}``).  When ``None`` (default) the plan runs with
+        its own module-level defaults.
 
     Returns
     -------
@@ -274,6 +330,7 @@ def build_queueserver_agent(
         evaluation_function=evaluation_function,
         acquisition_plan=ACQUISITION_PLAN_NAME,
         outcome_constraints=outcome_constraints,
+        acquisition_plan_kwargs=acquisition_plan_kwargs,
     )
 
     # Seed with historical data
