@@ -17,13 +17,14 @@ from __future__ import annotations
 
 import os
 import sys
+import functools
 
 import numpy as np
 import pandas as pd
 from bluesky_queueserver_api.http import REManagerAPI
 
 from blop import RangeDOF, Objective, OutcomeConstraint
-from blop.ax.agent import QueueserverAgent
+from blop.ax.agent import QueueserverAgent, Agent
 from blop.queueserver import (
     CORRELATION_UID_KEY,
     QueueserverClient,
@@ -211,51 +212,8 @@ def _get_tiled_client(tiled_profile: str):
 # ---------------------------------------------------------------------------
 
 
-class HalideOptimizationRunner(QueueserverOptimizationRunner):
-    """QueueserverOptimizationRunner that forwards extra kwargs to the acquisition plan.
-
-    Blop's base ``_build_plan`` constructs a ``BPlan`` with a fixed signature
-    (suggestions, actuators, sensors, md).  ``halide_acquire`` exposes optional
-    keyword arguments such as ``post_dilute`` and ``use_good_bad`` that cannot
-    be reached through the base class.  This subclass accepts a ``plan_kwargs``
-    dict and rebuilds the ``BPlan`` with those extra kwargs forwarded.
-
-    Parameters
-    ----------
-    optimization_problem : QueueserverOptimizationProblem
-        Passed through to the base class.
-    queueserver_client : QueueserverClient
-        Passed through to the base class.
-    plan_kwargs : dict | None
-        Extra keyword arguments forwarded to every ``BPlan`` submitted to the
-        queueserver (e.g. ``{"post_dilute": True, "use_good_bad": True}``).
-    """
-
-    def __init__(self, optimization_problem, queueserver_client, plan_kwargs=None):
-        super().__init__(optimization_problem, queueserver_client)
-        self._plan_kwargs: dict = plan_kwargs or {}
-
-    def _build_plan(self, suggestions: list[dict]) -> BPlan:
-        # Delegate to super() so it updates self._state (iteration counter,
-        # current_uid, current_suggestions).  We discard the returned BPlan and
-        # rebuild it below so we can inject the extra kwargs.
-        super()._build_plan(suggestions)
-
-        md = {
-            CORRELATION_UID_KEY: self._state.current_uid,
-            "blop_suggestions": self._state.current_suggestions,
-        }
-        return BPlan(
-            self._plan_name,
-            self._state.current_suggestions,
-            list(self._problem.actuators),
-            list(self._problem.sensors),
-            md=md,
-            **self._plan_kwargs,
-        )
-
-
-def build_queueserver_agent(
+def build_agent(
+    queueserver: bool = True,
     peak_target: float = PEAK_TARGET,
     peak_tolerance: float = PEAK_TOLERANCE,
     use_OAm: bool = False,
@@ -266,7 +224,7 @@ def build_queueserver_agent(
     zmq_consumer_addr: str = ZMQ_CONSUMER_ADDR,
     tiled_profile: str = TILED_PROFILE,
     acquisition_plan_kwargs: dict | None = None,
-) -> QueueserverAgent:
+) -> Agent | QueueserverAgent:
     """Build and return a QueueserverAgent ready to run.
 
     Parameters
@@ -297,8 +255,8 @@ def build_queueserver_agent(
 
     Returns
     -------
-    QueueserverAgent
-        Configured agent, seeded with historical data, ready to call .run().
+    Agent | QueueserverAgent
+        Configured agent, seeded with historical data.
     """
     if plqy_params is None:
         plqy_params = PLQY_PARAMS
@@ -315,23 +273,37 @@ def build_queueserver_agent(
         plqy_params=plqy_params,
     )
 
-    # Queueserver connection
-    RM = REManagerAPI(http_server_uri=http_server_uri)
-    if http_api_key:
-        RM.set_authorization_key(api_key=http_api_key)
+    if queueserver:
+        # Queueserver connection
+        RM = REManagerAPI(http_server_uri=http_server_uri)
+        if http_api_key:
+            RM.set_authorization_key(api_key=http_api_key)
 
-    # Build agent
-    agent = QueueserverAgent(
-        re_manager_api=RM,
-        zmq_consumer_addr=zmq_consumer_addr,
-        sensors=["qepro"],
-        dofs=dofs,
-        objectives=objectives,
-        evaluation_function=evaluation_function,
-        acquisition_plan=ACQUISITION_PLAN_NAME,
-        outcome_constraints=outcome_constraints,
-        acquisition_plan_kwargs=acquisition_plan_kwargs,
-    )
+        # Build agent
+        agent = QueueserverAgent(
+            re_manager_api=RM,
+            zmq_consumer_addr=zmq_consumer_addr,
+            sensors=["qepro"],
+            dofs=dofs,
+            objectives=objectives,
+            evaluation_function=evaluation_function,
+            acquisition_plan=ACQUISITION_PLAN_NAME,
+            outcome_constraints=outcome_constraints,
+            acquisition_plan_kwargs=acquisition_plan_kwargs,
+        )
+    else:
+        halide_acquisition = functools.partial(
+            globals().get("halide_acquire"), use_good_bad=True
+        )
+
+        agent = Agent(
+            [],
+            dofs,
+            objectives,
+            evaluation_function=evaluation_function,
+            acquisition_plan=halide_acquisition,
+            outcome_constraints=outcome_constraints,
+        )
 
     # Seed with historical data
     if agent_data_path and os.path.exists(agent_data_path):
@@ -343,11 +315,3 @@ def build_queueserver_agent(
 
     print(f"Agent built. Target peak: {peak_target} ± {peak_tolerance} nm")
     return agent
-
-
-# ---------------------------------------------------------------------------
-# Entry point
-# ---------------------------------------------------------------------------
-
-if __name__ == "__main__":
-    agent = build_queueserver_agent()

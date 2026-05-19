@@ -5,10 +5,23 @@ Replaces real EPICS devices with ophyd.sim-based mocks that share the same
 variable names, so the acquisition plan runs unchanged.
 """
 
+import os
+
 import numpy as np
 from ophyd.sim import SynSignal, NullStatus
 from ophyd import Device, Signal, Component as Cpt
 import bluesky.plan_stubs as bps
+
+from bluesky_tiled_plugins import TiledWriter
+
+from tiled.server import SimpleTiledServer
+from tiled.client import from_uri
+
+server = SimpleTiledServer()
+client = from_uri(server.uri)
+os.environ["TILED_URI"] = server.uri
+writer = TiledWriter(client)
+RE.subscribe(writer)
 
 print("[TEST MODE] Loading mock devices...")
 

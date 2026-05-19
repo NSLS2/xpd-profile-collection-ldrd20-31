@@ -15,9 +15,7 @@ It performs the full synthesis + measurement sequence for one optimization step:
    PL batches are taken (in the same Bluesky run) until either ``GOOD_TARGET``
    good batches or ``MAX_BAD`` bad batches have been classified.
 4. Stop all pumps that were started (guaranteed even on exception, via
-   ``bpp.finalize_wrapper``).
-5. Return the run UID.
-
+   ``bpp.finalize_wrapper``). 5. Return the run UID.
 Design:
 
 * :func:`steady_state_flow` is a wrapper plan that owns pump setup and
@@ -664,6 +662,10 @@ def halide_acquire(
     good_target = good_target if good_target is not None else GOOD_TARGET
     max_bad = max_bad if max_bad is not None else MAX_BAD
 
+    if len(suggestions) > 1:
+        raise RuntimeError(
+            f"This plan expects only 1 suggestion but got {len(suggestions)}"
+        )
     suggestion = suggestions[0]
 
     # Extract rates from suggestion — DOF names like "infusion_rate_CsPb"
@@ -697,6 +699,7 @@ def halide_acquire(
 
     # Acquisition plan
     @bpp.subs_decorator(subs)
+    @bpp.set_run_key_decorator("halide_acquire")
     @bpp.stage_decorator([qepro])
     @bpp.run_decorator(md=_md)
     def acquisition():
