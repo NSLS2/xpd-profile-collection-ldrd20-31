@@ -267,6 +267,89 @@ def wait_equilibrium2(mixer_pump_list, ratio=1, tubing_ID_mm=1.016):
     yield from bps.null()
 
 
+# ---------------------------------------------------------------------------
+# Mock area detector (pe1c) for X-ray scattering
+# ---------------------------------------------------------------------------
+
+
+class MockAreaDetector(Device):
+    """Minimal mock of the PerkinElmer area detector (pe1c).
+
+    Produces a synthetic 2D scattering pattern on each trigger.
+    """
+
+    # Signals that the real detector exposes
+    exposure_time = Cpt(Signal, value=5.0, kind="config")
+    num_images = Cpt(Signal, value=25, kind="config")
+    frame_acq_time = Cpt(Signal, value=0.2, kind="config")
+
+    # Simulated image data (128x128 for speed)
+    image = Cpt(Signal, value=np.zeros((128, 128)), kind="normal")
+
+    def trigger(self):
+        """Generate a synthetic scattering pattern with a ring + noise."""
+        rng = np.random.default_rng()
+        # Create ring pattern at q ~ 40 pixels from center
+        y, x = np.mgrid[:128, :128]
+        r = np.sqrt((x - 64) ** 2 + (y - 64) ** 2)
+        ring = 1000 * np.exp(-0.5 * ((r - 40) / 3) ** 2)
+        noise = rng.poisson(10, (128, 128)).astype(float)
+        self.image.put(ring + noise)
+        return NullStatus()
+
+    def stage(self):
+        return [self]
+
+    def unstage(self):
+        return [self]
+
+    def describe(self):
+        return {
+            f"{self.name}_image": {
+                "source": "SIM",
+                "dtype": "array",
+                "shape": [128, 128],
+            },
+            f"{self.name}_exposure_time": {
+                "source": "SIM",
+                "dtype": "number",
+                "shape": [],
+            },
+        }
+
+    def read(self):
+        import time as _time
+
+        ts = _time.time()
+        return {
+            f"{self.name}_image": {"value": self.image.get(), "timestamp": ts},
+            f"{self.name}_exposure_time": {
+                "value": self.exposure_time.get(),
+                "timestamp": ts,
+            },
+        }
+
+
+pe1c = MockAreaDetector(name="pe1c")
+
+
+# ---------------------------------------------------------------------------
+# Mock fast shutter (fs)
+# ---------------------------------------------------------------------------
+
+
+class MockFastShutter(Signal):
+    """Fast shutter mock: accepts numeric set values (-20=open, 20=closed)."""
+
+    def set(self, value, **kwargs):
+        self.put(value)
+        return NullStatus()
+
+
+fs = MockFastShutter(name="fs", value=20)
+
+
 print(
-    "[TEST MODE] Mock devices loaded: qepro, LED, UV_shutter, dds1_p1, dds1_p2, dds2_p1, dds2_p2"
+    "[TEST MODE] Mock devices loaded: qepro, pe1c, fs, LED, UV_shutter, "
+    "dds1_p1, dds1_p2, dds2_p1, dds2_p2, dds3_p1"
 )

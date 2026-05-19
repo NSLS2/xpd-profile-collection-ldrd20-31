@@ -1,5 +1,5 @@
 """
-Acquisition plan for the halide perovskite QueueserverAgent.
+Multimodal acquisition plan: UV-Vis (absorbance + fluorescence) and X-ray scattering.
 
 This plan follows the Blop AcquisitionPlan protocol signature::
 
@@ -14,8 +14,11 @@ It performs the full synthesis + measurement sequence for one optimization step:
 3. Collect fluorescence spectra. When ``USE_GOOD_BAD`` is enabled, additional
    PL batches are taken (in the same Bluesky run) until either ``GOOD_TARGET``
    good batches or ``MAX_BAD`` bad batches have been classified.
-4. Stop all pumps that were started (guaranteed even on exception, via
-   ``bpp.finalize_wrapper``). 5. Return the run UID.
+4. Optionally collect X-ray scattering data (area detector).
+5. Stop all pumps that were started (guaranteed even on exception, via
+   ``bpp.finalize_wrapper``).
+6. Return the run UID.
+
 Design:
 
 * :func:`steady_state_flow` is a wrapper plan that owns pump setup and
@@ -25,12 +28,12 @@ Design:
 * :class:`PLQualityMonitor` is a ``CallbackBase`` subscribed locally via
   ``bpp.subs_decorator``. It runs synchronously in the RunEngine thread
   between event docs, so the plan can read ``monitor.good_count`` /
-  ``monitor.bad_count`` immediately after each batch
+  ``monitor.bad_count`` immediately after each batch.
 * The decision policy (continue / stop) is inline in
   :func:`_pl_with_quality_gate`.
 
 This file is loaded into the queueserver environment via startup. All devices
-(``qepro``, ``LED``, ``UV_shutter``, pump objects) and helper plans
+(``qepro``, ``pe1c``, ``LED``, ``UV_shutter``, ``fs``, pump objects) and helper plans
 (``stop_group``, ``set_group_infuse2``, ``start_group_infuse``,
 ``wait_equilibrium2``, ``sleep_sec_q``) are available as globals from earlier
 startup files.
@@ -41,6 +44,50 @@ import bluesky.plan_stubs as bps
 import bluesky.preprocessors as bpp
 from bluesky.callbacks import CallbackBase
 from ophyd import Signal
+
+
+# ---------------------------------------------------------------------------
+# Area detector helpers (formerly from xpdacq)
+# ---------------------------------------------------------------------------
+
+
+def configure_area_det(det, exposure, frame_acq_time=0.2):
+    """Configure the area detector exposure parameters.
+
+    Sets ``num_images = exposure / frame_acq_time`` (rounded) and stores
+    both the total exposure time and per-frame acquisition time on the
+    detector device.
+    """
+    num_frames = max(1, int(round(exposure / frame_acq_time)))
+    yield from bps.mv(
+        det.exposure_time, exposure,
+        det.num_images, num_frames,
+        det.frame_acq_time, frame_acq_time,
+    )
+
+
+def periodic_dark(plan):
+    """Wrap a plan with periodic dark-frame collection.
+
+    Currently a pass-through; dark frame logic will be re-implemented
+    outside of xpdacq in a future PR.
+    """
+    return (yield from plan)
+
+
+def _inject_qualified_dark_frame_uid(msg):
+    """Msg mutator: inject dark frame UID into trigger messages (no-op stub)."""
+    return msg
+
+
+def _inject_calibration_md(msg):
+    """Msg mutator: inject calibration metadata (no-op stub)."""
+    return msg
+
+
+def _inject_analysis_stage(msg):
+    """Msg mutator: inject analysis stage metadata (no-op stub)."""
+    return msg
 
 
 # ---------------------------------------------------------------------------
@@ -118,6 +165,15 @@ DEFAULT_THRESHOLDS = {
     "threshold": [560, 100000, 200000],  # [split_wl_nm, integral_low, integral_high]
     "int_boundary": [340, 400, 800],  # [LED_lo, LED_hi == PL_lo, PL_hi] (nm)
 }
+
+# ---------------------------------------------------------------------------
+# X-ray scattering configuration
+# ---------------------------------------------------------------------------
+DO_XRAY = False
+XRAY_EXPOSURE = 5.0  # total area detector exposure time (seconds)
+XRAY_FRAME_ACQ_TIME = 0.2  # per-frame acquisition time (seconds)
+XRAY_STREAM_NAME = "scattering"
+XRAY_NO_DARK = False
 
 # ---------------------------------------------------------------------------
 # Module-level cached Signals for the 'fluorescence_quality' stream.
@@ -373,6 +429,39 @@ def measure_pl(qepro, n_shots, *, stream="fluorescence", settle_sec=2):
         yield from bps.trigger_and_read([qepro], name=stream)
 
 
+def measure_scattering(det, exposure, *, frame_acq_time=0.2, stream_name="scattering"):
+    """Configure and trigger the area detector for X-ray scattering.
+
+    This is a streamlined version of ``_inner_scattering`` from 94-CHL-plans.py,
+    adapted for use within the multimodal acquisition plan.
+
+    Steps:
+    1. Configure the area detector (exposure, frame_acq_time).
+    2. Open the fast shutter (fs → -20).
+    3. Trigger the detector.
+    4. Emit an event in the specified stream.
+    5. Close the fast shutter (fs → 20).
+
+    Parameters
+    ----------
+    det : ophyd device
+        The area detector (e.g., pe1c).
+    exposure : float
+        Total exposure time in seconds.
+    frame_acq_time : float
+        Per-frame acquisition time in seconds.
+    stream_name : str
+        Name of the event stream for scattering data.
+    """
+    # Configure area detector exposure
+    yield from configure_area_det(det, exposure, frame_acq_time=frame_acq_time)
+
+    # Open fast shutter, acquire, close fast shutter
+    yield from bps.mv(fs, -20)
+    yield from bps.trigger_and_read([det], name=stream_name)
+    yield from bps.mv(fs, 20)
+
+
 def _emit_quality_event(result):
     """Emit one event in the ``fluorescence_quality`` stream from a result dict."""
     if result is None:
@@ -533,7 +622,7 @@ def steady_state_flow(
 # ---------------------------------------------------------------------------
 
 
-def halide_acquire(
+def xray_uvvis_acquire(
     suggestions: list[dict],
     actuators,
     sensors=None,
@@ -557,8 +646,14 @@ def halide_acquire(
     use_good_bad=None,
     good_target=None,
     max_bad=None,
+    do_xray=None,
+    xray_exposure=None,
+    xray_frame_acq_time=None,
+    xray_stream_name=None,
+    xray_no_dark=None,
 ):
-    """Acquire UV-Vis data for halide perovskite optimization.
+    """Acquire UV-Vis and (optionally) X-ray scattering data for halide
+    perovskite optimization.
 
     The Blop ``AcquisitionPlan`` for one optimizer suggestion:
 
@@ -567,8 +662,9 @@ def halide_acquire(
     2. In a single Bluesky run, collect absorbance and fluorescence streams.
        With ``use_good_bad`` enabled, PL is gated by :class:`PLQualityMonitor`
        and additional batches are taken until good/bad termination.
-    3. Stop all started pumps (guaranteed by ``bpp.finalize_wrapper``).
-    4. Return the run UID.
+    3. Optionally collect X-ray scattering (area detector ``pe1c``).
+    4. Stop all started pumps (guaranteed by ``bpp.finalize_wrapper``).
+    5. Return the run UID.
 
     Parameters
     ----------
@@ -615,9 +711,19 @@ def halide_acquire(
         If ``True``, PL is gated by quality monitoring; additional
         batches are taken until good/bad termination.
     good_target : int | None
-        Quality target threshold for good PL data
+        Quality target threshold for good PL data.
     max_bad : int | None
-        Maximum number of bad PL data before aborting
+        Maximum number of bad PL data before aborting.
+    do_xray : bool | None
+        If ``True``, collect X-ray scattering after UV-Vis measurements.
+    xray_exposure : float | None
+        Total area detector exposure time in seconds.
+    xray_frame_acq_time : float | None
+        Per-frame acquisition time in seconds.
+    xray_stream_name : str | None
+        Event stream name for the scattering data.
+    xray_no_dark : bool | None
+        If ``True``, skip dark frame collection for X-ray.
 
     Returns
     -------
@@ -661,6 +767,15 @@ def halide_acquire(
     use_good_bad = use_good_bad if use_good_bad is not None else USE_GOOD_BAD
     good_target = good_target if good_target is not None else GOOD_TARGET
     max_bad = max_bad if max_bad is not None else MAX_BAD
+    do_xray = do_xray if do_xray is not None else DO_XRAY
+    xray_exposure = xray_exposure if xray_exposure is not None else XRAY_EXPOSURE
+    xray_frame_acq_time = (
+        xray_frame_acq_time if xray_frame_acq_time is not None else XRAY_FRAME_ACQ_TIME
+    )
+    xray_stream_name = (
+        xray_stream_name if xray_stream_name is not None else XRAY_STREAM_NAME
+    )
+    xray_no_dark = xray_no_dark if xray_no_dark is not None else XRAY_NO_DARK
 
     if len(suggestions) > 1:
         raise RuntimeError(
@@ -678,15 +793,21 @@ def halide_acquire(
     sample_type = _make_sample_name(rate_list)
 
     # Build metadata
+    detectors_list = ["qepro"]
+    if do_xray:
+        detectors_list.append("pe1c")
+
     _md = {
         "sample_type": sample_type,
+        "sample_name": sample_type,
         "infuse_rates": rate_list,
         "dof_names": dof_names,
         "precursors": precursor_list[: len(pump_list)],
         "pumps": [p.name for p in pump_list],
         "pump_status": [p.status.get() for p in pump_list],
-        "detectors": ["qepro"],
+        "detectors": detectors_list,
         "use_good_bad": use_good_bad,
+        "do_xray": do_xray,
     }
     _md.update(md or {})
 
@@ -697,20 +818,51 @@ def halide_acquire(
     # Only need descriptor and event documents
     subs = {"descriptor": [monitor], "event": [monitor]} if monitor else {}
 
+    # Determine which detectors to stage
+    stage_devices = [qepro, pe1c] if do_xray else [qepro]
+
     # Acquisition plan
     @bpp.subs_decorator(subs)
-    @bpp.set_run_key_decorator("halide_acquire")
-    @bpp.stage_decorator([qepro])
+    @bpp.set_run_key_decorator("xray_uvvis_acquire")
+    @bpp.stage_decorator(stage_devices)
     @bpp.run_decorator(md=_md)
     def acquisition():
+        # UV-Vis: absorbance then fluorescence
         yield from measure_absorbance(qepro, num_abs)
         yield from _pl_with_quality_gate(qepro, monitor, num_flu, good_target, max_bad)
+        # Turn off LED and UV shutter before x-ray (and as general cleanup)
         yield from bps.mv(LED, "Low", UV_shutter, "Low")
+
+        # X-ray scattering (optional)
+        if do_xray:
+            yield from measure_scattering(
+                pe1c,
+                xray_exposure,
+                frame_acq_time=xray_frame_acq_time,
+                stream_name=xray_stream_name,
+            )
 
     dilute_pump = _resolve_pumps([dilute_pump_name])[0] if post_dilute else None
 
+    # Wrap with periodic_dark and metadata injectors when doing x-ray
+    if do_xray and not xray_no_dark:
+        grand_plan = periodic_dark(acquisition())
+        grand_plan = bpp.msg_mutator(grand_plan, _inject_qualified_dark_frame_uid)
+        grand_plan = bpp.msg_mutator(grand_plan, _inject_calibration_md)
+        grand_plan = bpp.msg_mutator(grand_plan, _inject_analysis_stage)
+        inner_plan = grand_plan
+    elif do_xray and xray_no_dark:
+        # X-ray without dark frames — still need calibration/analysis metadata
+        grand_plan = acquisition()
+        grand_plan = bpp.msg_mutator(grand_plan, _inject_qualified_dark_frame_uid)
+        grand_plan = bpp.msg_mutator(grand_plan, _inject_calibration_md)
+        grand_plan = bpp.msg_mutator(grand_plan, _inject_analysis_stage)
+        inner_plan = grand_plan
+    else:
+        inner_plan = acquisition()
+
     uid = yield from steady_state_flow(
-        acquisition(),
+        inner_plan,
         pump_list=pump_list,
         rate_list=rate_list,
         syringe_list=syringe_list[: len(pump_list)],

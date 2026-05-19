@@ -68,7 +68,7 @@ TILED_URI = os.environ.get("TILED_URI", "https://tiled.nsls2.bnl.gov")
 TILED_PROFILE = os.environ.get("TILED_PROFILE", "xpd")
 
 # Acquisition plan name (must be registered on the queueserver)
-ACQUISITION_PLAN_NAME = "halide_acquire"
+ACQUISITION_PLAN_NAME = "xray_uvvis_acquire"
 
 # Number of optimization iterations
 N_ITERATIONS = 20
@@ -248,7 +248,7 @@ def build_agent(
     tiled_profile : str
         Tiled profile name for data access.
     acquisition_plan_kwargs : dict | None
-        Extra keyword arguments forwarded to every ``halide_acquire`` call
+        Extra keyword arguments forwarded to every ``xray_uvvis_acquire`` call
         submitted by the agent (e.g. ``{"post_dilute": True,
         "use_good_bad": True}``).  When ``None`` (default) the plan runs with
         its own module-level defaults.
@@ -293,7 +293,9 @@ def build_agent(
         )
     else:
         halide_acquisition = functools.partial(
-            globals().get("halide_acquire"), use_good_bad=True
+            globals().get(ACQUISITION_PLAN_NAME),
+            use_good_bad=True,
+            do_xray=False,
         )
 
         agent = Agent(

@@ -861,6 +861,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/wslink-2.5.6-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/xarray-2026.2.0-pyhcf101f3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/xlrd-2.0.2-pyhd8ed1ab_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/xpdacq-1.1.4-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/xpdan-0.8.2-py_0.tar.bz2
       - conda: https://conda.anaconda.org/conda-forge/noarch/xpdconf-0.4.6-pyhd8ed1ab_0.tar.bz2
       - conda: https://conda.anaconda.org/conda-forge/noarch/xpdsim-0.4.3-pyhd8ed1ab_0.tar.bz2
@@ -1586,6 +1587,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/wslink-2.5.6-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/xarray-2026.2.0-pyhcf101f3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/xlrd-2.0.2-pyhd8ed1ab_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/xpdacq-1.1.4-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/xpdan-0.8.2-py_0.tar.bz2
       - conda: https://conda.anaconda.org/conda-forge/noarch/xpdconf-0.4.6-pyhd8ed1ab_0.tar.bz2
       - conda: https://conda.anaconda.org/conda-forge/noarch/xpdsim-0.4.3-pyhd8ed1ab_0.tar.bz2
@@ -12834,6 +12836,34 @@ packages:
   - pkg:pypi/xlrd?source=hash-mapping
   size: 93671
   timestamp: 1756170155688
+- conda: https://conda.anaconda.org/conda-forge/noarch/xpdacq-1.1.4-pyhd8ed1ab_0.conda
+  sha256: a26391291de5df8c7c2dd5752ba69d51d04f4908935af6434c3841ed3001be18
+  md5: 187c0f156c58186dfa530fcca5ecb134
+  depends:
+  - bluesky
+  - bluesky-darkframes
+  - databroker
+  - fabio
+  - frozendict
+  - ipython
+  - numpy
+  - openpyxl
+  - ophyd
+  - pandas
+  - pyfai
+  - pyopencl
+  - python >=3.8
+  - pyyaml
+  - tifffile
+  - xlrd
+  - xpdconf >=0.4.6
+  - xpdsim >=0.4.3
+  license: BSD-3-Clause
+  license_family: BSD
+  purls:
+  - pkg:pypi/xpdacq?source=hash-mapping
+  size: 90137
+  timestamp: 1671122428396
 - conda: https://conda.anaconda.org/conda-forge/noarch/xpdan-0.8.2-py_0.tar.bz2
   sha256: 08a7a6c81eaa8d24d71138334e12f9ca787a7a114256f95370c1b12f47db71b1
   md5: 11b4406906b03b29238ad17daacebc79
