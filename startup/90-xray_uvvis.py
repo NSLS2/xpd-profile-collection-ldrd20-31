@@ -176,6 +176,18 @@ XRAY_STREAM_NAME = "scattering"
 XRAY_NO_DARK = False
 
 # ---------------------------------------------------------------------------
+# Wash loop configuration
+# ---------------------------------------------------------------------------
+DO_WASH = False
+WASH_PUMP_LIST = []  # pump device objects for wash solvent(s)
+WASH_SYRINGE_LIST = [50]  # syringe sizes (mL) for wash pumps
+WASH_RATE_LIST = ["500 ul/min"]  # infusion rates for wash pumps
+WASH_DURATION_SEC = 60  # how long to run wash pumps (seconds)
+WASH_SYRINGE_MATER_LIST = ["steel"]
+WASH_TARGET_VOL_LIST = ["30 ml"]
+WASH_SET_TARGET_LIST = [False]
+
+# ---------------------------------------------------------------------------
 # Module-level cached Signals for the 'fluorescence_quality' stream.
 # Created once at import time so we don't churn descriptor UIDs across runs.
 # ---------------------------------------------------------------------------
@@ -522,6 +534,38 @@ def _pl_with_quality_gate(qepro, monitor, num_flu, good_target, max_bad):
 # ---------------------------------------------------------------------------
 
 
+def _wash_loop(
+    pump_list,
+    syringe_list,
+    rate_list,
+    duration_sec,
+    *,
+    syringe_mater_list,
+    target_vol_list,
+    set_target_list,
+    rate_unit,
+):
+    """Configure, start, wait, and stop wash pumps to clean tubing.
+
+    This is a blocking sub-plan intended to run after the main synthesis +
+    measurement sequence has completed and all synthesis pumps have been
+    stopped.  It flushes the flow path with wash solvent(s) for
+    ``duration_sec`` seconds before stopping.
+    """
+    yield from set_group_infuse2(
+        syringe_list,
+        pump_list,
+        set_target_list=set_target_list,
+        target_vol_list=target_vol_list,
+        rate_list=rate_list,
+        syringe_mater_list=syringe_mater_list,
+        rate_unit=rate_unit,
+    )
+    yield from start_group_infuse(pump_list, rate_list)
+    yield from sleep_sec_q(duration_sec)
+    yield from stop_group(pump_list)
+
+
 def steady_state_flow(
     plan,
     pump_list,
@@ -651,6 +695,14 @@ def xray_uvvis_acquire(
     xray_frame_acq_time=None,
     xray_stream_name=None,
     xray_no_dark=None,
+    do_wash=None,
+    wash_pump_list=None,
+    wash_syringe_list=None,
+    wash_rate_list=None,
+    wash_duration_sec=None,
+    wash_syringe_mater_list=None,
+    wash_target_vol_list=None,
+    wash_set_target_list=None,
 ):
     """Acquire UV-Vis and (optionally) X-ray scattering data for halide
     perovskite optimization.
@@ -776,6 +828,26 @@ def xray_uvvis_acquire(
         xray_stream_name if xray_stream_name is not None else XRAY_STREAM_NAME
     )
     xray_no_dark = xray_no_dark if xray_no_dark is not None else XRAY_NO_DARK
+    do_wash = do_wash if do_wash is not None else DO_WASH
+    wash_pump_list = wash_pump_list if wash_pump_list is not None else WASH_PUMP_LIST
+    wash_syringe_list = (
+        wash_syringe_list if wash_syringe_list is not None else WASH_SYRINGE_LIST
+    )
+    wash_rate_list = wash_rate_list if wash_rate_list is not None else WASH_RATE_LIST
+    wash_duration_sec = (
+        wash_duration_sec if wash_duration_sec is not None else WASH_DURATION_SEC
+    )
+    wash_syringe_mater_list = (
+        wash_syringe_mater_list
+        if wash_syringe_mater_list is not None
+        else WASH_SYRINGE_MATER_LIST
+    )
+    wash_target_vol_list = (
+        wash_target_vol_list if wash_target_vol_list is not None else WASH_TARGET_VOL_LIST
+    )
+    wash_set_target_list = (
+        wash_set_target_list if wash_set_target_list is not None else WASH_SET_TARGET_LIST
+    )
 
     if len(suggestions) > 1:
         raise RuntimeError(
@@ -872,6 +944,20 @@ def xray_uvvis_acquire(
         post_dilute=post_dilute,
         dilute_pump=dilute_pump,
     )
+
+    # Optional wash loop — flush tubing with wash solvent before next iteration
+    if do_wash and wash_pump_list:
+        yield from _wash_loop(
+            wash_pump_list,
+            wash_syringe_list,
+            wash_rate_list,
+            wash_duration_sec,
+            syringe_mater_list=wash_syringe_mater_list,
+            target_vol_list=wash_target_vol_list,
+            set_target_list=wash_set_target_list,
+            rate_unit=rate_unit,
+        )
+
     return uid
 
 
