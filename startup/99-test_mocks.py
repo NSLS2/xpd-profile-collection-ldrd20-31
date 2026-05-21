@@ -5,10 +5,23 @@ Replaces real EPICS devices with ophyd.sim-based mocks that share the same
 variable names, so the acquisition plan runs unchanged.
 """
 
+import os
+
 import numpy as np
 from ophyd.sim import SynSignal, NullStatus
 from ophyd import Device, Signal, Component as Cpt
 import bluesky.plan_stubs as bps
+
+from bluesky_tiled_plugins import TiledWriter
+
+from tiled.server import SimpleTiledServer
+from tiled.client import from_uri
+
+server = SimpleTiledServer()
+client = from_uri(server.uri)
+os.environ["TILED_URI"] = server.uri
+writer = TiledWriter(client)
+RE.subscribe(writer)
 
 print("[TEST MODE] Loading mock devices...")
 
@@ -18,11 +31,42 @@ print("[TEST MODE] Loading mock devices...")
 
 _WAVELENGTHS = np.linspace(200, 1000, 2048)
 
+# Number of PL shots per batch (must match NUM_FLU in 33-halide_acquire.py).
+# The first TWO batches intentionally generate spectra that fail the c1
+# classifier threshold (key_height=2000) so the quality-gate retry loop is
+# exercised.  The third batch returns a strong peak that passes.
+_INITIAL_BAD_PL_SHOTS = 20  # 2 full batches of NUM_FLU=10
+_pl_trigger_count = 0
+
+
+def reset_pl_trigger_count():
+    """Reset the trigger counter so the next batch produces bad data again.
+
+    Call this before each test run to ensure the first batch is always
+    classified as **bad** by the PLQualityMonitor.
+    """
+    global _pl_trigger_count
+    _pl_trigger_count = 0
+
 
 def _make_spectrum():
-    """Generate a synthetic fluorescence spectrum with a gaussian peak around 520 nm."""
+    """Generate a synthetic PL spectrum.
+
+    The first ``_INITIAL_BAD_PL_SHOTS`` calls return a deterministically
+    flat spectrum (all zeros + tiny noise) so the PLQualityMonitor
+    classifies the first batch as **bad** and exercises the retry loop.
+    All subsequent calls return a strong Gaussian peak at 520 nm (amplitude
+    5000) that passes the c1 threshold (key_height=2000), causing the
+    second batch to be classified **good** and the acquisition to succeed.
+    """
+    global _pl_trigger_count
+    _pl_trigger_count += 1
+    if _pl_trigger_count <= _INITIAL_BAD_PL_SHOTS:
+        # Deterministically bad: constant baseline of 10 counts, well below
+        # key_height=2000.  No peaks for find_peaks to detect.
+        return np.full(2048, 10.0)
     noise = np.random.normal(0, 5, 2048)
-    peak = 800 * np.exp(-0.5 * ((_WAVELENGTHS - 520) / 15) ** 2)
+    peak = 5000 * np.exp(-0.5 * ((_WAVELENGTHS - 520) / 15) ** 2)
     return peak + noise
 
 
@@ -43,10 +87,13 @@ class MockQEPro(Device):
     correction = Cpt(Signal, value="Reference", kind="normal")
     spectrum_type = Cpt(Signal, value="Absorbtion", kind="normal")
 
-    # Signals that get read during data collection
+    # Signals that get read during data collection.
+    # NOTE: Use static initial values here — do NOT call _make_spectrum() at
+    # class definition time, as that would consume "bad" shots from the
+    # trigger counter before any plan runs.
     x_axis = Cpt(Signal, value=_WAVELENGTHS, kind="normal")
-    output = Cpt(Signal, value=_make_spectrum(), kind="normal")
-    sample = Cpt(Signal, value=_make_spectrum(), kind="normal")
+    output = Cpt(Signal, value=np.full(2048, 10.0), kind="normal")
+    sample = Cpt(Signal, value=np.full(2048, 10.0), kind="normal")
     dark = Cpt(Signal, value=np.zeros(2048), kind="normal")
     reference = Cpt(Signal, value=np.ones(2048) * 1000, kind="normal")
 
@@ -190,6 +237,7 @@ dds2_p1 = MockPump(name="DDS2_p1")
 dds2_p2 = MockPump(name="DDS2_p2")
 dds1_p1 = MockPump(name="DDS1_p1")
 dds1_p2 = MockPump(name="DDS1_p2")
+dds3_p1 = MockPump(name="DDS3_p1")
 
 # ---------------------------------------------------------------------------
 # Mock helper plans that the acquisition plan calls
@@ -209,6 +257,99 @@ def stop_group(pump_list):
         yield from pump.stop_pump2()
 
 
+def wait_equilibrium2(mixer_pump_list, ratio=1, tubing_ID_mm=1.016):
+    """Mock: skip the residence-time wait so smoke tests finish quickly.
+
+    The real implementation sleeps for one residence-time (typically several
+    minutes). In test mode we just yield a no-op so the plan proceeds
+    immediately.
+    """
+    yield from bps.null()
+
+
+# ---------------------------------------------------------------------------
+# Mock area detector (pe1c) for X-ray scattering
+# ---------------------------------------------------------------------------
+
+
+class MockAreaDetector(Device):
+    """Minimal mock of the PerkinElmer area detector (pe1c).
+
+    Produces a synthetic 2D scattering pattern on each trigger.
+    """
+
+    # Signals that the real detector exposes
+    exposure_time = Cpt(Signal, value=5.0, kind="config")
+    num_images = Cpt(Signal, value=25, kind="config")
+    frame_acq_time = Cpt(Signal, value=0.2, kind="config")
+
+    # Simulated image data (128x128 for speed)
+    image = Cpt(Signal, value=np.zeros((128, 128)), kind="normal")
+
+    def trigger(self):
+        """Generate a synthetic scattering pattern with a ring + noise."""
+        rng = np.random.default_rng()
+        # Create ring pattern at q ~ 40 pixels from center
+        y, x = np.mgrid[:128, :128]
+        r = np.sqrt((x - 64) ** 2 + (y - 64) ** 2)
+        ring = 1000 * np.exp(-0.5 * ((r - 40) / 3) ** 2)
+        noise = rng.poisson(10, (128, 128)).astype(float)
+        self.image.put(ring + noise)
+        return NullStatus()
+
+    def stage(self):
+        return [self]
+
+    def unstage(self):
+        return [self]
+
+    def describe(self):
+        return {
+            f"{self.name}_image": {
+                "source": "SIM",
+                "dtype": "array",
+                "shape": [128, 128],
+            },
+            f"{self.name}_exposure_time": {
+                "source": "SIM",
+                "dtype": "number",
+                "shape": [],
+            },
+        }
+
+    def read(self):
+        import time as _time
+
+        ts = _time.time()
+        return {
+            f"{self.name}_image": {"value": self.image.get(), "timestamp": ts},
+            f"{self.name}_exposure_time": {
+                "value": self.exposure_time.get(),
+                "timestamp": ts,
+            },
+        }
+
+
+pe1c = MockAreaDetector(name="pe1c")
+
+
+# ---------------------------------------------------------------------------
+# Mock fast shutter (fs)
+# ---------------------------------------------------------------------------
+
+
+class MockFastShutter(Signal):
+    """Fast shutter mock: accepts numeric set values (-20=open, 20=closed)."""
+
+    def set(self, value, **kwargs):
+        self.put(value)
+        return NullStatus()
+
+
+fs = MockFastShutter(name="fs", value=20)
+
+
 print(
-    "[TEST MODE] Mock devices loaded: qepro, LED, UV_shutter, dds1_p1, dds1_p2, dds2_p1, dds2_p2"
+    "[TEST MODE] Mock devices loaded: qepro, pe1c, fs, LED, UV_shutter, "
+    "dds1_p1, dds1_p2, dds2_p1, dds2_p2, dds3_p1"
 )

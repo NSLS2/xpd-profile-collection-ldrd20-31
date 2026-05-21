@@ -8,7 +8,12 @@ Spins up:
 3. A queueserver HTTP server
 4. A ZMQ RemoteDispatcher → TiledWriter bridge (persists documents to tiled)
 
-Then runs the agent for 2 iterations and verifies the loop completes.
+Then runs the agent for 2 iterations and verifies the loop completes.  The
+agent is configured with all optional acquisition steps enabled so that the
+full ``halide_acquire`` code path is exercised:
+
+* ``post_dilute=True``  — toluene post-dilution pump step
+* ``use_good_bad=True`` — PL quality-gate loop (good/bad classifier)
 
 Usage:
     python scripts/tests/smoke_test_halide.py
@@ -296,32 +301,37 @@ def run_agent(tiled_uri: str, n_iterations: int = 2):
         http_api_key=QS_API_KEY,
         zmq_consumer_addr=ZMQ_PROXY_OUT_ADDR_TUPLE,
         tiled_profile="unused",  # TILED_URI env var takes precedence
+        # Exercise all optional acquisition steps in every agent iteration:
+        # - post_dilute: runs the toluene post-dilution pump step
+        # - use_good_bad: enables the PL quality-gate loop.
+        #   The mock QEPro returns a flat (bad) spectrum for the first batch
+        #   of PL shots and a strong-peak (good) spectrum for subsequent
+        #   batches, so the first iteration exercises the bad→retry→good path.
+        #   max_bad=2 tolerates that one intentional bad batch.
+        acquisition_plan_kwargs={
+            "post_dilute": True,
+            "post_dilute_wait_sec": 2,  # keep smoke test fast
+            "use_good_bad": True,
+            "good_target": 1,
+            "max_bad": 2,  # tolerate the one intentional bad batch from the mock
+        },
     )
 
     print(f"[SMOKE] Running agent for {n_iterations} iterations...")
-    agent.run(iterations=n_iterations, n_points=1)
-
-    # Subscribe raw debug to the agent's internal dispatcher (if accessible)
-    try:
-        dispatcher = agent._runner._client._dispatcher
-        if dispatcher is not None:
-            dispatcher.subscribe(_raw_doc_debug)
-            print(
-                "[SMOKE] Subscribed raw debug callback to agent's internal dispatcher"
-            )
-        else:
-            print("[SMOKE] WARNING: dispatcher is None after agent.run()")
-    except AttributeError as e:
-        print(f"[SMOKE] Could not attach raw debug callback: {e}")
+    fut = agent.run(iterations=n_iterations, n_points=1)
 
     print("[SMOKE] Agent submitted plans. Waiting for queue to drain...")
 
-    wait_start = time.time()
-    while agent._runner.is_running:
-        if time.time() - wait_start > 300:
-            print("[SMOKE] WARNING: Timed out waiting for agent to finish.")
-            break
-        time.sleep(0.5)
+    try:
+        result = fut.result(timeout=600)
+    except Exception as e:
+        print(f"[SMOKE] Agent iterations timed out: {repr(e)}")
+        try:
+            result = fut.exception(timeout=1)
+        except Exception as e:
+            result = None
+
+    print(f"[SMOKE] {result=}")
 
     # Give ZMQ → eval → ingest pipeline time to propagate
     print("[SMOKE] Queue drained. Waiting for ingestion...")
@@ -433,7 +443,7 @@ def main():
 
     # 6. Run the agent
     try:
-        run_agent(tiled_uri=tiled_uri, n_iterations=2)
+        run_agent(tiled_uri=tiled_uri, n_iterations=5)
     except Exception as e:
         print(f"[SMOKE] FAILED: {e}")
         import traceback

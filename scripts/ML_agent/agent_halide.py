@@ -17,13 +17,20 @@ from __future__ import annotations
 
 import os
 import sys
+import functools
 
 import numpy as np
 import pandas as pd
 from bluesky_queueserver_api.http import REManagerAPI
 
 from blop import RangeDOF, Objective, OutcomeConstraint
-from blop.ax.agent import QueueserverAgent
+from blop.ax.agent import QueueserverAgent, Agent
+from blop.queueserver import (
+    CORRELATION_UID_KEY,
+    QueueserverClient,
+    QueueserverOptimizationRunner,
+)
+from bluesky_queueserver_api import BPlan
 from ax.api.protocols import IMetric
 
 # Add utils to path for evaluation function dependencies
@@ -61,7 +68,7 @@ TILED_URI = os.environ.get("TILED_URI", "https://tiled.nsls2.bnl.gov")
 TILED_PROFILE = os.environ.get("TILED_PROFILE", "xpd")
 
 # Acquisition plan name (must be registered on the queueserver)
-ACQUISITION_PLAN_NAME = "halide_acquire"
+ACQUISITION_PLAN_NAME = "xray_uvvis_acquire"
 
 
 # ---------------------------------------------------------------------------
@@ -202,7 +209,8 @@ def _get_tiled_client(tiled_profile: str):
 # ---------------------------------------------------------------------------
 
 
-def build_queueserver_agent(
+def build_agent(
+    queueserver: bool = True,
     peak_target: float = PEAK_TARGET,
     peak_tolerance: float = PEAK_TOLERANCE,
     use_OAm: bool = False,
@@ -212,7 +220,8 @@ def build_queueserver_agent(
     http_api_key: str = HTTP_API_KEY,
     zmq_consumer_addr: str = ZMQ_CONSUMER_ADDR,
     tiled_profile: str = TILED_PROFILE,
-) -> QueueserverAgent:
+    acquisition_plan_kwargs: dict | None = None,
+) -> Agent | QueueserverAgent:
     """Build and return a QueueserverAgent ready to run.
 
     Parameters
@@ -235,11 +244,16 @@ def build_queueserver_agent(
         ZMQ address to consume Bluesky documents from.
     tiled_profile : str
         Tiled profile name for data access.
+    acquisition_plan_kwargs : dict | None
+        Extra keyword arguments forwarded to every ``xray_uvvis_acquire`` call
+        submitted by the agent (e.g. ``{"post_dilute": True,
+        "use_good_bad": True}``).  When ``None`` (default) the plan runs with
+        its own module-level defaults.
 
     Returns
     -------
-    QueueserverAgent
-        Configured agent, seeded with historical data, ready to call .run().
+    Agent | QueueserverAgent
+        Configured agent, seeded with historical data.
     """
     if plqy_params is None:
         plqy_params = PLQY_PARAMS
@@ -256,22 +270,39 @@ def build_queueserver_agent(
         plqy_params=plqy_params,
     )
 
-    # Queueserver connection
-    RM = REManagerAPI(http_server_uri=http_server_uri)
-    if http_api_key:
-        RM.set_authorization_key(api_key=http_api_key)
+    if queueserver:
+        # Queueserver connection
+        RM = REManagerAPI(http_server_uri=http_server_uri)
+        if http_api_key:
+            RM.set_authorization_key(api_key=http_api_key)
 
-    # Build agent
-    agent = QueueserverAgent(
-        re_manager_api=RM,
-        zmq_consumer_addr=zmq_consumer_addr,
-        sensors=["qepro"],
-        dofs=dofs,
-        objectives=objectives,
-        evaluation_function=evaluation_function,
-        acquisition_plan=ACQUISITION_PLAN_NAME,
-        outcome_constraints=outcome_constraints,
-    )
+        # Build agent
+        agent = QueueserverAgent(
+            re_manager_api=RM,
+            zmq_consumer_addr=zmq_consumer_addr,
+            sensors=["qepro"],
+            dofs=dofs,
+            objectives=objectives,
+            evaluation_function=evaluation_function,
+            acquisition_plan=ACQUISITION_PLAN_NAME,
+            outcome_constraints=outcome_constraints,
+            acquisition_plan_kwargs=acquisition_plan_kwargs,
+        )
+    else:
+        halide_acquisition = functools.partial(
+            globals().get(ACQUISITION_PLAN_NAME),
+            use_good_bad=True,
+            do_xray=False,
+        )
+
+        agent = Agent(
+            [],
+            dofs,
+            objectives,
+            evaluation_function=evaluation_function,
+            acquisition_plan=halide_acquisition,
+            outcome_constraints=outcome_constraints,
+        )
 
     # Seed with historical data
     if agent_data_path and os.path.exists(agent_data_path):
