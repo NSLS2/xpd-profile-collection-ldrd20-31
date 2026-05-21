@@ -222,8 +222,8 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/bibtexparser-1.4.4-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/blosc-1.21.6-he440d0b_1.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/blosc-hdf5-plugin-1.0.1-h64b1803_3.conda
-      - conda: https://conda.anaconda.org/conda-forge/noarch/bluesky-1.14.4-pyhd8ed1ab_1.conda
-      - conda: https://conda.anaconda.org/conda-forge/noarch/bluesky-base-1.14.4-pyhd8ed1ab_1.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/bluesky-1.15.1-pyhd8ed1ab_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/bluesky-base-1.15.1-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/bluesky-darkframes-0.6.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/bluesky-httpserver-0.0.12-pyhd8ed1ab_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/bluesky-kafka-0.10.0-pyhd8ed1ab_1.conda
@@ -266,7 +266,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/linux-64/cytoolz-1.1.0-py312h4c3975b_2.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/dask-2026.3.0-pyhc364b38_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/dask-core-2026.3.0-pyhc364b38_0.conda
-      - conda: https://conda.anaconda.org/conda-forge/noarch/databroker-2.0.0b68-pyhd8ed1ab_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/databroker-2.0.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/dav1d-1.2.1-hd590300_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/dbus-1.16.2-h24cb091_1.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/debugpy-1.8.20-py312h8285ef7_0.conda
@@ -585,7 +585,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/linux-64/netifaces-0.11.0-py312h4c3975b_4.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/networkx-3.6.1-pyhcf101f3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/nlohmann_json-3.12.0-h54a6638_1.conda
-      - conda: https://conda.anaconda.org/conda-forge/noarch/nslsii-0.11.4-pyhd8ed1ab_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/nslsii-0.11.9-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/nspr-4.38-h29cc59b_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/nss-3.118-h445c969_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/numba-0.65.1-py312hd1dde6f_1.conda
@@ -955,8 +955,8 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/bibtexparser-1.4.4-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/blosc-1.21.6-he440d0b_1.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/blosc-hdf5-plugin-1.0.1-h64b1803_3.conda
-      - conda: https://conda.anaconda.org/conda-forge/noarch/bluesky-1.14.4-pyhd8ed1ab_1.conda
-      - conda: https://conda.anaconda.org/conda-forge/noarch/bluesky-base-1.14.4-pyhd8ed1ab_1.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/bluesky-1.15.1-pyhd8ed1ab_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/bluesky-base-1.15.1-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/bluesky-darkframes-0.6.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/bluesky-kafka-0.10.0-pyhd8ed1ab_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/bluesky-queueserver-0.0.24-pyhd8ed1ab_0.conda
@@ -998,7 +998,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/linux-64/cytoolz-1.1.0-py312h4c3975b_2.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/dask-2026.3.0-pyhc364b38_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/dask-core-2026.3.0-pyhc364b38_0.conda
-      - conda: https://conda.anaconda.org/conda-forge/noarch/databroker-2.0.0b68-pyhd8ed1ab_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/databroker-2.0.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/dav1d-1.2.1-hd590300_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/dbus-1.16.2-h24cb091_1.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/debugpy-1.8.20-py312h8285ef7_0.conda
@@ -1317,7 +1317,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/linux-64/netifaces-0.11.0-py312h4c3975b_4.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/networkx-3.6.1-pyhcf101f3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/nlohmann_json-3.12.0-h54a6638_1.conda
-      - conda: https://conda.anaconda.org/conda-forge/noarch/nslsii-0.11.4-pyhd8ed1ab_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/nslsii-0.11.9-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/nspr-4.38-h29cc59b_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/nss-3.118-h445c969_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/numba-0.65.1-py312hd1dde6f_1.conda
@@ -2562,11 +2562,11 @@ packages:
   purls: []
   size: 13955
   timestamp: 1774957208400
-- conda: https://conda.anaconda.org/conda-forge/noarch/bluesky-1.14.4-pyhd8ed1ab_1.conda
-  sha256: 54ad3829c00faaac6d80b6d060a1b44e98953323eea7985f3f0fbdb5dff6a31a
-  md5: 5ca2415faa5516e63d61ecf2e06d08db
+- conda: https://conda.anaconda.org/conda-forge/noarch/bluesky-1.15.1-pyhd8ed1ab_0.conda
+  sha256: dc9ab55ec7c444cb9034f04fb176e7643dd6a5dcac1c0c2b9a95d2112d428968
+  md5: 0479b7228654769da0fa3cd0c56aece9
   depends:
-  - bluesky-base >=1.14.4,<1.14.5.0a0
+  - bluesky-base >=1.15.1,<1.15.2.0a0
   - databroker
   - doct
   - ipython
@@ -2578,11 +2578,11 @@ packages:
   license: BSD-3-Clause
   license_family: BSD
   purls: []
-  size: 7764
-  timestamp: 1756441569692
-- conda: https://conda.anaconda.org/conda-forge/noarch/bluesky-base-1.14.4-pyhd8ed1ab_1.conda
-  sha256: 142b77b5f09ec0dcf29ac40d6c599974d0c51689649d3861b6000794cd762e0f
-  md5: 2b57753a9a3bcdf8b2f1b858af7000ba
+  size: 8187
+  timestamp: 1778080178720
+- conda: https://conda.anaconda.org/conda-forge/noarch/bluesky-base-1.15.1-pyhd8ed1ab_0.conda
+  sha256: a2689c53cf103f5b25d47bc8744de9d1789f99630a01657ec00a0ec62f954e77
+  md5: 433607e935ea7544fb926b23b4a11613
   depends:
   - cycler
   - event-model >=1.14.0
@@ -2599,8 +2599,8 @@ packages:
   license_family: BSD
   purls:
   - pkg:pypi/bluesky?source=hash-mapping
-  size: 273895
-  timestamp: 1756441555305
+  size: 287265
+  timestamp: 1778080167723
 - conda: https://conda.anaconda.org/conda-forge/noarch/bluesky-darkframes-0.6.0-pyhd8ed1ab_0.conda
   sha256: 8794b63ef6bb7fa3fc9aee00bd9769698e3c2fc66e78c2bb619ba285ca6cd3c4
   md5: df4fba25238577902fccf0233dcf976f
@@ -3302,9 +3302,9 @@ packages:
   - pkg:pypi/dask?source=hash-mapping
   size: 1066502
   timestamp: 1773823162829
-- conda: https://conda.anaconda.org/conda-forge/noarch/databroker-2.0.0b68-pyhd8ed1ab_0.conda
-  sha256: 1389960dec9f09f2b02dc1ffd67f3a6c9ba38dfedcae778bbf1c2711ff436270
-  md5: 2731e97441697b4ea65d4fd210307d26
+- conda: https://conda.anaconda.org/conda-forge/noarch/databroker-2.0.0-pyhd8ed1ab_0.conda
+  sha256: 82d22ca12001cfbe18d1643f5fb6000a93c63e057249ba7f2620d5835ea620db
+  md5: ae6ace6405d2f03bb9c2b3f144732c08
   depends:
   - area-detector-handlers
   - bluesky-tiled-plugins
@@ -3339,8 +3339,8 @@ packages:
   license_family: BSD
   purls:
   - pkg:pypi/databroker?source=hash-mapping
-  size: 141641
-  timestamp: 1756950616361
+  size: 141191
+  timestamp: 1763687269409
 - conda: https://conda.anaconda.org/conda-forge/linux-64/dav1d-1.2.1-hd590300_0.conda
   sha256: 22053a5842ca8ee1cf8e1a817138cdb5e647eb2c46979f84153f6ad7bde73020
   md5: 418c6ca5929a611cbd69204907a83995
@@ -8307,9 +8307,9 @@ packages:
   purls: []
   size: 136216
   timestamp: 1758194284857
-- conda: https://conda.anaconda.org/conda-forge/noarch/nslsii-0.11.4-pyhd8ed1ab_0.conda
-  sha256: 424687444583dd1fc95ad13eda2edc887fa456bb80737d316c5c358c9ee4498d
-  md5: ba5de6cc6e92eb31f6057040fb716f34
+- conda: https://conda.anaconda.org/conda-forge/noarch/nslsii-0.11.9-pyhd8ed1ab_0.conda
+  sha256: 0912fe8c5d8547b6afc9427c794a8eeef518d5d0e678e6352b7ad722f7185c70
+  md5: f3c857ff3007753fb45008d278b2fe8e
   depends:
   - appdirs
   - bluesky-base >=1.8.1
@@ -8343,8 +8343,8 @@ packages:
   license_family: BSD
   purls:
   - pkg:pypi/nslsii?source=hash-mapping
-  size: 72222
-  timestamp: 1757003768835
+  size: 72449
+  timestamp: 1777916492649
 - conda: https://conda.anaconda.org/conda-forge/linux-64/nspr-4.38-h29cc59b_0.conda
   sha256: e3664264bd936c357523b55c71ed5a30263c6ba278d726a75b1eb112e6fb0b64
   md5: e235d5566c9cc8970eb2798dd4ecf62f

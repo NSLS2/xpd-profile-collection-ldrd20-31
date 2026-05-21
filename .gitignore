@@ -88,3 +88,5 @@ history*.sqlite
 acceptance_tests/307_demo.csv
 acceptance_tests/mydata.xlsx
 test*.csv
+
+.pixi/
