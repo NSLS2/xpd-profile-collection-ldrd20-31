@@ -39,8 +39,8 @@ from evaluation_halide import HalideEvaluation
 # ---------------------------------------------------------------------------
 
 # Queueserver connection
-HTTP_SERVER_URI = os.environ.get("QSERVER_HTTP_URI", "http://localhost:60610")
-HTTP_API_KEY = os.environ.get("QSERVER_HTTP_API_KEY", "")
+HTTP_SERVER_URI = os.environ.get("QSERVER_HTTP_URI", "https://xf28id2-xpd-qs1.nsls2.bnl.gov")
+HTTP_API_KEY = os.environ.get("QSERVER_HTTP_SERVER_API_KEY", "")
 ZMQ_CONSUMER_ADDR = os.environ.get(
     "ZMQ_CONSUMER_ADDR",
     "ipc:///var/lib/bluesky-zmq-proxy/xpd-ipc-in-ipc-out/out.sock",
@@ -54,7 +54,7 @@ PEAK_TOLERANCE = 5  # nm
 PLQY_PARAMS = [1, "quinine", 365, 0.06, 1.2e6, 1.33, 0.546]
 
 # Historical data path
-AGENT_DATA_PATH = "/nsls2/data/xpd-new/legacy/processed/LDRD_chl/agent_data.csv"
+AGENT_DATA_PATH = ""
 
 # Tiled URI for evaluation function
 TILED_URI = os.environ.get("TILED_URI", "https://tiled.nsls2.bnl.gov")
@@ -62,9 +62,6 @@ TILED_PROFILE = os.environ.get("TILED_PROFILE", "xpd")
 
 # Acquisition plan name (must be registered on the queueserver)
 ACQUISITION_PLAN_NAME = "halide_acquire"
-
-# Number of optimization iterations
-N_ITERATIONS = 20
 
 
 # ---------------------------------------------------------------------------
@@ -286,11 +283,3 @@ def build_queueserver_agent(
 
     print(f"Agent built. Target peak: {peak_target} ± {peak_tolerance} nm")
     return agent
-
-
-# ---------------------------------------------------------------------------
-# Entry point
-# ---------------------------------------------------------------------------
-
-if __name__ == "__main__":
-    agent = build_queueserver_agent()
