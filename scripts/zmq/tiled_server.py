@@ -30,13 +30,14 @@ def main():
         description="Local Tiled server ingesting Bluesky documents from ZMQ."
     )
     parser.add_argument(
-        "zmq_address",
+        "--zmq_address",
         help="ZMQ PUB address to subscribe to (e.g. tcp://localhost:5578)",
+        default="ipc:///var/lib/bluesky-zmq-proxy/xpd-ipc-in-ipc-out/out.sock",
     )
     parser.add_argument(
         "--port",
         type=int,
-        default=8000,
+        default=8101,
         help="Port for the Tiled HTTP server (default: 8000)",
     )
     args = parser.parse_args()
@@ -48,7 +49,7 @@ def main():
 
     # 2. Wire RemoteDispatcher → TiledWriter
     writer = TiledWriter(client)
-    dispatcher = RemoteDispatcher(args.zmq_address)
+    dispatcher = RemoteDispatcher(args.zmq_address, prefix=b"an")
     dispatcher.subscribe(writer)
 
     # 3. Run dispatcher (blocks in background thread)
