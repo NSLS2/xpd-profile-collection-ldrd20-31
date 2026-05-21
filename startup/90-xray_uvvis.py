@@ -865,7 +865,6 @@ def xray_uvvis_acquire(
         "dof_names": dof_names,
         "precursors": precursor_list[: len(pump_list)],
         "pumps": [p.name for p in pump_list],
-        "pump_status": [p.status.get() for p in pump_list],
         "detectors": detectors_list,
         "flow_config": flow,
         "xray_config": xray,
@@ -887,6 +886,7 @@ def xray_uvvis_acquire(
     # Acquisition plan
     @bpp.subs_decorator(subs)
     @bpp.set_run_key_decorator("xray_uvvis_acquire")
+    @bpp.baseline_decorator(pump_list)
     @bpp.stage_decorator(stage_devices)
     @bpp.run_decorator(md=_md)
     def acquisition():
