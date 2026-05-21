@@ -44,6 +44,7 @@ import bluesky.plan_stubs as bps
 import bluesky.preprocessors as bpp
 from bluesky.callbacks import CallbackBase
 from ophyd import Signal
+from typing import TypedDict
 
 
 # ---------------------------------------------------------------------------
@@ -94,67 +95,171 @@ def _inject_analysis_stage(msg):
 
 
 # ---------------------------------------------------------------------------
-# Static configuration (physical setup — update per beamtime)
+# Configuration TypedDicts and defaults (JSON-serializable for Queueserver)
 # ---------------------------------------------------------------------------
 
-# Syringe sizes (mL) for each pump, in order matching DOF order
-SYRINGE_LIST = [50, 50, 50]
 
-# Syringe materials
-SYRINGE_MATER_LIST = ["steel", "steel", "steel"]
+class FlowConfig(TypedDict, total=False):
+    """Flow/pump configuration for synthesis.
 
-# Target volumes (format: "value unit")
-TARGET_VOL_LIST = ["30 ml", "30 ml", "30 ml"]
+    All values must be JSON-serializable (strings, numbers, bools, lists/dicts
+    of those) so that the plan can be submitted via Queueserver.
+    """
 
-# Whether to auto-set target for each pump
-SET_TARGET_LIST = [True, True, True]
+    syringe_list: list[float]
+    """Syringe sizes in mL for each pump, in DOF order."""
 
-# Rate unit
-RATE_UNIT = "ul/min"
+    syringe_mater_list: list[str]
+    """Syringe materials for each pump (e.g. 'steel', 'plastic_BD')."""
 
-# Mixer tubing: single segment of 30 cm (matches historical xlsx config).
-# Format matches what wait_equilibrium2 expects: "value unit".
-MIXER_LENGTHS_CM = [30.0]
+    target_vol_list: list[str]
+    """Target volumes as 'value unit' strings (e.g. '30 ml')."""
 
-# Residence time multiplier (wait this many multiples of the residence time)
-RESIDENT_T_RATIO = 1.0
+    set_target_list: list[bool]
+    """Whether to auto-set the target volume for each pump."""
 
-# Number of absorbance and fluorescence spectra per measurement
-NUM_ABS = 10
-NUM_FLU = 10
+    rate_unit: str
+    """Flow-rate unit string passed to set_group_infuse2."""
 
-# Precursor names (for metadata only)
-PRECURSOR_LIST = ["CsPbOA", "TOABr", "ZnI2"]
+    mixer_lengths_cm: list[float]
+    """Lengths of mixer tubing segments in cm."""
 
-# Post-dilution with toluene
-POST_DILUTE = False
-POST_DILUTE_RATIO = 1.0  # toluene rate = sum(active_rates) * ratio
-POST_DILUTE_WAIT_SEC = 30  # wait time after starting toluene pump (seconds)
+    resident_t_ratio: float
+    """Multiplier of the residence time to wait for equilibrium."""
 
-# Default mapping: DOF name -> pump device name in queueserver namespace
-DOF_TO_PUMP = {
-    "infusion_rate_CsPb": "dds2_p1",
-    "infusion_rate_Br": "dds2_p2",
-    "infusion_rate_I2": "dds3_p1",
-    "infusion_rate_Cl": "dds1_p1",
-    "infusion_rate_OAm": "dds1_p2",
+    precursor_list: list[str]
+    """Precursor names (metadata only)."""
+
+    post_dilute: bool
+    """Whether to perform toluene post-dilution."""
+
+    post_dilute_ratio: float
+    """Toluene rate = sum(active_rates) * this ratio."""
+
+    post_dilute_wait_sec: float
+    """Seconds to wait after starting the toluene pump."""
+
+    dof_to_pump: dict[str, str]
+    """Mapping of DOF name -> pump device name in the queueserver namespace."""
+
+    dilute_pump_name: str
+    """Device name of the toluene dilution pump."""
+
+
+class XrayConfig(TypedDict, total=False):
+    """X-ray scattering acquisition configuration."""
+
+    do_xray: bool
+    """If True, collect X-ray scattering after UV-Vis measurements."""
+
+    exposure: float
+    """Total area detector exposure time in seconds."""
+
+    frame_acq_time: float
+    """Per-frame acquisition time in seconds."""
+
+    stream_name: str
+    """Event stream name for the scattering data."""
+
+    no_dark: bool
+    """If True, skip dark frame collection for X-ray."""
+
+
+class WashConfig(TypedDict, total=False):
+    """Wash loop configuration for cleaning tubing between iterations."""
+
+    do_wash: bool
+    """If True, run the wash loop after the acquisition completes."""
+
+    pump_names: list[str]
+    """Pump device name strings for wash solvent(s), resolved from global namespace."""
+
+    syringe_list: list[float]
+    """Syringe sizes in mL for wash pumps."""
+
+    rate_list: list[str]
+    """Infusion rates for wash pumps as 'value unit' strings."""
+
+    duration_sec: float
+    """How long to run wash pumps (seconds)."""
+
+    syringe_mater_list: list[str]
+    """Syringe materials for wash pumps."""
+
+    target_vol_list: list[str]
+    """Target volumes for wash pumps."""
+
+    set_target_list: list[bool]
+    """Whether to auto-set target for each wash pump."""
+
+
+class QualityConfig(TypedDict, total=False):
+    """PL quality monitoring and UV-Vis shot count configuration."""
+
+    use_good_bad: bool
+    """If True, PL is gated by quality monitoring with reacquisition."""
+
+    good_target: int
+    """Number of good PL batches required before proceeding."""
+
+    max_bad: int
+    """Maximum bad PL batches before giving up and proceeding."""
+
+    num_abs: int
+    """Number of absorbance spectra per measurement."""
+
+    num_flu: int
+    """Number of fluorescence spectra per measurement."""
+
+
+DEFAULT_FLOW_CONFIG: FlowConfig = {
+    "syringe_list": [50, 50, 50],
+    "syringe_mater_list": ["steel", "steel", "steel"],
+    "target_vol_list": ["30 ml", "30 ml", "30 ml"],
+    "set_target_list": [True, True, True],
+    "rate_unit": "ul/min",
+    "mixer_lengths_cm": [30.0],
+    "resident_t_ratio": 1.0,
+    "precursor_list": ["CsPbOA", "TOABr", "ZnI2"],
+    "post_dilute": False,
+    "post_dilute_ratio": 1.0,
+    "post_dilute_wait_sec": 30,
+    "dof_to_pump": {
+        "infusion_rate_CsPb": "dds2_p1",
+        "infusion_rate_Br": "dds2_p2",
+        "infusion_rate_I2": "dds3_p1",
+        "infusion_rate_Cl": "dds1_p1",
+        "infusion_rate_OAm": "dds1_p2",
+    },
+    "dilute_pump_name": "dds1_p2",
 }
 
-# Toluene dilution pump device name
-DILUTE_PUMP_NAME = "dds1_p2"
+DEFAULT_XRAY_CONFIG: XrayConfig = {
+    "do_xray": False,
+    "exposure": 5.0,
+    "frame_acq_time": 0.2,
+    "stream_name": "scattering",
+    "no_dark": False,
+}
 
-# ---------------------------------------------------------------------------
-# Good/bad fluorescence reacquisition
-# ---------------------------------------------------------------------------
-# When enabled, after each batch of NUM_FLU PL shots the most recent qepro
-# spectrum is classified by `_classify_pl`. Additional batches are taken (in
-# the same Bluesky run, into the same 'fluorescence' stream) until either
-# GOOD_TARGET good batches or MAX_BAD bad batches are accumulated. One small
-# bookkeeping event per batch is emitted into a single auxiliary stream
-# 'fluorescence_quality' for traceability.
-USE_GOOD_BAD = False
-GOOD_TARGET = 3  # success once this many good batches collected
-MAX_BAD = 3  # give up after this many bad batches (log + proceed)
+DEFAULT_WASH_CONFIG: WashConfig = {
+    "do_wash": False,
+    "pump_names": [],
+    "syringe_list": [50],
+    "rate_list": ["500 ul/min"],
+    "duration_sec": 60,
+    "syringe_mater_list": ["steel"],
+    "target_vol_list": ["30 ml"],
+    "set_target_list": [False],
+}
+
+DEFAULT_QUALITY_CONFIG: QualityConfig = {
+    "use_good_bad": False,
+    "good_target": 3,
+    "max_bad": 3,
+    "num_abs": 10,
+    "num_flu": 10,
+}
 
 # Classifier thresholds — names + defaults mirror legacy
 # scripts/utils/_data_analysis.good_bad_data exactly. Production callers
@@ -168,27 +273,6 @@ DEFAULT_THRESHOLDS = {
     "threshold": [560, 100000, 200000],  # [split_wl_nm, integral_low, integral_high]
     "int_boundary": [340, 400, 800],  # [LED_lo, LED_hi == PL_lo, PL_hi] (nm)
 }
-
-# ---------------------------------------------------------------------------
-# X-ray scattering configuration
-# ---------------------------------------------------------------------------
-DO_XRAY = False
-XRAY_EXPOSURE = 5.0  # total area detector exposure time (seconds)
-XRAY_FRAME_ACQ_TIME = 0.2  # per-frame acquisition time (seconds)
-XRAY_STREAM_NAME = "scattering"
-XRAY_NO_DARK = False
-
-# ---------------------------------------------------------------------------
-# Wash loop configuration
-# ---------------------------------------------------------------------------
-DO_WASH = False
-WASH_PUMP_LIST = []  # pump device objects for wash solvent(s)
-WASH_SYRINGE_LIST = [50]  # syringe sizes (mL) for wash pumps
-WASH_RATE_LIST = ["500 ul/min"]  # infusion rates for wash pumps
-WASH_DURATION_SEC = 60  # how long to run wash pumps (seconds)
-WASH_SYRINGE_MATER_LIST = ["steel"]
-WASH_TARGET_VOL_LIST = ["30 ml"]
-WASH_SET_TARGET_LIST = [False]
 
 # ---------------------------------------------------------------------------
 # Module-level cached Signals for the 'fluorescence_quality' stream.
@@ -578,13 +662,13 @@ def steady_state_flow(
     target_vol_list,
     set_target_list,
     syringe_mater_list,
-    rate_unit=RATE_UNIT,
-    mixer_lengths_cm=MIXER_LENGTHS_CM,
-    resident_t_ratio=RESIDENT_T_RATIO,
+    rate_unit=DEFAULT_FLOW_CONFIG["rate_unit"],
+    mixer_lengths_cm=DEFAULT_FLOW_CONFIG["mixer_lengths_cm"],
+    resident_t_ratio=DEFAULT_FLOW_CONFIG["resident_t_ratio"],
     post_dilute=False,
     dilute_pump=None,
-    dilute_rate_ratio=POST_DILUTE_RATIO,
-    dilute_wait_sec=POST_DILUTE_WAIT_SEC,
+    dilute_rate_ratio=DEFAULT_FLOW_CONFIG["post_dilute_ratio"],
+    dilute_wait_sec=DEFAULT_FLOW_CONFIG["post_dilute_wait_sec"],
 ):
     """Wrap ``plan`` with pump setup before and pump stop after.
 
@@ -675,37 +759,10 @@ def xray_uvvis_acquire(
     sensors=None,
     md=None,
     *,
-    syringe_list=None,
-    syringe_mater_list=None,
-    target_vol_list=None,
-    set_target_list=None,
-    rate_unit=None,
-    mixer_lengths_cm=None,
-    resident_t_ratio=None,
-    num_abs=None,
-    num_flu=None,
-    precursor_list=None,
-    post_dilute=None,
-    post_dilute_ratio=None,
-    post_dilute_wait_sec=None,
-    dof_to_pump=None,
-    dilute_pump_name=None,
-    use_good_bad=None,
-    good_target=None,
-    max_bad=None,
-    do_xray=None,
-    xray_exposure=None,
-    xray_frame_acq_time=None,
-    xray_stream_name=None,
-    xray_no_dark=None,
-    do_wash=None,
-    wash_pump_list=None,
-    wash_syringe_list=None,
-    wash_rate_list=None,
-    wash_duration_sec=None,
-    wash_syringe_mater_list=None,
-    wash_target_vol_list=None,
-    wash_set_target_list=None,
+    flow_config: FlowConfig | None = None,
+    xray_config: XrayConfig | None = None,
+    wash_config: WashConfig | None = None,
+    quality_config: QualityConfig | None = None,
 ):
     """Acquire UV-Vis and (optionally) X-ray scattering data for halide
     perovskite optimization.
@@ -719,7 +776,8 @@ def xray_uvvis_acquire(
        and additional batches are taken until good/bad termination.
     3. Optionally collect X-ray scattering (area detector ``pe1c``).
     4. Stop all started pumps (guaranteed by ``bpp.finalize_wrapper``).
-    5. Return the run UID.
+    5. Optionally wash the flow loop to clean residual for the next iteration.
+    6. Return the run UID.
 
     Parameters
     ----------
@@ -732,129 +790,53 @@ def xray_uvvis_acquire(
         Sensor device names (e.g., ["QEPro"]).
     md : dict | None
         Metadata dict (contains blop_correlation_uid for tracking).
-    syringe_list : list[float] | None
-        Syringe sizes in mL for each pump, in DOF order.
-    syringe_mater_list : list[str] | None
-        Syringe materials for each pump.
-    target_vol_list : list[str] | None
-        Target volumes (e.g. ``["30 ml", ...]``) for each pump.
-    set_target_list : list[bool] | None
-        Whether to auto-set the target volume for each pump.
-    rate_unit : str | None
-        Flow-rate unit string passed to ``set_group_infuse2``.
-    mixer_lengths_cm : list[float] | None
-        Lengths of mixer tubing segments in cm.
-    resident_t_ratio : float | None
-        Multiplier of the residence time to wait for equilibrium.
-    num_abs : int | None
-        Number of absorbance spectra to collect.
-    num_flu : int | None
-        Number of fluorescence spectra to collect.
-    precursor_list : list[str] | None
-        Precursor names stored in run metadata.
-    post_dilute : bool | None
-        Whether to perform toluene post-dilution.
-    post_dilute_ratio : float | None
-        Toluene rate = sum(active_rates) * ratio.
-    post_dilute_wait_sec : float | None
-        Seconds to wait after starting the toluene pump.
-    dof_to_pump : dict[str, str] | None
-        Mapping of DOF name → pump device name in the queueserver namespace.
-    dilute_pump_name : str | None
-        Device name of the toluene dilution pump.
-    use_good_bad : bool | None
-        If ``True``, PL is gated by quality monitoring; additional
-        batches are taken until good/bad termination.
-    good_target : int | None
-        Quality target threshold for good PL data.
-    max_bad : int | None
-        Maximum number of bad PL data before aborting.
-    do_xray : bool | None
-        If ``True``, collect X-ray scattering after UV-Vis measurements.
-    xray_exposure : float | None
-        Total area detector exposure time in seconds.
-    xray_frame_acq_time : float | None
-        Per-frame acquisition time in seconds.
-    xray_stream_name : str | None
-        Event stream name for the scattering data.
-    xray_no_dark : bool | None
-        If ``True``, skip dark frame collection for X-ray.
+    flow_config : FlowConfig | None
+        Flow/pump configuration. Keys are merged with DEFAULT_FLOW_CONFIG;
+        only overridden keys need to be supplied. See :class:`FlowConfig`.
+    xray_config : XrayConfig | None
+        X-ray scattering configuration. See :class:`XrayConfig`.
+    wash_config : WashConfig | None
+        Wash loop configuration. See :class:`WashConfig`.
+    quality_config : QualityConfig | None
+        PL quality monitoring configuration. See :class:`QualityConfig`.
 
     Returns
     -------
     str
         UID of the Bluesky run.
     """
-    # Resolve all configuration, falling back to module-level defaults
-    syringe_list = syringe_list if syringe_list is not None else SYRINGE_LIST
-    syringe_mater_list = (
-        syringe_mater_list if syringe_mater_list is not None else SYRINGE_MATER_LIST
-    )
-    target_vol_list = (
-        target_vol_list if target_vol_list is not None else TARGET_VOL_LIST
-    )
-    set_target_list = (
-        set_target_list if set_target_list is not None else SET_TARGET_LIST
-    )
-    rate_unit = rate_unit if rate_unit is not None else RATE_UNIT
-    mixer_lengths_cm = (
-        mixer_lengths_cm if mixer_lengths_cm is not None else MIXER_LENGTHS_CM
-    )
-    resident_t_ratio = (
-        resident_t_ratio if resident_t_ratio is not None else RESIDENT_T_RATIO
-    )
-    num_abs = num_abs if num_abs is not None else NUM_ABS
-    num_flu = num_flu if num_flu is not None else NUM_FLU
-    precursor_list = precursor_list if precursor_list is not None else PRECURSOR_LIST
-    post_dilute = post_dilute if post_dilute is not None else POST_DILUTE
-    post_dilute_ratio = (
-        post_dilute_ratio if post_dilute_ratio is not None else POST_DILUTE_RATIO
-    )
-    post_dilute_wait_sec = (
-        post_dilute_wait_sec
-        if post_dilute_wait_sec is not None
-        else POST_DILUTE_WAIT_SEC
-    )
-    dof_to_pump = dof_to_pump if dof_to_pump is not None else DOF_TO_PUMP
-    dilute_pump_name = (
-        dilute_pump_name if dilute_pump_name is not None else DILUTE_PUMP_NAME
-    )
-    use_good_bad = use_good_bad if use_good_bad is not None else USE_GOOD_BAD
-    good_target = good_target if good_target is not None else GOOD_TARGET
-    max_bad = max_bad if max_bad is not None else MAX_BAD
-    do_xray = do_xray if do_xray is not None else DO_XRAY
-    xray_exposure = xray_exposure if xray_exposure is not None else XRAY_EXPOSURE
-    xray_frame_acq_time = (
-        xray_frame_acq_time if xray_frame_acq_time is not None else XRAY_FRAME_ACQ_TIME
-    )
-    xray_stream_name = (
-        xray_stream_name if xray_stream_name is not None else XRAY_STREAM_NAME
-    )
-    xray_no_dark = xray_no_dark if xray_no_dark is not None else XRAY_NO_DARK
-    do_wash = do_wash if do_wash is not None else DO_WASH
-    wash_pump_list = wash_pump_list if wash_pump_list is not None else WASH_PUMP_LIST
-    wash_syringe_list = (
-        wash_syringe_list if wash_syringe_list is not None else WASH_SYRINGE_LIST
-    )
-    wash_rate_list = wash_rate_list if wash_rate_list is not None else WASH_RATE_LIST
-    wash_duration_sec = (
-        wash_duration_sec if wash_duration_sec is not None else WASH_DURATION_SEC
-    )
-    wash_syringe_mater_list = (
-        wash_syringe_mater_list
-        if wash_syringe_mater_list is not None
-        else WASH_SYRINGE_MATER_LIST
-    )
-    wash_target_vol_list = (
-        wash_target_vol_list
-        if wash_target_vol_list is not None
-        else WASH_TARGET_VOL_LIST
-    )
-    wash_set_target_list = (
-        wash_set_target_list
-        if wash_set_target_list is not None
-        else WASH_SET_TARGET_LIST
-    )
+    # Merge caller overrides with module-level defaults
+    flow: FlowConfig = {**DEFAULT_FLOW_CONFIG, **(flow_config or {})}
+    xray: XrayConfig = {**DEFAULT_XRAY_CONFIG, **(xray_config or {})}
+    wash: WashConfig = {**DEFAULT_WASH_CONFIG, **(wash_config or {})}
+    quality: QualityConfig = {**DEFAULT_QUALITY_CONFIG, **(quality_config or {})}
+
+    # Unpack for readability
+    syringe_list = flow["syringe_list"]
+    syringe_mater_list = flow["syringe_mater_list"]
+    target_vol_list = flow["target_vol_list"]
+    set_target_list = flow["set_target_list"]
+    rate_unit = flow["rate_unit"]
+    mixer_lengths_cm = flow["mixer_lengths_cm"]
+    resident_t_ratio = flow["resident_t_ratio"]
+    precursor_list = flow["precursor_list"]
+    post_dilute = flow["post_dilute"]
+    dof_to_pump = flow["dof_to_pump"]
+    dilute_pump_name = flow["dilute_pump_name"]
+
+    do_xray = xray["do_xray"]
+    xray_exposure = xray["exposure"]
+    xray_frame_acq_time = xray["frame_acq_time"]
+    xray_stream_name = xray["stream_name"]
+    xray_no_dark = xray["no_dark"]
+
+    do_wash = wash["do_wash"]
+
+    use_good_bad = quality["use_good_bad"]
+    good_target = quality["good_target"]
+    max_bad = quality["max_bad"]
+    num_abs = quality["num_abs"]
+    num_flu = quality["num_flu"]
 
     if len(suggestions) > 1:
         raise RuntimeError(
@@ -871,7 +853,7 @@ def xray_uvvis_acquire(
 
     sample_type = _make_sample_name(rate_list)
 
-    # Build metadata
+    # Build metadata — include full resolved configs for reproducibility
     detectors_list = ["qepro"]
     if do_xray:
         detectors_list.append("pe1c")
@@ -885,8 +867,10 @@ def xray_uvvis_acquire(
         "pumps": [p.name for p in pump_list],
         "pump_status": [p.status.get() for p in pump_list],
         "detectors": detectors_list,
-        "use_good_bad": use_good_bad,
-        "do_xray": do_xray,
+        "flow_config": flow,
+        "xray_config": xray,
+        "wash_config": wash,
+        "quality_config": quality,
     }
     _md.update(md or {})
 
@@ -953,15 +937,16 @@ def xray_uvvis_acquire(
     )
 
     # Optional wash loop — flush tubing with wash solvent before next iteration
-    if do_wash and wash_pump_list:
+    if do_wash and wash["pump_names"]:
+        wash_pumps = _resolve_pumps(wash["pump_names"])
         yield from _wash_loop(
-            wash_pump_list,
-            wash_syringe_list,
-            wash_rate_list,
-            wash_duration_sec,
-            syringe_mater_list=wash_syringe_mater_list,
-            target_vol_list=wash_target_vol_list,
-            set_target_list=wash_set_target_list,
+            wash_pumps,
+            wash["syringe_list"],
+            wash["rate_list"],
+            wash["duration_sec"],
+            syringe_mater_list=wash["syringe_mater_list"],
+            target_vol_list=wash["target_vol_list"],
+            set_target_list=wash["set_target_list"],
             rate_unit=rate_unit,
         )
 
@@ -991,9 +976,9 @@ def _resolve_pumps(pump_names):
 
 
 def _resolve_pumps_from_dofs(dof_names, dof_to_pump=None):
-    """Map DOF names to pump devices via DOF_TO_PUMP mapping."""
+    """Map DOF names to pump devices via dof_to_pump mapping."""
     if dof_to_pump is None:
-        dof_to_pump = DOF_TO_PUMP
+        dof_to_pump = DEFAULT_FLOW_CONFIG["dof_to_pump"]
     pump_names = []
     for dof in dof_names:
         pname = dof_to_pump.get(dof)
