@@ -51,18 +51,21 @@ from ophyd import Signal
 # ---------------------------------------------------------------------------
 
 
-def configure_area_det(det, exposure, frame_acq_time=0.2):
+def configure_area_det(det, exposure, acq_time=0.2):
     """Configure the area detector exposure parameters.
 
     Sets ``num_images = exposure / frame_acq_time`` (rounded) and stores
     both the total exposure time and per-frame acquisition time on the
     detector device.
     """
-    num_frames = max(1, int(round(exposure / frame_acq_time)))
+    num_frames = max(1, int(round(exposure / acq_time)))
     yield from bps.mv(
-        det.exposure_time, exposure,
-        det.num_images, num_frames,
-        det.frame_acq_time, frame_acq_time,
+        det.exposure_time,
+        exposure,
+        det.num_images,
+        num_frames,
+        det.frame_acq_time,
+        acq_time,
     )
 
 
@@ -466,7 +469,7 @@ def measure_scattering(det, exposure, *, frame_acq_time=0.2, stream_name="scatte
         Name of the event stream for scattering data.
     """
     # Configure area detector exposure
-    yield from configure_area_det(det, exposure, frame_acq_time=frame_acq_time)
+    yield from configure_area_det(det, exposure, acq_time=frame_acq_time)
 
     # Open fast shutter, acquire, close fast shutter
     yield from bps.mv(fs, -20)
@@ -843,10 +846,14 @@ def xray_uvvis_acquire(
         else WASH_SYRINGE_MATER_LIST
     )
     wash_target_vol_list = (
-        wash_target_vol_list if wash_target_vol_list is not None else WASH_TARGET_VOL_LIST
+        wash_target_vol_list
+        if wash_target_vol_list is not None
+        else WASH_TARGET_VOL_LIST
     )
     wash_set_target_list = (
-        wash_set_target_list if wash_set_target_list is not None else WASH_SET_TARGET_LIST
+        wash_set_target_list
+        if wash_set_target_list is not None
+        else WASH_SET_TARGET_LIST
     )
 
     if len(suggestions) > 1:
