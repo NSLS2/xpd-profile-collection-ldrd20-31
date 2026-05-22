@@ -1,4 +1,6 @@
 name: Tests
+permissions:
+  contents: read
 
 on:
   push:
@@ -34,6 +36,8 @@ jobs:
 
       - name: Checkout the code
         uses: actions/checkout@v3
+        with:
+          persist-credentials: false
 
       - name: Config files
         run: |
@@ -53,10 +57,10 @@ jobs:
           sudo cp -v configs/kafka.yml /etc/bluesky/kafka.yml
 
       - name: Start MongoDB
-        uses: supercharge/mongodb-github-action@1.6.0
+        uses: supercharge/mongodb-github-action@a16e87bbc3edc38021742a5f958831c905fe9f67 # 1.6.0
 
       - name: Set up Python ${{ matrix.python-version }} with conda
-        uses: conda-incubator/setup-miniconda@v2
+        uses: conda-incubator/setup-miniconda@9f54435e0e72c53962ee863144e47a4b094bfd35 # v2
         with:
           activate-environment: ${{ env.REPOSITORY_NAME }}-${{ matrix.env-name }}
           auto-update-conda: true
