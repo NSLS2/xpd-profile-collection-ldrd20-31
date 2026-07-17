@@ -9,6 +9,7 @@ import importlib
 
 # importlib.import_module("_data_analysis")
 from _data_analysis import *
+import _data_analysis as da
 
 """ This module provides functions for data export.
     Usually imported as de.
@@ -111,7 +112,7 @@ def _auto_name_sample2(pump_list, prefix=None):
 
     get_rate = [pump.read_infuse_rate.get() for pump in pump_list]
     get_unit = [pump.read_infuse_rate_unit.get() for pump in pump_list]
-    ruc_list = [rate_unit_converter(r0=unit, r1="ul/min") for unit in get_unit]
+    ruc_list = [da.rate_unit_converter(r0=unit, r1="ul/min") for unit in get_unit]
     get_status = [pump.status.get() for pump in pump_list]
 
     is_infusing = []
@@ -161,7 +162,7 @@ def _exprot_rate_agent(metadata_dic, rate_label_dic, agent_data):
         if num_idx.size == 1:
             pre_idx = num_idx[0][0]
             try:
-                ruc = rate_unit_converter(
+                ruc = da.rate_unit_converter(
                     r0=metadata_dic["infuse_rate_unit"][pre_idx], r1="ul/min"
                 )
                 agent_data[rate_label_dic[key]] = (
@@ -732,7 +733,7 @@ def device_to_ML_parameters(metadata_dic, exp_name="ldrd-2031"):
     ## Generate ruc (rate unit converter) to unify rate units as infuse_rate_unit[0]
     ruc = []
     for i in range(len(infuse_rate_unit)):
-        rr = rate_unit_converter(r0=infuse_rate_unit[i], r1=infuse_rate_unit[0])
+        rr = da.rate_unit_converter(r0=infuse_rate_unit[i], r1=infuse_rate_unit[0])
         ruc.append(rr)
     ruc = np.float32(ruc)
 

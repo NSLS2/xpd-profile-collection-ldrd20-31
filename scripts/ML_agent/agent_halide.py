@@ -70,6 +70,7 @@ TILED_PROFILE = os.environ.get("TILED_PROFILE", "xpd")
 # Acquisition plan name (must be registered on the queueserver)
 ACQUISITION_PLAN_NAME = "xray_uvvis_acquire"
 
+AGENT_CHECKPOINT_PATH = "/nsls2/data/xpd-new/legacy/processed/LDRD_chl/checkpoints/agent_halide.json"
 
 # ---------------------------------------------------------------------------
 # DOFs
@@ -80,17 +81,14 @@ def build_dofs(use_OAm: bool = False) -> list[RangeDOF]:
     """Build DOFs for the halide perovskite optimization."""
     if use_OAm:
         return [
-            RangeDOF(
-                name="infusion_rate_CsPb", bounds=(20, 80), parameter_type="float"
-            ),
-            RangeDOF(name="infusion_rate_Cl", bounds=(10, 190), parameter_type="float"),
+            RangeDOF(name="infusion_rate_CsPb", bounds=(5, 200), parameter_type="float"),
+            RangeDOF(name="infusion_rate_Br", bounds=(5, 250), parameter_type="float"),
+            RangeDOF(name="infusion_rate_Cl", bounds=(5, 200), parameter_type="float"),
             RangeDOF(name="infusion_rate_OAm", bounds=(0, 70), parameter_type="float"),
         ]
     else:
         return [
-            RangeDOF(
-                name="infusion_rate_CsPb", bounds=(10, 200), parameter_type="float"
-            ),
+            RangeDOF(name="infusion_rate_CsPb", bounds=(10, 200), parameter_type="float"),
             RangeDOF(name="infusion_rate_Br", bounds=(5, 200), parameter_type="float"),
             RangeDOF(name="infusion_rate_I2", bounds=(0, 200), parameter_type="float"),
         ]
@@ -106,6 +104,7 @@ def build_objectives() -> list[Objective]:
     return [
         Objective(name="log_FWHM", minimize=True),
         Objective(name="log_PLQY", minimize=False),
+        Objective(name="peak_distance", minimize=True),
     ]
 
 
@@ -149,25 +148,37 @@ def load_historical_data(
     list[dict]
         Each dict contains DOF values and objective values, ready for ingest().
     """
+    # names = [
+    #     "infusion_rate_CsPb",
+    #     "infusion_rate_Br",
+    #     "infusion_rate_I2",
+    #     "infusion_rate_Cl",
+    #     "Peak",
+    #     "FWHM",
+    #     "PLQY",
+    #     "time",
+    #     "uid",
+    #     "r_2",
+    # ]
+    
     names = [
-        "infusion_rate_CsPb",
-        "infusion_rate_Br",
-        "infusion_rate_I2",
-        "infusion_rate_Cl",
-        "Peak",
-        "FWHM",
-        "PLQY",
-        "time",
-        "uid",
-        "r_2",
-    ]
+        'infusion_rate_CsPb',
+        'infusion_rate_Br', 
+        'infusion_rate_Cl', 
+        'infusion_rate_OAm', 
+        'N/A', 
+        'Peak', 
+        'FWHM', 
+        'PLQY'
+    ] 
 
-    df = pd.read_csv(agent_data_path, sep=" ", names=names, skiprows=1, index_col=False)
+    # df = pd.read_csv(agent_data_path, sep=" ", names=names, skiprows=1, index_col=False)
+    df = pd.read_csv(agent_data_path, sep=",", names=names, skiprows=1, index_col=False)
 
     points = []
     for _, row in df.iterrows():
-        if row.get("r_2", 0) < r2_min:
-            continue
+        # if row.get("r_2", 0) < r2_min:
+        #     continue
 
         point = {}
         for name in dof_names:
@@ -221,6 +232,7 @@ def build_agent(
     zmq_consumer_addr: str = ZMQ_CONSUMER_ADDR,
     tiled_profile: str = TILED_PROFILE,
     acquisition_plan_kwargs: dict | None = None,
+    checkpoint_path: str | None = AGENT_CHECKPOINT_PATH,
 ) -> Agent | QueueserverAgent:
     """Build and return a QueueserverAgent ready to run.
 
@@ -268,6 +280,7 @@ def build_agent(
     evaluation_function = HalideEvaluation(
         tiled_client=tiled_client,
         plqy_params=plqy_params,
+        peak_target=peak_target,
     )
 
     if queueserver:
@@ -287,6 +300,7 @@ def build_agent(
             acquisition_plan=ACQUISITION_PLAN_NAME,
             outcome_constraints=outcome_constraints,
             acquisition_plan_kwargs=acquisition_plan_kwargs,
+            checkpoint_path=checkpoint_path,
         )
     else:
         halide_acquisition = functools.partial(
@@ -302,6 +316,7 @@ def build_agent(
             evaluation_function=evaluation_function,
             acquisition_plan=halide_acquisition,
             outcome_constraints=outcome_constraints,
+            checkpoint_path=checkpoint_path,
         )
 
     # Seed with historical data

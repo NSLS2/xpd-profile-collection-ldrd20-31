@@ -367,8 +367,8 @@ class xlsx_to_inputs():
             message (dict): message in RE document
         """
         
-        if 'uid' in message.keys():
-            print(f"uid: {message['original_run_uid']}")
+        # if 'uid' in message.keys():
+        #     print(f"uid: {message['original_run_uid']}")
         if 'plan_name' in message.keys():
             print(f"plan name: {message['plan_name']}")
         if 'detectors' in message.keys(): 
@@ -774,12 +774,34 @@ class xlsx_to_inputs():
                                             beamline_acronym=beamline_acronym)
         self.sample_type = self.metadata_dic['sample_type']
         
+        print(f'\n{self.metadata_dic = }\n')
+        
         ## Save data in dic into .csv file
         if stream_name == 'take_a_uvvis':
             saving_path = self.inputs.csv_path[1]
         else:
             saving_path = self.inputs.csv_path[0]
-        de.dic_to_csv_for_stream(saving_path, self.qepro_dic, self.metadata_dic, stream_name=stream_name)
+        try:
+            de.dic_to_csv_for_stream(saving_path, self.qepro_dic, self.metadata_dic, stream_name=stream_name)
+            
+        except (IndexError, KeyError):
+            run = self.tiled_client[self.uid]
+            baseline = run.baseline.read()
+            infuse_rate = []
+            infuse_rate_unit = []
+            pump_status = []
+            for p in self.metadata_dic['pumps']:
+                rate = float(baseline[f'{p}_read_infuse_rate'].to_numpy()[0])
+                infuse_rate.append(rate)
+                unit = baseline[f'{p}_read_infuse_rate_unit'].to_numpy()[0]
+                infuse_rate_unit.append(unit)
+                status = baseline[f'{p}_status'].to_numpy()[0]
+                pump_status.append(status)
+                
+            self.metadata_dic['infuse_rate'] = infuse_rate
+            self.metadata_dic['infuse_rate_unit'] = infuse_rate_unit
+            self.metadata_dic['pump_status'] = pump_status
+        
         print(f'\n** export {stream_name} in uid: {self.uid[0:8]} to ../{os.path.basename(saving_path)} **\n')
 
         self.PL_goodbad = {}

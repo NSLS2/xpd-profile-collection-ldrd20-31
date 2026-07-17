@@ -40,6 +40,7 @@ pytest = ">=9.0.3,<10"
 #httpie = "*"
 botorch = "*"
 gpytorch = "*"
+jupyterlab = "*"
 
 [feature.profile.pypi-dependencies]
 ophyd-async = { version = ">0.10.0", extras = ["ca", "pva"] }
@@ -48,7 +49,7 @@ ophyd-async = { version = ">0.10.0", extras = ["ca", "pva"] }
 #torch = { version = "*", index = "https://download.pytorch.org/whl/cu124" }
 #torchvision = { version = "*", index = "https://download.pytorch.org/whl/cu124" }
 #bluesky = { git = "https://github.com/bluesky/bluesky.git"}
-blop = { git = "https://github.com/bluesky/blop.git", rev = "16c9614", extras = ["cpu"] }
+blop = { git = "https://github.com/bluesky/blop.git", rev = "testing-xpd", extras = ["cpu"] }
 
 
 [feature.qs.dependencies]
@@ -75,6 +76,7 @@ git-install-bluesky = "pip install -v git+https://github.com/bluesky/bluesky.git
 #git-install-bluesky = "pip install -v git+https://github.com/mrakitin/bluesky.git@xpd-pdfstream"
 zmq_auto = "python /home/xf28id2/.ipython/profile_collection_ldrd20-31/scripts/zmq/ZMQ_RemoteDispatcher_v1.1.py xpd xpd-analysis"
 ipython = "ipython"
+jupyterlab = "jupyter lab"
 #qm = "http POST http://xf28id2-xpd-qs1.nsls2.bnl.gov:443/api/permissions/set/b9b4c27dcd3a6779007e7782f4495a4702e7c74140ce836abd1432a001c7a612 && http GET http://xf28id2-xpd-qs1.nsls2.bnl.gov:443/api/console_output"
 #qm = "qserver-console-monitor --zmq-info-addr=ipc:///var/lib/bsqs/bsqs-info.sock"
 

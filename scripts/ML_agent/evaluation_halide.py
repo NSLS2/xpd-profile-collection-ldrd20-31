@@ -67,6 +67,7 @@ class HalideEvaluation:
         height: float = 50,
         percent_range_pl: list[float] | None = None,
         percent_range_abs: list[float] | None = None,
+        peak_target: float = 660,
     ):
         self.tiled_client = tiled_client
         self.plqy_params = plqy_params
@@ -79,6 +80,7 @@ class HalideEvaluation:
         self.percent_range_abs = (
             percent_range_abs if percent_range_abs is not None else [10, 70]
         )
+        self.peak_target = peak_target
 
     # ------------------------------------------------------------------
     # Internal helpers (exposed for testability)
@@ -433,6 +435,7 @@ class HalideEvaluation:
         return [
             {
                 "Peak": peak_emission,
+                "peak_distance": abs(self.peak_target - peak_emission),
                 "log_FWHM": np.log(fwhm),
                 "log_PLQY": np.log(plqy),
                 "_id": s["_id"],

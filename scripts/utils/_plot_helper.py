@@ -9,16 +9,20 @@ plt.rcParams["figure.raise_window"] = False
 class open_figures():
     def __init__(self, figure_labels):
         for i in figure_labels:
-            plt.figure(num=i, figsize=(4,3))
+            plt.figure(num=i, figsize=(8,6))
 
 
 class plot_uvvis(open_figures):
     
     def __init__(self, qepro_dic, metadata_dic, 
-                 figure_labels = ['primary_absorbance', 'primary_fluorescence', 
-                                  'bundle_absorbance', 'bundle_fluorescence',
-                                  'peak fitting', 'Spectra Evolution', 'CsPbX3', 
-                                  'I(Q)', 'g(r)']):
+                 figure_labels = [
+                    #  'primary_absorbance', 'primary_fluorescence', 
+                     'bundle_absorbance', 'bundle_fluorescence',
+                     'peak fitting', 'Spectra Evolution', 
+                    #  'CsPbX3', 
+                    #  'I(Q)', 'g(r)', 
+                     ]
+                 ):
         self.fig = figure_labels
         self.uid = metadata_dic['uid']
         self.stream_name = metadata_dic['stream_name']
@@ -40,33 +44,31 @@ class plot_uvvis(open_figures):
         global ax, y_label
         if self.stream_name == 'absorbance':
             y_label = 'Absorbance'
-            try: f = plt.figure(self.fig[2])
-            except (IndexError): f = plt.figure(self.fig[-1])
+            f = plt.figure('bundle_absorbance')
             plt.clf()
             ax = f.gca()
         
         elif self.stream_name == 'fluorescence':
             y_label = 'Fluorescence'
-            try: f = plt.figure(self.fig[3])
-            except (IndexError): f = plt.figure(self.fig[-1])
+            f = plt.figure('bundle_fluorescence')
             plt.clf()
             ax = f.gca()
         
-        elif (self.stream_name == 'take_a_uvvis') or (self.stream_name == 'primary'):
-            if self.qepro_dic['QEPro_spectrum_type'] == 3:
-                y_label = 'Absorbance'
-                try: f = plt.figure(self.fig[0])
-                except (IndexError): f = plt.figure(self.fig[-1])
-                if clear_fig:
-                    plt.clf()
-                ax = f.gca()
-            else:
-                y_label = 'Fluorescence'
-                try: f = plt.figure(self.fig[1])
-                except (IndexError): f = plt.figure(self.fig[-1])
-                if clear_fig:
-                    plt.clf()
-                ax = f.gca()
+        # elif (self.stream_name == 'take_a_uvvis') or (self.stream_name == 'primary'):
+        #     if self.qepro_dic['QEPro_spectrum_type'] == 3:
+        #         y_label = 'Absorbance'
+        #         try: f = plt.figure(self.fig[0])
+        #         except (IndexError): f = plt.figure(self.fig[-1])
+        #         if clear_fig:
+        #             plt.clf()
+        #         ax = f.gca()
+        #     else:
+        #         y_label = 'Fluorescence'
+        #         try: f = plt.figure(self.fig[1])
+        #         except (IndexError): f = plt.figure(self.fig[-1])
+        #         if clear_fig:
+        #             plt.clf()
+        #         ax = f.gca()
 
         for i in range(self.wavelength.shape[0]):
             if label == None:
@@ -91,10 +93,7 @@ class plot_uvvis(open_figures):
     def plot_peak_fit(self, x, y, fit_function, popt, peak=None, fill_between=False):
         y_label = 'Fluorescence'
         
-        try:
-            f = plt.figure(self.fig[4])
-        except (IndexError):
-            f = plt.figure(self.fig[-1])
+        f = plt.figure('peak fitting')
         
         plt.clf()
         ax = f.gca()
@@ -146,10 +145,7 @@ class plot_uvvis(open_figures):
 
         y_label = 'Fluorescence'
         
-        try:
-            f = plt.figure(self.fig[5])
-        except (IndexError):
-            f = plt.figure(self.fig[-1])
+        f = plt.figure('Spectra Evolution')
         
         ax = f.gca()      
         if len(list(ax.lines)) > clf_limit:
@@ -231,10 +227,7 @@ class plot_uvvis(open_figures):
         # palette = pld.RdYlGn_4_r
         # cmap = palette.mpl_colormap
         
-        try: 
-            f = plt.figure(self.fig[2])
-        except (IndexError): 
-            f = plt.figure('bundle_absorbance')
+        f = plt.figure('bundle_absorbance')
         
         ax = f.gca()
 
