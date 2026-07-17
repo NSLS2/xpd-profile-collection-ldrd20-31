@@ -35,7 +35,7 @@ if str(HERE) not in sys.path:
     sys.path.insert(0, str(HERE))
 
 from evaluation_halide import HalideEvaluation
-from agent_halide import PLQY_PARAMS, SANDBOX_URI, TILED_PROFILE
+from agent_halide import PLQY_PARAMS, SANDBOX_URI, SANDBOX_CATALOG, TILED_PROFILE
 
 
 def _load_uids(args: argparse.Namespace) -> list[str]:
@@ -99,7 +99,7 @@ def main() -> int:
 
     uids = _load_uids(args)
     raw_client = _raw_tiled_client(args.raw_uri or None, args.raw_profile)
-    sandbox_client = from_uri(args.sandbox_uri)
+    sandbox_client = from_uri(args.sandbox_uri)[SANDBOX_CATALOG]
 
     evaluator = HalideEvaluation(
         tiled_client=raw_client,

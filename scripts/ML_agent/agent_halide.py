@@ -69,8 +69,9 @@ TILED_PROFILE = os.environ.get("TILED_PROFILE", "xpd")
 
 # Tiled sandbox URI where pdfstream writes analysis results
 SANDBOX_URI = os.environ.get(
-    "TILED_SANDBOX_URI", "https://tiled.nsls2.bnl.gov/xpd/sandbox"
+    "TILED_SANDBOX_URI", "https://tiled.nsls2.bnl.gov"
 )
+SANDBOX_CATALOG = "xpd/sandbox"
 
 # Acquisition plan name (must be registered on the queueserver)
 ACQUISITION_PLAN_NAME = "xray_uvvis_acquire"
@@ -291,7 +292,7 @@ def build_agent(
     # Tiled clients for evaluation function
     tiled_client = _get_tiled_client(tiled_profile)
     from tiled.client import from_uri as _from_uri
-    sandbox_client = _from_uri(SANDBOX_URI)
+    sandbox_client = _from_uri(SANDBOX_URI)[SANDBOX_CATALOG]
 
     evaluation_function = HalideEvaluation(
         tiled_client=tiled_client,
