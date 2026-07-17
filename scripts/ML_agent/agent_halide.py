@@ -67,6 +67,12 @@ AGENT_DATA_PATH = ""
 TILED_URI = os.environ.get("TILED_URI", "https://tiled.nsls2.bnl.gov")
 TILED_PROFILE = os.environ.get("TILED_PROFILE", "xpd")
 
+# Tiled sandbox URI where pdfstream writes analysis results
+SANDBOX_URI = os.environ.get(
+    "TILED_SANDBOX_URI", "https://tiled.nsls2.bnl.gov"
+)
+SANDBOX_CATALOG = "xpd/sandbox"
+
 # Acquisition plan name (must be registered on the queueserver)
 ACQUISITION_PLAN_NAME = "xray_uvvis_acquire"
 
@@ -105,6 +111,14 @@ def build_objectives() -> list[Objective]:
         Objective(name="log_FWHM", minimize=True),
         Objective(name="log_PLQY", minimize=False),
         Objective(name="peak_distance", minimize=True),
+        # G(r) Pearson correlations against simulated reference phases.
+        # Maximise CsPbBr3 (desired phase) and minimise the impurity phases.
+        Objective(name="corr_CsPbBr3", minimize=False),
+        Objective(name="corr_CsBr", minimize=True),
+        Objective(name="corr_Cs4PbBr6", minimize=True),
+        # Alternative scalar PDF objective to use once HalideEvaluation returns it:
+        # pdf_score = corr_CsPbBr3 - 0.5 * (max(0, corr_CsBr) + max(0, corr_Cs4PbBr6))
+        # Objective(name="pdf_score", minimize=False),
     ]
 
 
@@ -275,13 +289,27 @@ def build_agent(
     objectives = build_objectives()
     outcome_constraints = build_outcome_constraints(peak_target, peak_tolerance)
 
-    # Evaluation function
+    # Tiled clients for evaluation function
     tiled_client = _get_tiled_client(tiled_profile)
+    from tiled.client import from_uri as _from_uri
+    sandbox_client = _from_uri(SANDBOX_URI)[SANDBOX_CATALOG]
+
     evaluation_function = HalideEvaluation(
         tiled_client=tiled_client,
+        sandbox_client=sandbox_client,
         plqy_params=plqy_params,
         peak_target=peak_target,
     )
+
+    # Always enable X-ray acquisition; merge with any caller overrides.
+    default_plan_kwargs: dict = {"xray_config": {"do_xray": True}}
+    if acquisition_plan_kwargs:
+        # Caller overrides win; deep-merge xray_config so individual keys
+        # can be overridden without clobbering do_xray.
+        caller_xray = acquisition_plan_kwargs.pop("xray_config", {})
+        default_plan_kwargs["xray_config"].update(caller_xray)
+        default_plan_kwargs.update(acquisition_plan_kwargs)
+    acquisition_plan_kwargs = default_plan_kwargs
 
     if queueserver:
         # Queueserver connection
@@ -306,7 +334,7 @@ def build_agent(
         halide_acquisition = functools.partial(
             globals().get(ACQUISITION_PLAN_NAME),
             use_good_bad=True,
-            do_xray=False,
+            xray_config={"do_xray": True},
         )
 
         agent = Agent(

@@ -5,7 +5,8 @@ callable class compatible with the Blop ``Agent`` evaluation_function interface:
 
     def __call__(self, uid: str, suggestions: list[dict]) -> list[dict]
 
-Each returned dict contains ``Peak``, ``log_FWHM``, ``log_PLQY``, and ``_id`` keys.
+Each returned dict contains ``Peak``, ``log_FWHM``, ``log_PLQY``,
+``corr_CsBr``, ``corr_CsPbBr3``, ``corr_Cs4PbBr6``, and ``_id`` keys.
 """
 
 from __future__ import annotations
@@ -14,16 +15,26 @@ import sys
 import os
 import time
 import numpy as np
+import pandas as pd
 from scipy import integrate
+from tiled.queries import Eq
 
-# Add utils to path so we can import _data_analysis / _data_export
-# This mirrors the pattern used throughout the codebase.
+# Add utils to path so we can import _data_analysis / _data_export / pearson_multi_phase
 _utils_dir = os.path.join(os.path.dirname(__file__), "..", "utils")
 if _utils_dir not in sys.path:
     sys.path.insert(0, _utils_dir)
 
 import _data_analysis as da
 import _data_export as de
+import pearson_multi_phase as pmp
+
+# ---------------------------------------------------------------------------
+# Simulated G(r) reference files bundled with the repo
+# ---------------------------------------------------------------------------
+_SIMULATED_GR_PATH = os.path.join(
+    os.path.dirname(__file__), "..", "Matt_multi_phase"
+)
+_SIMULATED_GR_FILES = ("CsBr.gr", "CsPbBr3.gr", "Cs4PbBr6.gr")
 
 # ---------------------------------------------------------------------------
 # Retry configuration for all Tiled reads
@@ -33,13 +44,20 @@ _TILED_RETRY_DELAY = 2.0  # seconds between attempts
 
 
 class HalideEvaluation:
-    """Evaluation function that reads QEPro data from Tiled and computes
-    optical properties (Peak, FWHM, PLQY) for the halide perovskite agent.
+    """Evaluation function that reads QEPro and pdfstream data from Tiled and
+    computes optical properties (Peak, FWHM, PLQY) plus G(r) Pearson
+    correlations (corr_CsBr, corr_CsPbBr3, corr_Cs4PbBr6) for the halide
+    perovskite agent.
 
     Parameters
     ----------
     tiled_client
-        A Tiled ``Container`` (or compatible mapping) keyed by Bluesky run UID.
+        A Tiled ``Container`` keyed by Bluesky run UID for the raw beamline
+        data (e.g. ``from_profile("xpd")``).
+    sandbox_client
+        A Tiled ``Container`` pointing to the XPD sandbox where pdfstream
+        writes its analysis results.  Expected to be keyed by UID, with each
+        entry's start metadata containing ``original_run_uid``.
     plqy_params : list
         PLQY reference parameters, matching ``self.inputs.PLQY`` from the old
         dispatcher:
@@ -61,6 +79,7 @@ class HalideEvaluation:
     def __init__(
         self,
         tiled_client,
+        sandbox_client,
         plqy_params: list,
         key_height: float = 200,
         distance: int = 100,
@@ -70,6 +89,7 @@ class HalideEvaluation:
         peak_target: float = 660,
     ):
         self.tiled_client = tiled_client
+        self.sandbox_client = sandbox_client
         self.plqy_params = plqy_params
         self.key_height = key_height
         self.distance = distance
@@ -85,6 +105,85 @@ class HalideEvaluation:
     # ------------------------------------------------------------------
     # Internal helpers (exposed for testability)
     # ------------------------------------------------------------------
+
+    def _read_pdfstream_data(self, uid: str) -> dict:
+        """Find the pdfstream analysis run for *uid* in the sandbox and return
+        the G(r) and I(Q) arrays as a plain-numpy dict.
+
+        pdfstream writes a Bluesky run to the sandbox whose start document
+        contains ``original_run_uid == uid``.  We iterate over recent sandbox
+        entries to find it, retrying with the same cadence used for UV-Vis reads.
+
+        Returns
+        -------
+        dict with keys:
+            ``gr_r``, ``gr_G`` — pair-distribution function
+            ``chi_Q``, ``chi_I`` — azimuthally-integrated I(Q)
+        Only ``gr_r`` / ``gr_G`` are guaranteed; the others are best-effort.
+
+        Raises
+        ------
+        RuntimeError
+            If no matching sandbox entry is found after all retries.
+        """
+        for attempt in range(_TILED_MAX_RETRIES):
+            try:
+                matches = self.sandbox_client.search(Eq("start.original_run_uid", uid))
+                key = next(iter(matches))
+                entry = matches[key]
+                ds = entry["primary"].read()
+                result = {}
+                for field in ("gr_r", "gr_G", "chi_Q", "chi_I"):
+                    if field in ds:
+                        arr = ds[field].values
+                        # pdfstream may store 1-D or 2-D; squeeze to 1-D
+                        result[field] = np.asarray(arr).squeeze()
+                if "gr_r" in result and "gr_G" in result:
+                    return result
+            except StopIteration:
+                pass
+            except Exception as exc:
+                print(
+                    f"[EVAL] Failed to read pdfstream sandbox data "
+                    f"(attempt {attempt + 1}/{_TILED_MAX_RETRIES}): {exc!r}",
+                    flush=True,
+                )
+            time.sleep(_TILED_RETRY_DELAY)
+
+        raise RuntimeError(
+            f"[EVAL] Could not find pdfstream sandbox entry with "
+            f"original_run_uid={uid!r} after {_TILED_MAX_RETRIES} attempts."
+        )
+
+    def _process_pdf(self, pdf_data: dict) -> dict:
+        """Compute Pearson correlations of the measured G(r) against the three
+        simulated reference phases bundled in scripts/Matt_multi_phase/.
+
+        Parameters
+        ----------
+        pdf_data : dict
+            As returned by :meth:`_read_pdfstream_data`.
+
+        Returns
+        -------
+        dict with keys ``corr_CsBr``, ``corr_CsPbBr3``, ``corr_Cs4PbBr6``.
+        """
+        gr_df = pd.DataFrame({
+            "r": pdf_data["gr_r"],
+            "g(r)": pdf_data["gr_G"],
+        })
+        raw = pmp.pearson_pdf(
+            gr_df,
+            list(_SIMULATED_GR_FILES),
+            os.path.abspath(_SIMULATED_GR_PATH),
+        )
+        # raw keys look like "CsBr.gr correlation"; map to clean names
+        name_map = {
+            "CsBr.gr correlation":    "corr_CsBr",
+            "CsPbBr3.gr correlation": "corr_CsPbBr3",
+            "Cs4PbBr6.gr correlation": "corr_Cs4PbBr6",
+        }
+        return {name_map.get(k, k): v for k, v in raw.items()}
 
     def _read_tiled_data(self, uid: str) -> tuple[dict, dict, dict, list[dict] | None]:
         """Read all required streams from Tiled, retrying until all are available.
@@ -415,8 +514,10 @@ class HalideEvaluation:
         Returns
         -------
         list[dict]
-            One outcome dict per suggestion, with keys ``Peak``, ``log_FWHM``,
-            ``log_PLQY``, and ``_id``.
+            One outcome dict per suggestion, with keys ``Peak``,
+            ``peak_distance``, ``log_FWHM``, ``log_PLQY``,
+            ``corr_CsBr``, ``corr_CsPbBr3``, ``corr_Cs4PbBr6``,
+            and ``_id``.
         """
         qepro_fl, qepro_abs, metadata, batch_info = self._read_tiled_data(uid)
 
@@ -432,12 +533,17 @@ class HalideEvaluation:
         wavelength, abs_offset = self._process_absorbance(qepro_abs)
         plqy = self._compute_plqy(abs_offset, wavelength, PL_integral) if has_peak else 0.0
 
+        # --- PDF correlations ---
+        pdf_data = self._read_pdfstream_data(uid)
+        pdf_correlations = self._process_pdf(pdf_data)
+
         return [
             {
                 "Peak": peak_emission,
                 "peak_distance": abs(self.peak_target - peak_emission),
                 "log_FWHM": np.log(fwhm),
                 "log_PLQY": np.log(plqy),
+                **pdf_correlations,
                 "_id": s["_id"],
             }
             for s in suggestions
